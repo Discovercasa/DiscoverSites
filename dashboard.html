@@ -6,32 +6,20 @@
   <title>A Minha Obra — Painel</title>
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
-  <main class="auth-card">
-    <h1>Bem-vindo 👷</h1>
-    <p class="subtitle" id="user-email"></p>
-    <p>As fases (Preparação, Obra, Continuidade) e as checklists vão aparecer aqui na próxima etapa.</p>
-    <button type="button" id="logout-btn" style="margin-top:20px;padding:11px;background:#262220;color:#fff;border:none;border-radius:8px;cursor:pointer;">Sair</button>
+<body class="dashboard-body">
+  <main class="dashboard">
+    <header class="dashboard-header">
+      <div>
+        <h1>A Minha Obra</h1>
+        <p class="subtitle" id="user-email"></p>
+      </div>
+      <button type="button" id="logout-btn" class="btn-secondary">Sair</button>
+    </header>
+
+    <div id="fases-container"></div>
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    const SUPABASE_URL = "https://swpqelomnbmytwoppccb.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3cHFlbG9tbmJteXR3b3BwY2NiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAzMjc5OTcsImV4cCI6MjEwNTkwMzk5N30.lVVpzaL21oak28tjnsHhzfi6ABWe3IrHU40RCxwx0sk";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data.session) {
-        window.location.href = "index.html";
-      } else {
-        document.getElementById("user-email").textContent = data.session.user.email;
-      }
-    });
-
-    document.getElementById("logout-btn").addEventListener("click", async () => {
-      await supabase.auth.signOut();
-      window.location.href = "index.html";
-    });
-  </script>
+  <script src="dashboard.js"></script>
 </body>
 </html>
