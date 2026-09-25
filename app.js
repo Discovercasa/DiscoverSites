@@ -2,7 +2,7 @@
 const SUPABASE_URL = "https://swpqelomnbmytwoppccb.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3cHFlbG9tbmJteXR3b3BwY2NiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAzMjc5OTcsImV4cCI6MjEwNTkwMzk5N30.lVVpzaL21oak28tjnsHhzfi6ABWe3IrHU40RCxwx0sk";
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // --- Alternar entre separadores Entrar / Criar conta ---
 document.querySelectorAll(".tab-btn").forEach((btn) => {
@@ -15,7 +15,7 @@ document.querySelectorAll(".tab-btn").forEach((btn) => {
 });
 
 // --- Se já estiver autenticado, salta logo para o dashboard ---
-supabase.auth.getSession().then(({ data }) => {
+supabaseClient.auth.getSession().then(({ data }) => {
   if (data.session) window.location.href = "dashboard.html";
 });
 
@@ -28,7 +28,7 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
   const email = document.getElementById("login-email").value;
   const password = document.getElementById("login-password").value;
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
 
   if (error) {
     errorEl.textContent = "Email ou palavra-passe incorretos.";
@@ -48,7 +48,7 @@ document.getElementById("registo-form").addEventListener("submit", async (e) => 
   const email = document.getElementById("registo-email").value;
   const password = document.getElementById("registo-password").value;
 
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const { data, error } = await supabaseClient.auth.signUp({ email, password });
 
   if (error) {
     errorEl.textContent = "Não foi possível criar a conta. " + error.message;
@@ -57,7 +57,7 @@ document.getElementById("registo-form").addEventListener("submit", async (e) => 
 
   // Cria já a "obra" inicial do utilizador, com uma checklist por omissão em cada fase
   if (data.user) {
-    const { data: obra } = await supabase
+    const { data: obra } = await supabaseClient
       .from("obras")
       .insert({ user_id: data.user.id })
       .select()
@@ -89,7 +89,7 @@ document.getElementById("registo-form").addEventListener("submit", async (e) => 
         items.map((titulo, i) => ({ obra_id: obra.id, fase, titulo, ordem: i }))
       );
 
-      await supabase.from("checklist_items").insert(rows);
+      await supabaseClient.from("checklist_items").insert(rows);
     }
   }
 
