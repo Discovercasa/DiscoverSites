@@ -55,9 +55,42 @@ document.getElementById("registo-form").addEventListener("submit", async (e) => 
     return;
   }
 
-  // Cria já a "obra" inicial do utilizador
+  // Cria já a "obra" inicial do utilizador, com uma checklist por omissão em cada fase
   if (data.user) {
-    await supabase.from("obras").insert({ user_id: data.user.id });
+    const { data: obra } = await supabase
+      .from("obras")
+      .insert({ user_id: data.user.id })
+      .select()
+      .single();
+
+    if (obra) {
+      const DEFAULT_ITEMS = {
+        preparacao: [
+          "Definir orçamento",
+          "Pedir licenças e autorizações",
+          "Escolher empreiteiro/equipa",
+          "Contratar seguro de obra",
+        ],
+        obra: [
+          "Demolições e preparação do terreno",
+          "Estrutura e alvenaria",
+          "Instalações elétricas e canalização",
+          "Acabamentos",
+        ],
+        continuidade: [
+          "Vistoria final",
+          "Guardar garantias e documentação",
+          "Agendar manutenção preventiva",
+          "Registar contactos úteis",
+        ],
+      };
+
+      const rows = Object.entries(DEFAULT_ITEMS).flatMap(([fase, items]) =>
+        items.map((titulo, i) => ({ obra_id: obra.id, fase, titulo, ordem: i }))
+      );
+
+      await supabase.from("checklist_items").insert(rows);
+    }
   }
 
   successEl.textContent = "Conta criada! A entrar...";
