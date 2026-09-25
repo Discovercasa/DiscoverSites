@@ -1,0 +1,118 @@
+:root {
+  --brick: #b5502e;
+  --brick-dark: #8f3d21;
+  --ink: #262220;
+  --muted: #7a726c;
+  --bg: #f4efe9;
+  --card: #ffffff;
+  --border: #e4dcd3;
+  --error: #c0392b;
+  --success: #2f7a4f;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: var(--ink);
+  padding: 20px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 32px 28px;
+  box-shadow: 0 8px 24px rgba(38, 34, 32, 0.06);
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 1.5rem;
+}
+
+.subtitle {
+  margin: 0 0 24px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+
+.tab-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 10px 0;
+  font-size: 0.95rem;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.tab-btn.active {
+  color: var(--brick);
+  border-bottom-color: var(--brick);
+  font-weight: 600;
+}
+
+.tab-panel { display: none; flex-direction: column; }
+.tab-panel.active { display: flex; }
+
+label {
+  font-size: 0.85rem;
+  margin: 10px 0 4px;
+  color: var(--muted);
+}
+
+input {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--brick);
+}
+
+button[type="submit"] {
+  margin-top: 20px;
+  padding: 11px;
+  background: var(--brick);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button[type="submit"]:hover { background: var(--brick-dark); }
+button[type="submit"]:disabled { opacity: 0.6; cursor: default; }
+
+.error {
+  color: var(--error);
+  font-size: 0.85rem;
+  margin: 10px 0 0;
+  min-height: 1em;
+}
+
+.success {
+  color: var(--success);
+  font-size: 0.85rem;
+  margin: 6px 0 0;
+}

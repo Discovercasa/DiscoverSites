@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Obra — Login</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="auth-card">
+    <h1>A Minha Obra</h1>
+    <p class="subtitle">Acompanha a tua obra do início ao fim.</p>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="login">Entrar</button>
+      <button class="tab-btn" data-tab="registo">Criar conta</button>
+    </div>
+
+    <form id="login-form" class="tab-panel active">
+      <label for="login-email">Email</label>
+      <input type="email" id="login-email" required autocomplete="email" />
+
+      <label for="login-password">Palavra-passe</label>
+      <input type="password" id="login-password" required autocomplete="current-password" />
+
+      <button type="submit">Entrar</button>
+      <p class="error" id="login-error"></p>
+    </form>
+
+    <form id="registo-form" class="tab-panel">
+      <label for="registo-email">Email</label>
+      <input type="email" id="registo-email" required autocomplete="email" />
+
+      <label for="registo-password">Palavra-passe</label>
+      <input type="password" id="registo-password" required minlength="6" autocomplete="new-password" />
+
+      <button type="submit">Criar conta</button>
+      <p class="error" id="registo-error"></p>
+      <p class="success" id="registo-success"></p>
+    </form>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
