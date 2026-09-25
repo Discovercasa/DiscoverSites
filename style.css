@@ -116,3 +116,102 @@ button[type="submit"]:disabled { opacity: 0.6; cursor: default; }
   font-size: 0.85rem;
   margin: 6px 0 0;
 }
+
+/* --- Painel (dashboard) --- */
+
+.dashboard-body {
+  align-items: flex-start;
+  padding: 40px 20px;
+}
+
+.dashboard {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.dashboard-header h1 {
+  font-size: 1.3rem;
+}
+
+.btn-secondary {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--ink);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.btn-secondary:hover { border-color: var(--brick); }
+
+/* --- Fases em acordeão --- */
+
+.fase-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.fase-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.fase-progress {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--muted);
+  background: var(--bg);
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.fase-body {
+  display: none;
+  flex-direction: column;
+  padding: 0 20px 16px;
+}
+
+.fase-card.open .fase-body { display: flex; }
+
+.checklist-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.checklist-row:first-child { border-top: none; }
+
+.checklist-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--brick);
+}
+
+.checklist-row span.done {
+  color: var(--muted);
+  text-decoration: line-through;
+}
