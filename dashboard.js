@@ -1,6 +1,6 @@
 const SUPABASE_URL = "https://swpqelomnbmytwoppccb.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN3cHFlbG9tbmJteXR3b3BwY2NiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAzMjc5OTcsImV4cCI6MjEwNTkwMzk5N30.lVVpzaL21oak28tjnsHhzfi6ABWe3IrHU40RCxwx0sk";
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const FASES = [
   { key: "preparacao", label: "Preparação" },
@@ -11,14 +11,14 @@ const FASES = [
 let currentObra = null;
 
 async function init() {
-  const { data: sessionData } = await supabase.auth.getSession();
+  const { data: sessionData } = await supabaseClient.auth.getSession();
   if (!sessionData.session) {
     window.location.href = "index.html";
     return;
   }
   document.getElementById("user-email").textContent = sessionData.session.user.email;
 
-  const { data: obra } = await supabase
+  const { data: obra } = await supabaseClient
     .from("obras")
     .select("*")
     .eq("user_id", sessionData.session.user.id)
@@ -26,7 +26,7 @@ async function init() {
 
   currentObra = obra;
 
-  const { data: items } = await supabase
+  const { data: items } = await supabaseClient
     .from("checklist_items")
     .select("*")
     .eq("obra_id", obra.id)
@@ -93,11 +93,11 @@ function render(items) {
 }
 
 async function toggleItem(itemId, concluido) {
-  await supabase.from("checklist_items").update({ concluido }).eq("id", itemId);
+  await supabaseClient.from("checklist_items").update({ concluido }).eq("id", itemId);
 }
 
 document.getElementById("logout-btn").addEventListener("click", async () => {
-  await supabase.auth.signOut();
+  await supabaseClient.auth.signOut();
   window.location.href = "index.html";
 });
 
