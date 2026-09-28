@@ -5,13 +5,15 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 // ---------- Estado ----------
 let me = null;
 let profile = null;
+let isAdmin = false;
+let isSuper = false;
 let obras = [];
 let obraAtual = null;
 let fases = [];
 let items = [];
-let status = new Map(); // item_id -> linha de item_status
+let status = new Map(); // item_id -> linha de item_status (do projeto atual)
 let nomes = new Map(); // user_id -> nome
-let membros = [];
+let membros = []; // membros do projeto atual (só admins veem)
 const collapsed = new Set(JSON.parse(localStorage.getItem("collapsed") || "[]"));
 
 const $ = (id) => document.getElementById(id);
@@ -60,11 +62,14 @@ function fmtData(iso) {
   });
 }
 
+function fmtDia(iso) {
+  return new Date(iso).toLocaleDateString("pt-PT", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
 const byOrdem = (a, b) => a.ordem - b.ordem || a.created_at.localeCompare(b.created_at);
 const irmaos = (faseId, parentId) =>
   items.filter((i) => i.fase_id === faseId && (i.parent_id || null) === (parentId || null)).sort(byOrdem);
 const filhos = (id) => items.filter((i) => i.parent_id === id);
-const souDono = () => obraAtual && obraAtual.papel === "dono";
 
 // ---------- Menu flutuante ----------
 function closeMenu() {
@@ -99,42 +104,45 @@ async function loadProfile() {
     );
   }
   profile = p;
+  isAdmin = p.role === "admin" || p.role === "super_admin";
+  isSuper = p.role === "super_admin";
   applyTheme(profile.dark_mode);
 }
 
 async function loadObras() {
-  const rows = await run(
-    supabaseClient.from("obra_membros").select("papel, obras(id, nome, user_id)").eq("user_id", me.id)
-  );
-  obras = rows
-    .filter((r) => r.obras)
-    .map((r) => ({ ...r.obras, papel: r.papel }))
-    .sort((a, b) => a.nome.localeCompare(b.nome));
+  obras = await run(supabaseClient.from("obras").select("id, nome, criado_por").order("nome"));
 }
 
 async function loadObraData() {
-  const donoId = obraAtual.user_id;
-  fases = await run(supabaseClient.from("fases").select("*").eq("dono_id", donoId).order("ordem"));
-  const ids = fases.map((f) => f.id);
-  items = ids.length ? await run(supabaseClient.from("items").select("*").in("fase_id", ids)) : [];
-  const st = await run(supabaseClient.from("item_status").select("*").eq("obra_id", obraAtual.id));
+  // A checklist (fases e itens) é única e igual em todos os projetos
+  fases = await run(supabaseClient.from("fases").select("*").order("ordem"));
+  items = await run(supabaseClient.from("items").select("*"));
+
+  // Os checks são por projeto
+  const st = obraAtual
+    ? await run(supabaseClient.from("item_status").select("*").eq("obra_id", obraAtual.id))
+    : [];
   status = new Map(st.map((s) => [s.item_id, s]));
-  membros = await run(supabaseClient.from("obra_membros").select("user_id, papel").eq("obra_id", obraAtual.id));
-  const pids = [...new Set([...membros.map((m) => m.user_id), ...st.map((s) => s.concluido_por)])];
+
+  membros = obraAtual && isAdmin
+    ? await run(supabaseClient.rpc("listar_membros", { p_obra: obraAtual.id }))
+    : [];
+
+  const pids = [...new Set(st.map((s) => s.concluido_por))];
   const ps = pids.length ? await run(supabaseClient.from("profiles").select("id, nome").in("id", pids)) : [];
   nomes = new Map(ps.map((p) => [p.id, p.nome || "Sem nome"]));
   nomes.set(me.id, profile.nome || me.email.split("@")[0]);
 }
 
 async function criarObra(nome) {
-  const obra = await run(supabaseClient.from("obras").insert({ user_id: me.id, nome }).select().single());
+  const obra = await run(supabaseClient.from("obras").insert({ nome }).select().single());
   await loadObras();
   return obra;
 }
 
 async function selecionarObra(id) {
-  obraAtual = obras.find((o) => o.id === id) || obras[0];
-  localStorage.setItem("obraAtual", obraAtual.id);
+  obraAtual = obras.find((o) => o.id === id) || obras[0] || null;
+  if (obraAtual) localStorage.setItem("obraAtual", obraAtual.id);
   await loadObraData();
   renderTopbar();
   render();
@@ -150,7 +158,7 @@ async function gravarOrdem(lista, tabela) {
   );
 }
 
-// ---------- Ações: itens ----------
+// ---------- Ações: itens (só admins) ----------
 async function addItem(faseId, parentId, tipo, afterId) {
   const txt = prompt(tipo === "titulo" ? "Nome do título (grupo):" : "Nome do item:");
   if (!txt || !txt.trim()) return;
@@ -196,6 +204,7 @@ async function apagarItem(it) {
   render();
 }
 
+// ---------- Checks (por projeto) ----------
 async function marcar(it, checked) {
   try {
     if (checked) {
@@ -218,16 +227,12 @@ async function marcar(it, checked) {
   render();
 }
 
-// ---------- Ações: fases ----------
+// ---------- Ações: fases (só admins) ----------
 async function addFase() {
   const txt = prompt("Nome da nova fase:");
   if (!txt || !txt.trim()) return;
   const nova = await run(
-    supabaseClient
-      .from("fases")
-      .insert({ dono_id: obraAtual.user_id, titulo: txt.trim(), ordem: fases.length })
-      .select()
-      .single()
+    supabaseClient.from("fases").insert({ titulo: txt.trim(), ordem: fases.length }).select().single()
   );
   fases.push(nova);
   render();
@@ -261,19 +266,22 @@ async function apagarFase(f) {
 
 // ---------- Renderização ----------
 function renderTopbar() {
-  $("ola").textContent = "Olá, " + (profile.nome || me.email);
+  const papel = isSuper ? " · Super admin" : isAdmin ? " · Admin" : "";
+  $("ola").textContent = "Olá, " + (profile.nome || me.email) + papel;
+
   const sel = $("obra-select");
   sel.innerHTML = "";
   obras.forEach((o) => {
-    const opt = el("option", "", o.nome + (o.papel === "dono" ? "" : " (partilhado)"));
+    const opt = el("option", "", o.nome);
     opt.value = o.id;
     sel.appendChild(opt);
   });
-  sel.value = obraAtual.id;
-}
+  sel.classList.toggle("hidden", !obras.length);
+  if (obraAtual) sel.value = obraAtual.id;
 
-function donoTemplate() {
-  return obraAtual.user_id === me.id;
+  $("btn-novo-projeto").classList.toggle("hidden", !isAdmin);
+  $("btn-projeto-menu").classList.toggle("hidden", !isAdmin || !obraAtual);
+  $("tabs-main").classList.toggle("hidden", !isSuper);
 }
 
 function renderItem(it) {
@@ -310,19 +318,21 @@ function renderItem(it) {
   }
   row.appendChild(text);
 
-  row.appendChild(
-    btn("menu-btn", "⋯", (_e, b) =>
-      showMenu(b, [
-        { label: "+ Sub-item", fn: () => addItem(it.fase_id, it.id, "item") },
-        { label: "+ Item abaixo", fn: () => addItem(it.fase_id, it.parent_id, "item", it.id) },
-        { label: "+ Título abaixo", fn: () => addItem(it.fase_id, it.parent_id, "titulo", it.id) },
-        { label: "Renomear", fn: () => renomearItem(it) },
-        { label: "Mover para cima", fn: () => moverItem(it, -1) },
-        { label: "Mover para baixo", fn: () => moverItem(it, 1) },
-        donoTemplate() && { label: "Apagar", danger: true, fn: () => apagarItem(it) },
-      ])
-    )
-  );
+  if (isAdmin) {
+    row.appendChild(
+      btn("menu-btn", "⋯", (_e, b) =>
+        showMenu(b, [
+          { label: "+ Sub-item", fn: () => addItem(it.fase_id, it.id, "item") },
+          { label: "+ Item abaixo", fn: () => addItem(it.fase_id, it.parent_id, "item", it.id) },
+          { label: "+ Título abaixo", fn: () => addItem(it.fase_id, it.parent_id, "titulo", it.id) },
+          { label: "Renomear", fn: () => renomearItem(it) },
+          { label: "Mover para cima", fn: () => moverItem(it, -1) },
+          { label: "Mover para baixo", fn: () => moverItem(it, 1) },
+          { label: "Apagar", danger: true, fn: () => apagarItem(it) },
+        ])
+      )
+    );
+  }
 
   wrap.appendChild(row);
   if (kids.length && aberto) {
@@ -336,18 +346,20 @@ function renderItem(it) {
 function renderTitulo(it) {
   const t = el("div", "grupo-titulo");
   t.appendChild(el("span", "", it.titulo));
-  t.appendChild(
-    btn("menu-btn", "⋯", (_e, b) =>
-      showMenu(b, [
-        { label: "+ Item abaixo", fn: () => addItem(it.fase_id, it.parent_id, "item", it.id) },
-        { label: "+ Título abaixo", fn: () => addItem(it.fase_id, it.parent_id, "titulo", it.id) },
-        { label: "Renomear", fn: () => renomearItem(it) },
-        { label: "Mover para cima", fn: () => moverItem(it, -1) },
-        { label: "Mover para baixo", fn: () => moverItem(it, 1) },
-        donoTemplate() && { label: "Apagar", danger: true, fn: () => apagarItem(it) },
-      ])
-    )
-  );
+  if (isAdmin) {
+    t.appendChild(
+      btn("menu-btn", "⋯", (_e, b) =>
+        showMenu(b, [
+          { label: "+ Item abaixo", fn: () => addItem(it.fase_id, it.parent_id, "item", it.id) },
+          { label: "+ Título abaixo", fn: () => addItem(it.fase_id, it.parent_id, "titulo", it.id) },
+          { label: "Renomear", fn: () => renomearItem(it) },
+          { label: "Mover para cima", fn: () => moverItem(it, -1) },
+          { label: "Mover para baixo", fn: () => moverItem(it, 1) },
+          { label: "Apagar", danger: true, fn: () => apagarItem(it) },
+        ])
+      )
+    );
+  }
   return t;
 }
 
@@ -375,26 +387,30 @@ function renderFase(f) {
   const feitos = todos.filter((i) => status.has(i.id)).length;
   head.appendChild(el("span", "fase-progress", `${feitos}/${todos.length}`));
 
-  head.appendChild(
-    btn("menu-btn", "⋯", (_e, b) =>
-      showMenu(b, [
-        { label: "+ Item", fn: () => addItem(f.id, null, "item") },
-        { label: "+ Título", fn: () => addItem(f.id, null, "titulo") },
-        { label: "Renomear fase", fn: () => renomearFase(f) },
-        { label: "Mover para cima", fn: () => moverFase(f, -1) },
-        { label: "Mover para baixo", fn: () => moverFase(f, 1) },
-        donoTemplate() && { label: "Apagar fase", danger: true, fn: () => apagarFase(f) },
-      ])
-    )
-  );
+  if (isAdmin) {
+    head.appendChild(
+      btn("menu-btn", "⋯", (_e, b) =>
+        showMenu(b, [
+          { label: "+ Item", fn: () => addItem(f.id, null, "item") },
+          { label: "+ Título", fn: () => addItem(f.id, null, "titulo") },
+          { label: "Renomear fase", fn: () => renomearFase(f) },
+          { label: "Mover para cima", fn: () => moverFase(f, -1) },
+          { label: "Mover para baixo", fn: () => moverFase(f, 1) },
+          { label: "Apagar fase", danger: true, fn: () => apagarFase(f) },
+        ])
+      )
+    );
+  }
   card.appendChild(head);
 
   const body = el("div", "fase-body");
   renderLista(body, f.id, null);
-  const bar = el("div", "fase-toolbar");
-  bar.appendChild(btn("btn-ghost", "+ Item", () => addItem(f.id, null, "item")));
-  bar.appendChild(btn("btn-ghost", "+ Título (grupo)", () => addItem(f.id, null, "titulo")));
-  body.appendChild(bar);
+  if (isAdmin) {
+    const bar = el("div", "fase-toolbar");
+    bar.appendChild(btn("btn-ghost", "+ Item", () => addItem(f.id, null, "item")));
+    bar.appendChild(btn("btn-ghost", "+ Título (grupo)", () => addItem(f.id, null, "titulo")));
+    body.appendChild(bar);
+  }
   card.appendChild(body);
   return card;
 }
@@ -402,8 +418,20 @@ function renderFase(f) {
 function render() {
   const c = $("fases-container");
   c.innerHTML = "";
+  if (!obraAtual) {
+    c.appendChild(
+      el(
+        "p",
+        "empty",
+        isAdmin
+          ? "Ainda não há projetos. Cria o primeiro com “+ Projeto”."
+          : "Ainda não tens acesso a nenhum projeto. Pede a um administrador para te adicionar."
+      )
+    );
+    return;
+  }
   [...fases].sort(byOrdem).forEach((f) => c.appendChild(renderFase(f)));
-  c.appendChild(btn("btn-ghost btn-add-fase", "+ Nova fase", addFase));
+  if (isAdmin) c.appendChild(btn("btn-ghost btn-add-fase", "+ Nova fase", addFase));
 }
 
 // ---------- Definições ----------
@@ -415,7 +443,7 @@ function abrirDefinicoes() {
 }
 
 function fecharDefinicoes() {
-  applyTheme(profile.dark_mode); // desfaz pré-visualização se cancelou
+  applyTheme(profile.dark_mode); // desfaz a pré-visualização se cancelou
   $("settings-modal").classList.add("hidden");
 }
 
@@ -432,19 +460,30 @@ async function guardarDefinicoes() {
   render();
 }
 
-// ---------- Partilha ----------
+// ---------- Acesso ao projeto (só admins) ----------
 function renderPartilha() {
   const list = $("share-list");
   list.innerHTML = "";
+  list.appendChild(
+    el("p", "hint", "Os admins veem sempre todos os projetos. Aqui adicionas quem não é admin (ex: empreiteiro).")
+  );
   membros.forEach((m) => {
     const row = el("div", "share-row");
-    const nome = (nomes.get(m.user_id) || "Sem nome") + (m.user_id === me.id ? " (tu)" : "");
-    row.appendChild(el("span", "", nome));
-    row.appendChild(el("span", "tag", m.papel === "dono" ? "Dono" : "Membro"));
+    row.appendChild(el("span", "", m.email + (m.nome ? ` (${m.nome})` : "")));
+    row.appendChild(
+      btn("btn-link", "Remover", async () => {
+        if (!confirm(`Remover ${m.email} deste projeto?`)) return;
+        try {
+          await run(
+            supabaseClient.from("obra_membros").delete().eq("obra_id", obraAtual.id).eq("user_id", m.user_id)
+          );
+          await loadObraData();
+          renderPartilha();
+        } catch (e) { /* erro já mostrado */ }
+      })
+    );
     list.appendChild(row);
   });
-  $("share-invite").classList.toggle("hidden", !souDono());
-  $("share-leave").classList.toggle("hidden", souDono());
   $("share-msg").textContent = "";
 }
 
@@ -462,15 +501,7 @@ async function convidar() {
   $("share-msg").textContent = "Pessoa adicionada ao projeto.";
 }
 
-async function sairDoProjeto() {
-  if (!confirm("Sair deste projeto? Deixas de o ver.")) return;
-  await run(supabaseClient.from("obra_membros").delete().eq("obra_id", obraAtual.id).eq("user_id", me.id));
-  $("share-modal").classList.add("hidden");
-  await loadObras();
-  await selecionarObra(obras[0] && obras[0].id);
-}
-
-// ---------- Projetos ----------
+// ---------- Projetos (só admins) ----------
 async function novoProjeto() {
   const nome = prompt("Nome do novo projeto:");
   if (!nome || !nome.trim()) return;
@@ -487,11 +518,60 @@ async function renomearProjeto() {
 }
 
 async function apagarProjeto() {
-  if (!confirm(`Apagar o projeto "${obraAtual.nome}" e todos os checks? Não dá para desfazer.`)) return;
+  if (!confirm(`Apagar o projeto "${obraAtual.nome}" e todos os seus checks? Não dá para desfazer.`)) return;
   await run(supabaseClient.from("obras").delete().eq("id", obraAtual.id));
   await loadObras();
-  if (!obras.length) await criarObra("A minha obra");
-  await selecionarObra(obras[0].id);
+  await selecionarObra(obras[0] && obras[0].id);
+}
+
+// ---------- Gestão de contas (só super admin) ----------
+async function carregarGestao() {
+  const box = $("gestao-lista");
+  box.textContent = "A carregar…";
+  let lista;
+  try {
+    lista = await run(supabaseClient.rpc("listar_utilizadores"));
+  } catch (e) {
+    box.textContent = "";
+    return;
+  }
+  box.innerHTML = "";
+  lista.forEach((u) => {
+    const row = el("div", "gestao-row");
+    const info = el("div", "gestao-info");
+    info.appendChild(el("span", "gestao-email", u.email));
+    info.appendChild(
+      el("span", "gestao-sub", (u.nome ? u.nome + " · " : "") + "conta criada em " + fmtDia(u.criado_em))
+    );
+    row.appendChild(info);
+
+    const label = u.role === "super_admin" ? "Super admin" : u.role === "admin" ? "Admin" : "Utilizador";
+    row.appendChild(el("span", "badge" + (u.role !== "utilizador" ? " badge-on" : ""), label));
+
+    if (u.role !== "super_admin") {
+      const tornar = u.role !== "admin";
+      row.appendChild(
+        btn("btn-secondary", tornar ? "Tornar admin" : "Remover admin", async () => {
+          const acao = tornar ? "Dar permissões de admin a" : "Retirar permissões de admin a";
+          if (!confirm(`${acao} ${u.email}?`)) return;
+          try {
+            await run(
+              supabaseClient.rpc("definir_role", { p_user: u.id, p_role: tornar ? "admin" : "utilizador" })
+            );
+            carregarGestao();
+          } catch (e) { /* erro já mostrado */ }
+        })
+      );
+    }
+    box.appendChild(row);
+  });
+}
+
+function mostrarVista(v) {
+  $("view-projetos").classList.toggle("hidden", v !== "projetos");
+  $("view-gestao").classList.toggle("hidden", v !== "gestao");
+  document.querySelectorAll(".nav-tab").forEach((b) => b.classList.toggle("active", b.dataset.view === v));
+  if (v === "gestao") carregarGestao();
 }
 
 // ---------- Arranque ----------
@@ -504,24 +584,26 @@ async function init() {
   me = data.session.user;
   await loadProfile();
   await loadObras();
-  if (!obras.length) await criarObra("A minha obra");
   const guardada = localStorage.getItem("obraAtual");
-  obraAtual = obras.find((o) => o.id === guardada) || obras[0];
+  obraAtual = obras.find((o) => o.id === guardada) || obras[0] || null;
   await loadObraData();
   renderTopbar();
   render();
 }
 
 $("obra-select").addEventListener("change", (e) => selecionarObra(e.target.value));
-$("btn-novo-projeto").addEventListener("click", novoProjeto);
+$("btn-novo-projeto").addEventListener("click", () => novoProjeto().catch(() => {}));
 $("btn-projeto-menu").addEventListener("click", (e) => {
   e.stopPropagation();
   showMenu(e.currentTarget, [
-    { label: "Partilhar…", fn: () => { renderPartilha(); $("share-modal").classList.remove("hidden"); } },
-    souDono() && { label: "Renomear projeto", fn: renomearProjeto },
-    souDono() && { label: "Apagar projeto", danger: true, fn: apagarProjeto },
+    { label: "Quem tem acesso…", fn: () => { renderPartilha(); $("share-modal").classList.remove("hidden"); } },
+    { label: "Renomear projeto", fn: () => renomearProjeto().catch(() => {}) },
+    { label: "Apagar projeto", danger: true, fn: () => apagarProjeto().catch(() => {}) },
   ]);
 });
+document.querySelectorAll(".nav-tab").forEach((b) =>
+  b.addEventListener("click", () => mostrarVista(b.dataset.view))
+);
 $("btn-settings").addEventListener("click", abrirDefinicoes);
 $("set-dark").addEventListener("change", (e) => applyTheme(e.target.checked));
 $("set-save").addEventListener("click", () => guardarDefinicoes().catch(() => {}));
@@ -532,6 +614,5 @@ $("set-logout").addEventListener("click", async () => {
 });
 $("share-btn").addEventListener("click", () => convidar().catch(() => {}));
 $("share-close").addEventListener("click", () => $("share-modal").classList.add("hidden"));
-$("share-leave").addEventListener("click", () => sairDoProjeto().catch(() => {}));
 
 init().catch((e) => console.error(e));
