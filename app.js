@@ -38,6 +38,7 @@ document.getElementById("login-form").addEventListener("submit", async (e) => {
 });
 
 // --- Registo ---
+// O perfil e o modelo de fases/itens são criados automaticamente na base de dados.
 document.getElementById("registo-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const errorEl = document.getElementById("registo-error");
@@ -48,49 +49,11 @@ document.getElementById("registo-form").addEventListener("submit", async (e) => 
   const email = document.getElementById("registo-email").value;
   const password = document.getElementById("registo-password").value;
 
-  const { data, error } = await supabaseClient.auth.signUp({ email, password });
+  const { error } = await supabaseClient.auth.signUp({ email, password });
 
   if (error) {
     errorEl.textContent = "Não foi possível criar a conta. " + error.message;
     return;
-  }
-
-  // Cria já a "obra" inicial do utilizador, com uma checklist por omissão em cada fase
-  if (data.user) {
-    const { data: obra } = await supabaseClient
-      .from("obras")
-      .insert({ user_id: data.user.id })
-      .select()
-      .single();
-
-    if (obra) {
-      const DEFAULT_ITEMS = {
-        preparacao: [
-          "Definir orçamento",
-          "Pedir licenças e autorizações",
-          "Escolher empreiteiro/equipa",
-          "Contratar seguro de obra",
-        ],
-        obra: [
-          "Demolições e preparação do terreno",
-          "Estrutura e alvenaria",
-          "Instalações elétricas e canalização",
-          "Acabamentos",
-        ],
-        continuidade: [
-          "Vistoria final",
-          "Guardar garantias e documentação",
-          "Agendar manutenção preventiva",
-          "Registar contactos úteis",
-        ],
-      };
-
-      const rows = Object.entries(DEFAULT_ITEMS).flatMap(([fase, items]) =>
-        items.map((titulo, i) => ({ obra_id: obra.id, fase, titulo, ordem: i }))
-      );
-
-      await supabaseClient.from("checklist_items").insert(rows);
-    }
   }
 
   successEl.textContent = "Conta criada! A entrar...";
