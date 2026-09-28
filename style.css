@@ -324,3 +324,30 @@ button[type="submit"]:disabled { opacity: 0.6; cursor: default; }
 .share-row .tag { font-size: 0.75rem; color: var(--muted); }
 .invite-row { display: flex; gap: 8px; margin-top: 12px; }
 .invite-row input { flex: 1; min-width: 0; }
+
+/* --- Separadores principais e gestão --- */
+.nav-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 18px; }
+.nav-tab {
+  background: none; border: none; padding: 10px 16px; cursor: pointer; color: var(--muted);
+  font-size: 0.95rem; border-bottom: 2px solid transparent;
+}
+.nav-tab.active { color: var(--brick); border-bottom-color: var(--brick); font-weight: 600; }
+
+.gestao-titulo { margin: 0 0 4px; font-size: 1.1rem; }
+.gestao-row {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px; margin-top: 10px;
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px; flex-wrap: wrap;
+}
+.gestao-info { flex: 1; min-width: 180px; display: flex; flex-direction: column; gap: 2px; }
+.gestao-email { font-weight: 600; word-break: break-all; }
+.gestao-sub { font-size: 0.78rem; color: var(--muted); }
+.badge {
+  font-size: 0.75rem; padding: 3px 10px; border-radius: 999px; background: var(--bg);
+  color: var(--muted); border: 1px solid var(--border);
+}
+.badge-on { color: var(--brick); border-color: var(--brick); }
+.empty { color: var(--muted); text-align: center; padding: 40px 10px; }
+.btn-link {
+  background: none; border: none; color: var(--error); cursor: pointer; font-size: 0.8rem; padding: 2px 6px;
+}
+.btn-link:hover { text-decoration: underline; }
