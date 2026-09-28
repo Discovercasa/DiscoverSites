@@ -351,3 +351,40 @@ button[type="submit"]:disabled { opacity: 0.6; cursor: default; }
   background: none; border: none; color: var(--error); cursor: pointer; font-size: 0.8rem; padding: 2px 6px;
 }
 .btn-link:hover { text-decoration: underline; }
+
+/* --- Modo editar, filtros, drag, responsável, partilha de item --- */
+.filtros-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.filtros-bar input, .filtros-bar select {
+  padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--card); color: var(--ink); font-size: 0.85rem;
+}
+.filtros-bar input[type="search"] { flex: 1; min-width: 140px; }
+.filtros-bar .active { border-color: var(--brick); color: var(--brick); }
+
+.item-row.dragging { opacity: 0.4; }
+.item-row.drop-target { outline: 2px dashed var(--brick); outline-offset: -2px; border-radius: 6px; }
+.drag-handle { cursor: grab; color: var(--muted); padding: 0 4px; user-select: none; }
+.drag-handle:active { cursor: grabbing; }
+
+.item-row.ignorado { opacity: 0.5; }
+.item-row.ignorado .item-title { font-style: italic; }
+
+.edit-actions { display: flex; gap: 2px; flex-wrap: wrap; margin-left: auto; }
+.edit-actions button {
+  background: none; border: none; color: var(--muted); cursor: pointer; font-size: 0.95rem;
+  padding: 3px 5px; border-radius: 6px; line-height: 1;
+}
+.edit-actions button:hover { color: var(--brick); background: var(--bg); }
+.edit-actions button.danger:hover { color: var(--error); }
+
+.tag-resp {
+  font-size: 0.72rem; background: var(--bg); color: var(--muted); border: 1px solid var(--border);
+  padding: 1px 8px; border-radius: 999px; white-space: nowrap;
+}
+.tag-partilhado { font-size: 0.85rem; }
+
+.breadcrumb { font-size: 0.78rem; color: var(--muted); margin-bottom: 4px; }
+.item-partilhado-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+  padding: 14px 16px; margin-bottom: 12px;
+}
