@@ -19,15 +19,34 @@
 
     <nav id="tabs-main" class="nav-tabs hidden">
       <button type="button" class="nav-tab active" data-view="projetos">Projetos</button>
-      <button type="button" class="nav-tab" data-view="gestao" id="tab-gestao">Gestão</button>
+      <button type="button" class="nav-tab" data-view="gestao">Gestão</button>
     </nav>
 
     <section id="view-projetos">
       <div class="projeto-bar">
         <select id="obra-select" aria-label="Projeto"></select>
         <button type="button" id="btn-novo-projeto" class="btn-secondary hidden">+ Projeto</button>
+        <button type="button" id="btn-editar" class="btn-secondary hidden">✎ Editar</button>
         <button type="button" id="btn-projeto-menu" class="icon-btn hidden" title="Mais opções do projeto">⋯</button>
       </div>
+
+      <div id="filtros-bar" class="filtros-bar hidden">
+        <input type="search" id="busca" placeholder="Pesquisar…" />
+        <select id="filtro-estado">
+          <option value="todos">Todos os estados</option>
+          <option value="pendentes">Por fazer</option>
+          <option value="feitos">Concluídos</option>
+        </select>
+        <select id="filtro-fase">
+          <option value="">Todas as fases</option>
+        </select>
+        <select id="filtro-resp">
+          <option value="">Todos os responsáveis</option>
+        </select>
+        <button type="button" id="filtro-meus" class="btn-ghost">Os meus itens</button>
+        <button type="button" id="filtro-limpar" class="btn-ghost hidden">Limpar filtros</button>
+      </div>
+
       <div id="fases-container"></div>
     </section>
 
@@ -66,6 +85,41 @@
       <div class="modal-actions">
         <span class="spacer"></span>
         <button type="button" id="share-close" class="btn-secondary">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="item-share-modal" class="modal hidden">
+    <div class="modal-card">
+      <h2>Partilhar item</h2>
+      <p class="hint" id="item-share-nome"></p>
+      <div id="item-share-list"></div>
+      <div class="invite-row">
+        <input type="email" id="item-share-email" placeholder="Email da pessoa (já com conta)" />
+        <button type="button" id="item-share-btn" class="btn-primary">Partilhar</button>
+      </div>
+      <p class="hint" id="item-share-msg"></p>
+      <div class="modal-actions">
+        <span class="spacer"></span>
+        <button type="button" id="item-share-close" class="btn-secondary">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="resp-modal" class="modal hidden">
+    <div class="modal-card">
+      <h2>Responsável</h2>
+      <p class="hint" id="resp-nome"></p>
+      <label for="resp-conta">Conta existente (email)</label>
+      <input type="email" id="resp-conta" placeholder="email@exemplo.com" />
+      <label for="resp-texto">Ou nome/empresa (texto livre)</label>
+      <input type="text" id="resp-texto" placeholder="Ex: Empreiteiro Silva" />
+      <p class="hint">Preenche só um dos dois campos.</p>
+      <div class="modal-actions">
+        <button type="button" id="resp-remover" class="btn-secondary">Remover</button>
+        <span class="spacer"></span>
+        <button type="button" id="resp-close" class="btn-secondary">Cancelar</button>
+        <button type="button" id="resp-save" class="btn-primary">Guardar</button>
       </div>
     </div>
   </div>
