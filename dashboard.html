@@ -17,13 +17,25 @@
       <button type="button" id="btn-settings" class="icon-btn" title="Definições">⚙</button>
     </header>
 
-    <div class="projeto-bar">
-      <select id="obra-select" aria-label="Projeto"></select>
-      <button type="button" id="btn-novo-projeto" class="btn-secondary">+ Projeto</button>
-      <button type="button" id="btn-projeto-menu" class="icon-btn" title="Mais opções do projeto">⋯</button>
-    </div>
+    <nav id="tabs-main" class="nav-tabs hidden">
+      <button type="button" class="nav-tab active" data-view="projetos">Projetos</button>
+      <button type="button" class="nav-tab" data-view="gestao" id="tab-gestao">Gestão</button>
+    </nav>
 
-    <div id="fases-container"></div>
+    <section id="view-projetos">
+      <div class="projeto-bar">
+        <select id="obra-select" aria-label="Projeto"></select>
+        <button type="button" id="btn-novo-projeto" class="btn-secondary hidden">+ Projeto</button>
+        <button type="button" id="btn-projeto-menu" class="icon-btn hidden" title="Mais opções do projeto">⋯</button>
+      </div>
+      <div id="fases-container"></div>
+    </section>
+
+    <section id="view-gestao" class="hidden">
+      <h2 class="gestao-titulo">Gestão de contas</h2>
+      <p class="hint">Contas criadas no site. Os admins podem criar projetos, editar a checklist e veem sempre todos os projetos.</p>
+      <div id="gestao-lista"></div>
+    </section>
   </main>
 
   <div id="settings-modal" class="modal hidden">
@@ -44,15 +56,14 @@
 
   <div id="share-modal" class="modal hidden">
     <div class="modal-card">
-      <h2>Partilhar projeto</h2>
+      <h2>Quem tem acesso a este projeto</h2>
       <div id="share-list"></div>
       <div id="share-invite" class="invite-row">
         <input type="email" id="share-email" placeholder="Email da pessoa (já com conta)" />
-        <button type="button" id="share-btn" class="btn-primary">Convidar</button>
+        <button type="button" id="share-btn" class="btn-primary">Adicionar</button>
       </div>
       <p class="hint" id="share-msg"></p>
       <div class="modal-actions">
-        <button type="button" id="share-leave" class="btn-secondary">Sair deste projeto</button>
         <span class="spacer"></span>
         <button type="button" id="share-close" class="btn-secondary">Fechar</button>
       </div>
