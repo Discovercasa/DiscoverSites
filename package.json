@@ -1,0 +1,9 @@
+{
+  "name": "hub",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Hub do Sebastião — site estático publicado no Cloudflare Pages.",
+  "scripts": {
+    "test": "node tests/regressao.cjs"
+  }
+}
