@@ -100,10 +100,10 @@ teste('D6', 'interface em português de Portugal', () => {
   exigir(/<html[^>]*lang="pt-PT"/.test(html), 'falta lang="pt-PT" no <html>');
 });
 
-teste('D7', 'Hub em home.discovercasa.pt', () => {
-  exigir(/<link[^>]*rel="canonical"[^>]*href="https:\/\/home\.discovercasa\.pt\/"/.test(html),
-    'falta <link rel="canonical" href="https://home.discovercasa.pt/">');
-  exigir(/home\.discovercasa\.pt/.test(ler('README.md')), 'README não indica o domínio');
+teste('D7', 'Hub em hub.discovercasa.pt', () => {
+  exigir(/<link[^>]*rel="canonical"[^>]*href="https:\/\/hub\.discovercasa\.pt\/"/.test(html),
+    'falta <link rel="canonical" href="https://hub.discovercasa.pt/">');
+  exigir(/hub\.discovercasa\.pt/.test(ler('README.md')), 'README não indica o domínio');
 });
 
 teste('—', 'ROADMAP marca a versão atual', () => {

@@ -6,7 +6,8 @@
 
 ## Onde está
 
-- **Site:** https://home.discovercasa.pt
+- **Site:** https://hub.discovercasa.pt
+- **Cloudflare Pages:** projeto `discoversites` (https://discoversites.pages.dev)
 - **Supabase:** projeto **Sites** (região eu-west-1), partilhado por todos os sites da plataforma.
 
 ## Como está construído
@@ -47,7 +48,17 @@ Tem de terminar com **0 falhas**.
 - Repositório ligado: este repo, ramo `main`.
 - Build command: *(vazio)*.
 - Build output directory: `public`.
-- Custom domain: `home.discovercasa.pt` (em Pages → Custom domains; a Cloudflare cria o CNAME e o SSL).
+- Projeto: `discoversites` (tipo **Pages**, não Worker).
+- Custom domain: `hub.discovercasa.pt`.
+
+### DNS
+
+O DNS do `discovercasa.pt` é gerido no **cPanel** (Zone Editor), não na Cloudflare.
+O subdomínio aponta para o Pages com um registo CNAME:
+
+| Nome | Tipo | Destino |
+|---|---|---|
+| `hub` | CNAME | `discoversites.pages.dev` |
 
 ## Estrutura
 

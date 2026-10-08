@@ -10,9 +10,16 @@ Regras que não se alteram sem confirmação do Sebastião. Cada uma tem, sempre
 4. **As novidades acompanham a versão.** A primeira entrada de `NOVIDADES` é a versão atual, com os grupos "novas funcionalidades" e "alterações". (D4)
 5. **Site estático em `public/`**, publicado pelo Cloudflare Pages a partir de `main`. (D5)
 6. **Interface em português de Portugal.** (D6)
-7. **O Hub vive em `https://home.discovercasa.pt`** e usa o projeto Supabase **Sites**, partilhado pelos sites da plataforma. (D7)
+7. **O Hub vive em `https://hub.discovercasa.pt`** (Cloudflare Pages `discoversites`, CNAME no cPanel) e usa o projeto Supabase **Sites**, partilhado pelos sites da plataforma. (D7)
 
 ## Histórico
+
+### v0.0b — 2026-10-08
+- Subdomínio mudado de `home` para `hub.discovercasa.pt` (pedido do Sebastião; Decisão fixa D7 atualizada).
+- Site publicado como Cloudflare **Pages** (`discoversites.pages.dev`) em vez de Worker, para aceitar o CNAME do cPanel.
+- README: secção de DNS (CNAME `hub` → `discoversites.pages.dev`).
+- ROADMAP: Redirect URLs da v0.1 com o novo domínio; nota sobre migrar o DNS para a Cloudflare.
+- Teste D7 atualizado.
 
 ### v0.0a — 2026-10-08
 - Domínio do Hub definido: `home.discovercasa.pt` (Cloudflare Pages, Custom domain).

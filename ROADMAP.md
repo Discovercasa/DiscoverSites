@@ -13,7 +13,7 @@ Cada versão nova do roadmap é registada em `PATCH NOTES.md` e marcada aqui com
 ## 🔜 v0.1 — Ligação ao Supabase
 - Carregar o `plataforma-core` e obter o cliente Supabase (só chave pública).
 - Login e logout.
-- Acrescentar `https://home.discovercasa.pt` ao Site URL e aos Redirect URLs da autenticação do Supabase.
+- Acrescentar `https://hub.discovercasa.pt` ao Site URL e aos Redirect URLs da autenticação do Supabase.
 - Primeira tabela com RLS (`user_id = auth.uid()`).
 
 ## 📝 v0.2 — Primeira funcionalidade do Hub
@@ -22,3 +22,4 @@ Cada versão nova do roadmap é registada em `PATCH NOTES.md` e marcada aqui com
 ## Próximos passos (sem versão atribuída)
 - Preencher o objetivo no README.
 - Confirmar como o `plataforma-core` é carregado (URL/ficheiro).
+- Avaliar passar o DNS do `discovercasa.pt` do cPanel para a Cloudflare (copiar antes os registos de email).
