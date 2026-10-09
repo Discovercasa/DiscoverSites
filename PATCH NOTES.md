@@ -11,8 +11,20 @@ Regras que não se alteram sem confirmação do Sebastião. Cada uma tem, sempre
 5. **Site estático em `public/`**, publicado pelo Cloudflare Pages a partir de `main`. (D5)
 6. **Interface em português de Portugal.** (D6)
 7. **O Hub vive em `https://hub.discovercasa.pt`** (Cloudflare Pages `discoversites`, CNAME no cPanel) e usa o projeto Supabase **Sites**, partilhado pelos sites da plataforma. (D7)
+8. **Contas só criadas por ADMIN ou Administrador.** Sem registo público; cada utilizador tem a sua senha. (D8)
+9. **5 papéis com a matriz de permissões do README.** O Cliente nunca vê custos nem preços; Obra também não. (D9)
+10. **Dados pessoais da equipa** (NIF, CC, IBAN, saúde) só visíveis para ADMIN e Administrador. (teste quando as tabelas existirem)
+11. **PINs de cartões não são guardados** na plataforma. (D11)
+12. **Ordem do roadmap: Base → Equipa → Obras → Custos.**
 
 ## Histórico
+
+### v0.0c — 2026-10-09
+- Roadmap definido em 4 blocos (Base → Equipa → Obras → Custos), a partir dos Excels de materiais e de horários/GPS.
+- O site existente da checklist (tabelas `obras`, `fases`, `items`…) passa a fazer parte do Hub.
+- Papéis atuais: `discovercasa2010` e `sebalca5` → ADMIN; o terceiro → Administrador (aplicado na v0.2).
+- README: matriz de papéis e permissões.
+- Novas Decisões fixas 8 a 12; testes D8, D9 e D11.
 
 ### v0.0b — 2026-10-08
 - Subdomínio mudado de `home` para `hub.discovercasa.pt` (pedido do Sebastião; Decisão fixa D7 atualizada).

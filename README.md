@@ -10,6 +10,19 @@
 - **Cloudflare Pages:** projeto `discoversites` (https://discoversites.pages.dev)
 - **Supabase:** projeto **Sites** (região eu-west-1), partilhado por todos os sites da plataforma.
 
+## Papéis e permissões
+
+| | ADMIN | Administrador | Obra | Subempreiteiro | Cliente |
+|---|---|---|---|---|---|
+| Criar e gerir contas | Todas | Todas exceto ADMIN | — | — | — |
+| Obras que vê | Todas | Todas | Atribuídas | Atribuídas | A dele |
+| Fase e fotos | Ver e editar | Ver e editar | Ver e carregar | Ver e carregar | Ver |
+| Lista de materiais | Ver e editar | Ver e editar | Ver | A parte dele | — |
+| Preços e custos | Ver e editar | Ver e editar | — | — | — |
+| Orçamento final | Ver e editar | Ver e editar | — | — | Ver |
+| Mapa de obras | Todas | Todas | Atribuídas | Atribuídas | — |
+| Dados pessoais da equipa | Ver e editar | Ver e editar | — | — | — |
+
 ## Como está construído
 
 O Hub é um site estático, sem passo de build.

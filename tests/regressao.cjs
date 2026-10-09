@@ -106,6 +106,24 @@ teste('D7', 'Hub em hub.discovercasa.pt', () => {
   exigir(/hub\.discovercasa\.pt/.test(ler('README.md')), 'README não indica o domínio');
 });
 
+teste('D8', 'sem registo público no site', () => {
+  for (const f of ficheiros(path.join(RAIZ, 'public')))
+    exigir(!/\.signUp\s*\(/.test(fs.readFileSync(f, 'utf8')), `signUp() em ${path.relative(RAIZ, f)}`);
+});
+
+teste('D9', 'README tem a matriz com os 5 papéis', () => {
+  const r = ler('README.md');
+  for (const p of ['ADMIN', 'Administrador', 'Obra', 'Subempreiteiro', 'Cliente'])
+    exigir(new RegExp(`\\|[^\\n]*\\b${p}\\b`).test(r), `papel ${p} em falta na matriz`);
+});
+
+teste('D11', 'nenhuma coluna de PIN na base de dados', () => {
+  const dir = path.join(RAIZ, 'supabase/migrations');
+  for (const f of fs.readdirSync(dir).filter(f => f.endsWith('.sql')))
+    exigir(!/\bpin\w*\s+(text|varchar|int|integer|bigint|numeric)\b/i.test(fs.readFileSync(path.join(dir, f), 'utf8')),
+      `coluna de PIN em ${f}`);
+});
+
 teste('—', 'ROADMAP marca a versão atual', () => {
   if (/[a-z]$/.test(versaoNotas || '')) return; // letras entre versões não vão ao roadmap
   exigir(new RegExp(`✅\\s*${versaoNotas?.replace('.', '\\.')}\\b`).test(ler('ROADMAP.md')),
