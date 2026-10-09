@@ -35,5 +35,5 @@ Projeto do Sebastião. Responder em português de Portugal.
 
 - **Nunca credenciais privadas no código** (só a chave pública do Supabase, via `plataforma-core`). Nada de `service_role`, passwords, tokens ou ficheiros `.env` no repositório.
 - **Dados do utilizador só dele (RLS).** Todas as tabelas novas em `supabase/migrations/` com `enable row level security` e políticas com `auth.uid()`.
-- Manter a app num único `public/index.html` enquanto for simples; propor divisão antes de a fazer.
+- Cada área grande tem a sua página em `public/` (ex.: `checklist.html`); o que é comum fica em `public/css/hub.css` e `public/js/hub.js`. Propor antes de criar uma página nova.
 - Não acrescentar dependências sem perguntar.

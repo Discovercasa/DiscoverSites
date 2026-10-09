@@ -105,8 +105,13 @@ teste('D5', 'site estático em public/', () => {
   exigir(fs.existsSync(path.join(RAIZ, 'public/index.html')), 'falta public/index.html');
 });
 
-teste('D6', 'interface em português de Portugal', () => {
-  exigir(/<html[^>]*lang="pt-PT"/.test(html), 'falta lang="pt-PT" no <html>');
+teste('D6', 'todas as páginas em pt-PT e ligadas pelo plataforma-core', () => {
+  for (const f of fs.readdirSync(path.join(RAIZ, 'public')).filter(f => f.endsWith('.html'))) {
+    const p = ler('public/' + f);
+    exigir(/<html[^>]*lang="pt-PT"/.test(p), `falta lang="pt-PT" em ${f}`);
+    if (/supabase-js/.test(p)) exigir(/plataforma-core\.js/.test(p), `${f} usa o Supabase sem o plataforma-core`);
+    exigir(!/createClient\(/.test(p), `${f} cria o seu próprio cliente Supabase`);
+  }
 });
 
 teste('D7', 'Hub em hub.discovercasa.pt', () => {
@@ -143,6 +148,14 @@ teste('D13', 'o tipo de utilizador só muda pelo servidor', () => {
     exigir(!/from\(['"]profiles['"]\)[\s\S]{0,200}?\.(update|upsert|insert)\(/.test(txt),
       `escrita direta em profiles em ${path.relative(RAIZ, f)}`);
   }
+});
+
+teste('D14', 'visibilidade da checklist aplicada na base de dados', () => {
+  const sql = fs.readdirSync(path.join(RAIZ, 'supabase/migrations')).filter(f => f.endsWith('.sql'))
+    .map(f => ler('supabase/migrations/' + f)).join('\n');
+  exigir(/create policy "Ve fases visiveis" on public\.fases for select[\s\S]*?pode_ver_fase\(id\)/.test(sql), 'falta a política de leitura de fases');
+  exigir(/create policy "Ve itens visiveis" on public\.items for select[\s\S]*?pode_ver_item\(id\)/.test(sql), 'falta a política de leitura de itens');
+  exigir(/item_ancestros\(p_item\)[\s\S]*?cumpre_visibilidade/.test(sql), 'a visibilidade não é herdada dos pais');
 });
 
 teste('—', 'ROADMAP marca a versão atual', () => {

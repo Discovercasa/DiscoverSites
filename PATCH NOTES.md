@@ -15,10 +15,23 @@ Regras que não se alteram sem confirmação do Sebastião. Cada uma tem, sempre
 9. **5 papéis com a matriz de permissões do README.** O Cliente nunca vê custos nem preços; Obra também não. (D9)
 10. **Dados pessoais da equipa** (NIF, CC, IBAN, saúde) só visíveis para ADMIN e Administrador. (teste quando as tabelas existirem)
 11. **PINs de cartões não são guardados** na plataforma. (D11)
-12. **Ordem do roadmap: Base → Equipa → Obras → Custos.**
+12. **Ordem do roadmap: Base (com a checklist) → Equipa → Obras → Custos.** (alterada na v0.2 a pedido do Sebastião)
 13. **O tipo de utilizador só muda pelo servidor.** Um trigger em `profiles` bloqueia alterações diretas a `papel`, `role`, `utilizador` e `ativo`; um Administrador não cria nem altera contas ADMIN; ninguém muda o próprio tipo. (D13)
+14. **A visibilidade da checklist é aplicada na base de dados** (RLS em `fases` e `items`), não só no ecrã. O que está dentro de um item escondido também fica escondido. (D14)
+15. **Todas as páginas** em `public/` são em português de Portugal e ligam-se ao Supabase só pelo `plataforma-core`. (D6)
 
 ## Histórico
+
+### v0.2 — 2026-10-10
+- Nova página `public/checklist.html` (`hub.discovercasa.pt/checklist`).
+- Fases → títulos → checks → subchecks; estrutura comum, checks por obra; esconder por obra; responsável; partilhas; membros; nova obra.
+- Visibilidade por tipo de utilizador e/ou colaborador (`vis_papeis`, `vis_utilizadores`), com herança; aplicada por RLS (migração `0002_checklist_visibilidade`).
+- `eh_admin()` passa a usar os tipos novos (ADMIN/Administrador, contas ativas); esconder numa obra só para gestores.
+- Dados antigos convertidos: os checks que vinham a seguir a um título passaram a ser filhos dele.
+- Separadores no topo, junto ao logótipo; páginas com largura total.
+- Código comum em `public/css/hub.css` e `public/js/hub.js`.
+- Roadmap: checklist passa a v0.2; Equipa, Obras e Custos renumerados (Decisão 12 atualizada).
+- Testes: D6 alargado a todas as páginas; novo D14.
 
 ### v0.1 — 2026-10-09
 - Novo visual Discovercasa: logótipo, amarelo `#ffcd34`, cinzento `#333`, fundo `#f4f4f2`, letra Barlow / Barlow Condensed.

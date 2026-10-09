@@ -1,0 +1,94 @@
+/* Estilos comuns do Hub Discovercasa */
+:root {
+  --amarelo: #ffcd34;
+  --amarelo-claro: #ffe28a;
+  --escuro: #333333;
+  --fundo: #f4f4f2;
+  --branco: #ffffff;
+  --linha: #dddddb;
+  --suave: #6b6b6b;
+  --erro: #b3261e;
+  --ok: #2e7d32;
+  --margem: clamp(1rem, 3vw, 2.5rem);
+  --titulos: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 5rem); }
+body {
+  background: var(--fundo); color: var(--escuro);
+  font: 1rem/1.5 Barlow, system-ui, -apple-system, "Segoe UI", sans-serif;
+  min-height: 100vh; padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+[hidden] { display: none !important; }
+button, input, select { font: inherit; color: inherit; }
+.titulo { font-family: var(--titulos); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.contentor { width: 100%; padding: 0 var(--margem); }
+.carregar { padding: 4rem 1rem; text-align: center; color: var(--suave); }
+
+/* ---------- Cabeçalho com separadores ---------- */
+header.topo {
+  position: sticky; top: 0; z-index: 20; background: var(--branco);
+  border-bottom: 4px solid var(--amarelo); padding-top: env(safe-area-inset-top, 0px);
+}
+.topo-linha { display: flex; align-items: center; gap: .4rem 1.5rem; padding: .55rem var(--margem); flex-wrap: wrap; }
+.topo-logo img { height: 42px; width: auto; display: block; }
+nav.abas { display: flex; gap: .15rem; flex: 1; overflow-x: auto; scrollbar-width: none; }
+nav.abas a {
+  color: var(--escuro); text-decoration: none; padding: .5rem .8rem .35rem; white-space: nowrap;
+  font-family: var(--titulos); font-weight: 600; font-size: 1.05rem; text-transform: uppercase; letter-spacing: .06em;
+  border-bottom: 3px solid transparent; border-radius: 3px 3px 0 0;
+}
+nav.abas a:hover { background: var(--fundo); }
+nav.abas a[aria-current="page"] { border-bottom-color: var(--amarelo); }
+.quem { margin-left: auto; text-align: right; color: var(--suave); font-size: .9rem; line-height: 1.3; }
+.quem button { background: none; border: 0; padding: 0; color: var(--escuro); text-decoration: underline; cursor: pointer; }
+@media (max-width: 760px) {
+  nav.abas { order: 3; flex-basis: 100%; margin: 0 calc(var(--margem) * -1); padding: 0 var(--margem); }
+  .topo-logo img { height: 36px; }
+}
+
+main { padding: 1.8rem 0 3rem; }
+h1.titulo { font-size: clamp(1.8rem, 5vw, 2.4rem); margin: 0 0 .3rem; }
+.subtitulo { color: var(--suave); margin: 0 0 1.6rem; }
+footer { color: var(--suave); font-size: .85rem; padding-bottom: 2rem; }
+
+/* ---------- Formulários e botões ---------- */
+.campo { margin-bottom: 1.1rem; }
+.campo label, .campo .rotulo { display: block; font-weight: 600; margin-bottom: .4rem; }
+.campo input, .campo select {
+  width: 100%; padding: .7rem .8rem; border: 1px solid var(--linha); border-radius: 4px; background: var(--branco);
+}
+.campo input:focus, .campo select:focus { outline: 2px solid var(--amarelo); border-color: var(--amarelo); }
+.botao {
+  border: 0; border-radius: 4px; background: var(--amarelo); color: var(--escuro); cursor: pointer;
+  font-family: var(--titulos); font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+  padding: .75rem 1.2rem;
+}
+.botao:hover { filter: brightness(.96); }
+.botao:disabled { background: var(--amarelo-claro); color: #8a8a8a; cursor: default; filter: none; }
+.botao.secundario { background: var(--branco); border: 1px solid var(--linha); }
+.botao.escuro { background: var(--escuro); color: #fff; }
+.botao.perigo { background: var(--branco); border: 1px solid #e6c2c0; color: var(--erro); }
+.botao.pequeno { padding: .4rem .65rem; font-size: .85rem; }
+.botao.largo { width: 100%; margin-top: .6rem; }
+.mensagem { margin: .8rem 0 0; font-size: .95rem; }
+.mensagem:empty { margin: 0; }
+.mensagem.erro { color: var(--erro); }
+.mensagem.ok { color: var(--ok); }
+.ajuda { font-size: .85rem; color: var(--suave); margin: .3rem 0 0; }
+.com-botao { display: flex; gap: .5rem; }
+.com-botao input { flex: 1; min-width: 0; }
+.acoes-form { display: flex; gap: .6rem; flex-wrap: wrap; }
+
+dialog { border: 0; border-radius: 8px; border-top: 6px solid var(--amarelo); padding: 1.4rem; width: min(100% - 2rem, 30rem); max-height: 90vh; }
+dialog::backdrop { background: rgba(0,0,0,.35); }
+dialog h2 { margin: 0 0 1rem; font-size: 1.3rem; }
+
+.etiqueta {
+  display: inline-block; font-size: .75rem; padding: .1rem .45rem; border-radius: 3px;
+  background: var(--fundo); color: var(--suave); font-weight: 600; letter-spacing: .03em;
+}
+.painel { background: var(--branco); border-radius: 6px; padding: 1.3rem; margin-bottom: 1.5rem; border-top: 4px solid var(--amarelo); }
+.painel h2 { margin: 0 0 1rem; font-size: 1.3rem; }

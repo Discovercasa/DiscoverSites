@@ -30,6 +30,13 @@
 - Entra-se com o utilizador **ou** com o email.
 - O registo público tem de estar desligado no Supabase (Authentication → "Allow new users to sign up").
 
+## Checklist
+
+- **Estrutura comum:** fases → títulos → checks → subchecks. O que se acrescenta aparece em todas as obras.
+- **Por obra:** os checks marcados, quem e quando, o responsável, o que está escondido e com quem se partilhou.
+- **Quem vê:** cada fase ou item pode ficar restrito a tipos de utilizador e/ou colaboradores (vazio = todos). ADMIN e Administrador veem tudo. Quem não pode ver um item não o recebe da base de dados.
+- **Quem edita:** só ADMIN e Administrador (botão "Editar estrutura"). Quem vê um check pode marcá-lo.
+
 ## Como está construído
 
 O Hub é um site estático, sem passo de build.
@@ -91,7 +98,10 @@ O subdomínio aponta para o Pages com um registo CNAME:
 ├── PATCH NOTES.md     histórico de alterações + Decisões fixas
 ├── package.json
 ├── public/
-│   ├── index.html     a app (APP_VERSAO, NOVIDADES)
+│   ├── index.html     entrada, início, colaboradores, novidades (APP_VERSAO, NOVIDADES)
+│   ├── checklist.html checklist das obras
+│   ├── css/hub.css    estilos comuns
+│   ├── js/hub.js      cabeçalho, sessão e utilitários comuns
 │   ├── js/plataforma-core.js
 │   └── img/           logótipos e favicon
 ├── supabase/
