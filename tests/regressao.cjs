@@ -40,11 +40,20 @@ teste('D1', 'nunca credenciais privadas no código', () => {
     [/(password|passwd|senha)\s*[:=]\s*['"][^'"]{4,}['"]/i, 'password no código'],
   ];
   const ignorar = ['CLAUDE.md', 'PATCH NOTES.md', 'README.md', 'regressao.cjs'];
+  const funcoes = path.join(RAIZ, 'supabase', 'functions') + path.sep;
   for (const f of ficheiros()) {
     if (ignorar.includes(path.basename(f))) continue;
     const txt = fs.readFileSync(f, 'utf8');
-    for (const [re, desc] of proibidos)
+    const ehFuncao = f.startsWith(funcoes);
+    for (const [re, desc] of proibidos) {
+      // As Edge Functions podem LER a chave de serviço do ambiente do Supabase (nunca escrevê-la).
+      if (ehFuncao && /service/i.test(desc)) continue;
       exigir(!re.test(txt), `${desc} em ${path.relative(RAIZ, f)}`);
+    }
+    if (ehFuncao)
+      for (const linha of txt.split('\n').filter(l => /SERVICE_ROLE/.test(l)))
+        exigir(/Deno\.env\.get\(\s*["']SUPABASE_SERVICE_ROLE_KEY["']\s*\)/.test(linha),
+          `chave de serviço fora de Deno.env em ${path.relative(RAIZ, f)}`);
     // JWT com role service_role
     for (const jwt of txt.match(/eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g) || []) {
       const corpo = Buffer.from(jwt.split('.')[1], 'base64url').toString();
@@ -122,6 +131,18 @@ teste('D11', 'nenhuma coluna de PIN na base de dados', () => {
   for (const f of fs.readdirSync(dir).filter(f => f.endsWith('.sql')))
     exigir(!/\bpin\w*\s+(text|varchar|int|integer|bigint|numeric)\b/i.test(fs.readFileSync(path.join(dir, f), 'utf8')),
       `coluna de PIN em ${f}`);
+});
+
+teste('D13', 'o tipo de utilizador só muda pelo servidor', () => {
+  const sql = fs.readdirSync(path.join(RAIZ, 'supabase/migrations')).filter(f => f.endsWith('.sql'))
+    .map(f => ler('supabase/migrations/' + f)).join('\n');
+  exigir(/profiles_proteger_e_sincronizar/.test(sql) && /current_user in \('authenticated', 'anon'\)/.test(sql),
+    'falta o trigger que impede alterar o papel diretamente');
+  for (const f of ficheiros(path.join(RAIZ, 'public'))) {
+    const txt = fs.readFileSync(f, 'utf8');
+    exigir(!/from\(['"]profiles['"]\)[\s\S]{0,200}?\.(update|upsert|insert)\(/.test(txt),
+      `escrita direta em profiles em ${path.relative(RAIZ, f)}`);
+  }
 });
 
 teste('—', 'ROADMAP marca a versão atual', () => {

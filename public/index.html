@@ -3,88 +3,284 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Hub</title>
+<title>Discovercasa · Hub</title>
 <link rel="canonical" href="https://hub.discovercasa.pt/">
+<link rel="icon" href="img/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --tinta: #1d2b3a;
-    --papel: #eef2f1;
-    --superficie: #ffffff;
-    --linha: #c9d4d2;
-    --suave: #5b6b78;
-    --destaque: #2e6f62;
+    --amarelo: #ffcd34;
+    --amarelo-claro: #ffe28a;
+    --escuro: #333333;
+    --fundo: #f4f4f2;
+    --branco: #ffffff;
+    --linha: #dddddb;
+    --suave: #6b6b6b;
+    --erro: #b3261e;
+    --ok: #2e7d32;
+    --titulos: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
     color-scheme: light;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --tinta: #e4ecea; --papel: #141c22; --superficie: #1c262e;
-      --linha: #2f3d47; --suave: #93a4ae; --destaque: #6fc1ad;
-      color-scheme: dark;
-    }
-  }
-  :root[data-theme="dark"] {
-    --tinta: #e4ecea; --papel: #141c22; --superficie: #1c262e;
-    --linha: #2f3d47; --suave: #93a4ae; --destaque: #6fc1ad;
-    color-scheme: dark;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
   body {
-    background: var(--papel); color: var(--tinta);
-    font: 1.0625rem/1.55 "Atkinson Hyperlegible", system-ui, -apple-system, "Segoe UI", sans-serif;
-    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
-    min-height: 100vh; display: flex; flex-direction: column;
+    background: var(--fundo); color: var(--escuro);
+    font: 1rem/1.5 Barlow, system-ui, -apple-system, "Segoe UI", sans-serif;
+    min-height: 100vh;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-  main { width: min(100% - 2.5rem, 44rem); margin: 0 auto; padding: 3.5rem 0 2rem; flex: 1; }
-  h1 { font-size: clamp(2.6rem, 9vw, 4.2rem); line-height: 1; margin: 0 0 .75rem; letter-spacing: -.02em; }
-  .intro { color: var(--suave); max-width: 34rem; margin: 0 0 2.5rem; }
-  .estado {
-    display: flex; gap: .75rem; align-items: center;
-    border-left: 4px solid var(--destaque); background: var(--superficie);
-    padding: 1rem 1.25rem; border-radius: 0 10px 10px 0; margin-bottom: 2.5rem;
+  [hidden] { display: none !important; }
+  button, input, select { font: inherit; color: inherit; }
+  .titulo { font-family: var(--titulos); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+
+  /* ---------- Carregar ---------- */
+  #ecra-carregar { padding: 4rem 1rem; text-align: center; color: var(--suave); }
+
+  /* ---------- Entrar ---------- */
+  #ecra-login { min-height: 100vh; display: grid; place-items: center; padding: 1.5rem; }
+  .cartao-login {
+    width: min(100%, 22.5rem); background: var(--branco); border-radius: 8px;
+    border-top: 6px solid var(--amarelo); box-shadow: 0 6px 24px rgba(0,0,0,.08);
+    padding: 2rem 1.4rem 1.6rem;
   }
-  .ponto { width: .7rem; height: .7rem; border-radius: 50%; background: var(--suave); flex: none; }
-  .ponto.ok { background: var(--destaque); }
-  h2 { font-size: 1.25rem; margin: 0 0 1rem; }
-  .novidade { border-top: 1px solid var(--linha); padding: 1rem 0; }
-  .novidade h3 { margin: 0 0 .5rem; font-size: 1rem; }
-  .novidade h3 span { color: var(--suave); font-weight: 400; margin-left: .5rem; }
-  .novidade h4 { margin: .5rem 0 .25rem; font-size: .9rem; color: var(--suave); font-weight: 400; }
+  .cartao-login img { display: block; width: 190px; max-width: 70%; margin: 0 auto 1.4rem; }
+  .cartao-login p { text-align: center; color: var(--suave); margin: 0 0 1.4rem; }
+  .campo { margin-bottom: 1.1rem; }
+  .campo label { display: block; font-weight: 600; margin-bottom: .4rem; }
+  .campo input, .campo select {
+    width: 100%; padding: .75rem .8rem; border: 1px solid var(--linha); border-radius: 4px; background: var(--branco);
+  }
+  .campo input:focus, .campo select:focus { outline: 2px solid var(--amarelo); outline-offset: 0; border-color: var(--amarelo); }
+  .botao {
+    border: 0; border-radius: 4px; background: var(--amarelo); color: var(--escuro); cursor: pointer;
+    font-family: var(--titulos); font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
+    padding: .8rem 1.2rem;
+  }
+  .botao:hover { filter: brightness(.96); }
+  .botao:disabled { background: var(--amarelo-claro); color: #8a8a8a; cursor: default; filter: none; }
+  .botao.secundario { background: transparent; border: 1px solid var(--linha); }
+  .botao.pequeno { padding: .45rem .7rem; font-size: .85rem; }
+  .botao.largo { width: 100%; margin-top: .6rem; }
+  .mensagem { min-height: 1.4rem; margin: .8rem 0 0; font-size: .95rem; }
+  .mensagem:empty { min-height: 0; margin: 0; }
+  .mensagem.erro { color: var(--erro); }
+  .mensagem.ok { color: var(--ok); }
+
+  /* ---------- App ---------- */
+  .contentor { width: min(100% - 2rem, 70rem); margin: 0 auto; }
+  header.topo { background: var(--branco); border-bottom: 4px solid var(--amarelo); padding-top: env(safe-area-inset-top, 0px); }
+  .topo-linha { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .9rem 0; }
+  .topo-linha img { height: 46px; width: auto; display: block; }
+  .quem { text-align: right; color: var(--suave); font-size: .95rem; line-height: 1.3; }
+  .quem button { background: none; border: 0; padding: 0; color: var(--escuro); text-decoration: underline; cursor: pointer; }
+  nav.abas { background: var(--escuro); }
+  nav.abas .contentor { display: flex; gap: .25rem; overflow-x: auto; }
+  nav.abas a {
+    color: #fff; text-decoration: none; padding: .85rem 1rem .7rem; white-space: nowrap;
+    font-family: var(--titulos); font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
+    border-bottom: 3px solid transparent;
+  }
+  nav.abas a:hover { color: var(--amarelo); }
+  nav.abas a[aria-current="page"] { color: var(--amarelo); border-bottom-color: var(--amarelo); }
+  main { padding: 2rem 0 3rem; }
+  h1.titulo { font-size: clamp(1.8rem, 5vw, 2.4rem); margin: 0 0 .3rem; }
+  .subtitulo { color: var(--suave); margin: 0 0 1.8rem; }
+
+  /* Menu inicial */
+  .grelha { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1rem; }
+  .cartao {
+    display: block; background: var(--branco); border-radius: 6px; padding: 1.2rem 1.2rem 1.1rem;
+    border-left: 5px solid var(--amarelo); color: inherit; text-decoration: none;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06); transition: transform .15s, box-shadow .15s;
+  }
+  a.cartao:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.08); }
+  .cartao.futuro { border-left-color: var(--linha); opacity: .75; }
+  .cartao h2 { font-size: 1.35rem; margin: 0 0 .3rem; }
+  .cartao p { margin: 0; color: var(--suave); font-size: .95rem; }
+  .etiqueta {
+    display: inline-block; margin-top: .7rem; font-size: .75rem; padding: .15rem .5rem; border-radius: 3px;
+    background: var(--fundo); color: var(--suave); font-weight: 600; letter-spacing: .03em;
+  }
+
+  /* Colaboradores */
+  .barra { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 1rem; margin-bottom: 1.2rem; }
+  .barra h1 { margin: 0; }
+  .painel { background: var(--branco); border-radius: 6px; padding: 1.3rem; margin-bottom: 1.5rem; border-top: 4px solid var(--amarelo); }
+  .painel h2 { margin: 0 0 1rem; font-size: 1.3rem; }
+  .form-grelha { display: grid; grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr)); gap: 0 1rem; }
+  .com-botao { display: flex; gap: .5rem; }
+  .com-botao input { flex: 1; min-width: 0; }
+  .acoes-form { display: flex; gap: .6rem; flex-wrap: wrap; }
+  .ajuda { font-size: .85rem; color: var(--suave); margin: .3rem 0 0; }
+  .tabela-envolvente { overflow-x: auto; background: var(--branco); border-radius: 6px; }
+  table { width: 100%; border-collapse: collapse; min-width: 46rem; }
+  th, td { text-align: left; padding: .7rem .8rem; border-bottom: 1px solid var(--fundo); vertical-align: middle; }
+  th { font-family: var(--titulos); text-transform: uppercase; letter-spacing: .05em; font-size: .9rem; color: var(--suave); background: #fafaf8; }
+  tr.inativa td { color: #9a9a9a; }
+  td select { padding: .4rem; border: 1px solid var(--linha); border-radius: 4px; background: var(--branco); }
+  .estado { font-size: .8rem; font-weight: 600; padding: .15rem .5rem; border-radius: 3px; }
+  .estado.sim { background: #e7f3e8; color: var(--ok); }
+  .estado.nao { background: #f3e7e7; color: var(--erro); }
+  .acoes { display: flex; gap: .4rem; }
+  .eu { font-size: .8rem; color: var(--suave); }
+
+  dialog { border: 0; border-radius: 8px; border-top: 6px solid var(--amarelo); padding: 1.4rem; width: min(100% - 2rem, 24rem); }
+  dialog::backdrop { background: rgba(0,0,0,.35); }
+  dialog h2 { margin: 0 0 1rem; font-size: 1.3rem; }
+
+  /* Novidades */
+  .novidade { background: var(--branco); border-radius: 6px; padding: 1rem 1.2rem; margin-bottom: .8rem; }
+  .novidade h2 { margin: 0 0 .4rem; font-size: 1.2rem; }
+  .novidade h2 span { font-family: Barlow, sans-serif; text-transform: none; letter-spacing: 0; color: var(--suave); font-weight: 400; font-size: .95rem; margin-left: .5rem; }
+  .novidade h3 { margin: .5rem 0 .2rem; font-size: .9rem; color: var(--suave); font-weight: 600; }
   .novidade ul { margin: 0; padding-left: 1.2rem; }
-  footer { width: min(100% - 2.5rem, 44rem); margin: 0 auto; padding: 1.5rem 0 2rem; color: var(--suave); font-size: .9rem; }
+
+  footer { color: var(--suave); font-size: .85rem; padding: 0 0 2rem; }
 </style>
 </head>
 <body>
-<main>
-  <h1>Hub</h1>
-  <p class="intro">Ponto de partida. As funcionalidades chegam versão a versão — vê o que mudou em baixo.</p>
 
-  <div class="estado" role="status">
-    <span class="ponto" id="ponto"></span>
-    <span id="estado-texto">A verificar a ligação à plataforma…</span>
-  </div>
+<div id="ecra-carregar">A carregar…</div>
 
-  <section aria-labelledby="t-novidades">
-    <h2 id="t-novidades">Novidades</h2>
-    <div id="novidades"></div>
-  </section>
-</main>
-<footer>Versão <span id="versao"></span></footer>
+<!-- ================= ENTRAR ================= -->
+<div id="ecra-login" hidden>
+  <form class="cartao-login" id="form-login" novalidate>
+    <img src="img/logo.png" alt="Discovercasa">
+    <p>Entre com o seu utilizador e palavra&#8209;passe.</p>
+    <div class="campo">
+      <label for="login-utilizador">Utilizador</label>
+      <input id="login-utilizador" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="utilizador ou email" required>
+    </div>
+    <div class="campo">
+      <label for="login-senha">Palavra-passe</label>
+      <input id="login-senha" type="password" autocomplete="current-password" required>
+    </div>
+    <button class="botao largo" id="botao-entrar" type="submit">Entrar</button>
+    <p class="mensagem erro" id="login-mensagem" role="alert"></p>
+  </form>
+</div>
 
-<!--
-  plataforma-core: fornece o cliente Supabase com a chave PÚBLICA.
-  Quando estiver definido, carregar aqui, por exemplo:
-  <script src="URL-DO-PLATAFORMA-CORE"></script>
--->
+<!-- ================= APP ================= -->
+<div id="ecra-app" hidden>
+  <header class="topo">
+    <div class="contentor topo-linha">
+      <a href="#inicio"><img src="img/logo.png" alt="Discovercasa — início"></a>
+      <div class="quem">
+        <span id="quem-texto"></span><br>
+        <button type="button" id="botao-sair">Sair</button>
+      </div>
+    </div>
+  </header>
+  <nav class="abas" aria-label="Separadores">
+    <div class="contentor" id="abas"></div>
+  </nav>
 
+  <main class="contentor">
+    <!-- Início -->
+    <section id="aba-inicio" hidden>
+      <h1 class="titulo" id="ola"></h1>
+      <p class="subtitulo">Escolha uma área.</p>
+      <div class="grelha" id="menu-inicial"></div>
+    </section>
+
+    <!-- Colaboradores -->
+    <section id="aba-colaboradores" hidden>
+      <div class="barra">
+        <div>
+          <h1 class="titulo">Colaboradores</h1>
+          <p class="subtitulo" style="margin:0">Contas de acesso à plataforma e tipo de utilizador.</p>
+        </div>
+        <button class="botao" type="button" id="botao-nova-conta">+ Nova conta</button>
+      </div>
+
+      <form class="painel" id="form-conta" hidden novalidate>
+        <h2 class="titulo">Nova conta</h2>
+        <div class="form-grelha">
+          <div class="campo"><label for="nc-nome">Nome</label><input id="nc-nome" autocomplete="off" required></div>
+          <div class="campo">
+            <label for="nc-utilizador">Utilizador</label>
+            <input id="nc-utilizador" autocomplete="off" autocapitalize="none" spellcheck="false" required>
+            <p class="ajuda">Minúsculas, números, . _ - (3 a 30)</p>
+          </div>
+          <div class="campo"><label for="nc-email">Email</label><input id="nc-email" type="email" autocomplete="off" required></div>
+          <div class="campo"><label for="nc-papel">Tipo de utilizador</label><select id="nc-papel"></select></div>
+          <div class="campo">
+            <label for="nc-senha">Palavra-passe inicial</label>
+            <div class="com-botao">
+              <input id="nc-senha" autocomplete="new-password" required>
+              <button class="botao secundario pequeno" type="button" id="nc-gerar">Gerar</button>
+            </div>
+            <p class="ajuda">Mínimo 8 caracteres. Entregue-a à pessoa.</p>
+          </div>
+        </div>
+        <div class="acoes-form">
+          <button class="botao" type="submit" id="nc-criar">Criar conta</button>
+          <button class="botao secundario" type="button" id="nc-cancelar">Cancelar</button>
+        </div>
+        <p class="mensagem" id="nc-mensagem" role="status"></p>
+      </form>
+
+      <p class="mensagem" id="contas-mensagem" role="status"></p>
+      <div class="tabela-envolvente">
+        <table>
+          <thead><tr><th>Nome</th><th>Utilizador</th><th>Email</th><th>Tipo de utilizador</th><th>Estado</th><th>Ações</th></tr></thead>
+          <tbody id="contas-corpo"><tr><td colspan="6">A carregar…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Novidades -->
+    <section id="aba-novidades" hidden>
+      <h1 class="titulo">Novidades</h1>
+      <p class="subtitulo">O que mudou em cada versão.</p>
+      <div id="novidades"></div>
+    </section>
+  </main>
+
+  <footer class="contentor">Discovercasa · Hub · Versão <span id="versao"></span></footer>
+</div>
+
+<dialog id="dialogo-senha">
+  <form method="dialog" id="form-senha" novalidate>
+    <h2 class="titulo">Nova palavra-passe</h2>
+    <p id="senha-para" style="margin-top:0;color:var(--suave)"></p>
+    <div class="campo">
+      <label for="ns-senha">Palavra-passe</label>
+      <div class="com-botao">
+        <input id="ns-senha" autocomplete="new-password">
+        <button class="botao secundario pequeno" type="button" id="ns-gerar">Gerar</button>
+      </div>
+    </div>
+    <div class="acoes-form">
+      <button class="botao" type="submit" value="guardar">Guardar</button>
+      <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Cancelar</button>
+    </div>
+    <p class="mensagem erro" id="ns-mensagem" role="alert"></p>
+  </form>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="js/plataforma-core.js"></script>
 <script>
-  const APP_VERSAO = 'v0.0c';
+  const APP_VERSAO = 'v0.1';
 
   // Mais recente primeiro. A primeira entrada tem de ser igual a APP_VERSAO.
   const NOVIDADES = [
+    {
+      versao: 'v0.1',
+      data: '2026-10-09',
+      novas: [
+        'Entrada com utilizador ou email e palavra-passe.',
+        'Menu inicial com as áreas da plataforma.',
+        'Separador Colaboradores: criar contas com tipo de utilizador.',
+        'Alterar tipo, palavra-passe e ativar ou desativar contas.'
+      ],
+      alteracoes: [
+        'Novo visual com as cores e o logótipo Discovercasa.'
+      ]
+    },
     {
       versao: 'v0.0c',
       data: '2026-10-09',
@@ -120,38 +316,308 @@
     }
   ];
 
-  document.getElementById('versao').textContent = APP_VERSAO;
+  // ---------------------------------------------------------------
+  const sb = window.PlataformaCore && PlataformaCore.cliente;
+  const NOMES_PAPEIS = (window.PlataformaCore && PlataformaCore.papeis) || {};
+  const ORDEM_PAPEIS = ['admin', 'administrador', 'obra', 'subempreiteiro', 'cliente'];
+  let eu = null;          // { id, nome, utilizador, papel }
+  let contas = [];
 
-  const lista = document.getElementById('novidades');
-  for (const n of NOVIDADES) {
-    const bloco = document.createElement('article');
-    bloco.className = 'novidade';
-    const grupos = [
-      [n.novas, n.novas.length === 1 ? '1 nova funcionalidade' : n.novas.length + ' novas funcionalidades'],
-      [n.alteracoes, n.alteracoes.length === 1 ? '1 alteração' : n.alteracoes.length + ' alterações']
-    ].filter(([itens]) => itens.length);
-    const h3 = document.createElement('h3');
-    h3.textContent = n.versao;
-    const data = document.createElement('span');
-    data.textContent = n.data;
-    h3.append(data);
-    bloco.append(h3);
-    for (const [itens, titulo] of grupos) {
-      const h4 = document.createElement('h4');
-      h4.textContent = titulo;
-      const ul = document.createElement('ul');
-      for (const t of itens) { const li = document.createElement('li'); li.textContent = t; ul.append(li); }
-      bloco.append(h4, ul);
+  const $ = (id) => document.getElementById(id);
+  const ehGestor = () => eu && ['admin', 'administrador'].includes(eu.papel);
+  const ehAdmin = () => eu && eu.papel === 'admin';
+
+  function el(tag, props = {}, filhos = []) {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(props)) {
+      if (k === 'class') e.className = v;
+      else if (k === 'text') e.textContent = v;
+      else if (k.startsWith('on')) e.addEventListener(k.slice(2), v);
+      else if (v === true) e.setAttribute(k, '');
+      else if (v !== false && v != null) e.setAttribute(k, v);
     }
-    lista.append(bloco);
+    for (const f of [].concat(filhos)) if (f != null) e.append(f);
+    return e;
   }
 
-  // Estado da ligação ao plataforma-core (ainda não ligado na v0.0).
-  const ligado = typeof window.PlataformaCore !== 'undefined';
-  document.getElementById('ponto').classList.toggle('ok', ligado);
-  document.getElementById('estado-texto').textContent = ligado
-    ? 'Ligado à plataforma.'
-    : 'Ainda sem ligação à plataforma. Chega na v0.1.';
+  function mostrar(ecra) {
+    for (const id of ['ecra-carregar', 'ecra-login', 'ecra-app']) $(id).hidden = id !== ecra;
+  }
+
+  function mensagem(id, texto, tipo = 'erro') {
+    const m = $(id); m.textContent = texto || ''; m.className = 'mensagem ' + (texto ? tipo : '');
+  }
+
+  function gerarSenha() {
+    const letras = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const n = crypto.getRandomValues(new Uint32Array(10));
+    return Array.from(n, (x) => letras[x % letras.length]).join('');
+  }
+
+  // ---------------- Entrar / sair ----------------
+  $('form-login').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const valor = $('login-utilizador').value.trim();
+    const senha = $('login-senha').value;
+    mensagem('login-mensagem', '');
+    if (!valor || !senha) return mensagem('login-mensagem', 'Preencha o utilizador e a palavra-passe.');
+
+    const botao = $('botao-entrar');
+    botao.disabled = true; botao.textContent = 'A entrar…';
+    try {
+      let email = valor;
+      if (!valor.includes('@')) {
+        const { data, error } = await sb.rpc('email_para_login', { p_utilizador: valor });
+        if (error) throw error;
+        email = data;
+      }
+      if (!email) throw new Error('credenciais');
+      const { error } = await sb.auth.signInWithPassword({ email, password: senha });
+      if (error) throw error;
+      $('login-senha').value = '';
+      await entrarNaApp();
+    } catch (e) {
+      mensagem('login-mensagem', 'Utilizador ou palavra-passe incorretos.');
+    } finally {
+      botao.disabled = false; botao.textContent = 'Entrar';
+    }
+  });
+
+  $('botao-sair').addEventListener('click', async () => {
+    await sb.auth.signOut();
+    eu = null;
+    mostrar('ecra-login');
+  });
+
+  async function entrarNaApp() {
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return mostrar('ecra-login');
+    const { data: perfil, error } = await sb.from('profiles')
+      .select('nome, utilizador, papel, ativo').eq('id', user.id).single();
+    if (error || !perfil || !perfil.ativo) {
+      await sb.auth.signOut();
+      mostrar('ecra-login');
+      return mensagem('login-mensagem', 'Esta conta não está ativa.');
+    }
+    eu = { id: user.id, ...perfil };
+    $('quem-texto').textContent = `${perfil.nome || perfil.utilizador} · ${NOMES_PAPEIS[perfil.papel] || perfil.papel}`;
+    $('ola').textContent = `Olá, ${(perfil.nome || perfil.utilizador || '').split(' ')[0]}`;
+    construirAbas();
+    construirMenu();
+    mostrar('ecra-app');
+    irPara(location.hash.slice(1) || 'inicio');
+  }
+
+  // ---------------- Separadores ----------------
+  function abasVisiveis() {
+    return [
+      { id: 'inicio', nome: 'Início' },
+      ehGestor() && { id: 'colaboradores', nome: 'Colaboradores' },
+      { id: 'novidades', nome: 'Novidades' }
+    ].filter(Boolean);
+  }
+
+  function construirAbas() {
+    $('abas').replaceChildren(...abasVisiveis().map((a) => el('a', { href: '#' + a.id, 'data-aba': a.id, text: a.nome })));
+  }
+
+  function irPara(aba) {
+    if (!abasVisiveis().some((a) => a.id === aba)) aba = 'inicio';
+    for (const s of document.querySelectorAll('main > section')) s.hidden = s.id !== 'aba-' + aba;
+    document.querySelectorAll('#abas a').forEach((a) => a.dataset.aba === aba ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
+    if (aba === 'colaboradores') carregarContas();
+    window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', () => { if (eu) irPara(location.hash.slice(1)); });
+
+  // ---------------- Menu inicial ----------------
+  function construirMenu() {
+    const itens = [
+      ehGestor() && { titulo: 'Colaboradores', texto: 'Criar contas e definir o tipo de utilizador.', aba: 'colaboradores' },
+      { titulo: 'Obras', texto: 'Fase, fotos, vídeos e checklist de cada obra.', futuro: 'v0.6' },
+      eu.papel !== 'cliente' && { titulo: 'Mapa de obras', texto: 'Todas as obras num mapa.', futuro: 'v0.8' },
+      ehGestor() && { titulo: 'Equipa', texto: 'Férias, horas extra, veículos e alertas.', futuro: 'v0.2' },
+      ehGestor() && { titulo: 'Materiais e custos', texto: 'Fornecedores, preços e orçamentação.', futuro: 'v0.9' },
+      { titulo: 'Novidades', texto: 'O que mudou em cada versão.', aba: 'novidades' }
+    ].filter(Boolean);
+
+    $('menu-inicial').replaceChildren(...itens.map((i) => i.aba
+      ? el('a', { class: 'cartao', href: '#' + i.aba }, [el('h2', { class: 'titulo', text: i.titulo }), el('p', { text: i.texto })])
+      : el('div', { class: 'cartao futuro' }, [
+          el('h2', { class: 'titulo', text: i.titulo }), el('p', { text: i.texto }),
+          el('span', { class: 'etiqueta', text: 'Em breve · ' + i.futuro })
+        ])
+    ));
+  }
+
+  // ---------------- Colaboradores ----------------
+  async function gerirContas(corpo) {
+    const { data, error } = await sb.functions.invoke('gerir-contas', { body: corpo });
+    if (error) {
+      let texto = 'Ocorreu um erro. Tente novamente.';
+      try { texto = (await error.context.json()).erro || texto; } catch (_) {}
+      throw new Error(texto);
+    }
+    return data;
+  }
+
+  function opcoesPapel(select, atual, bloquearAdmin) {
+    select.replaceChildren(...ORDEM_PAPEIS.map((p) => el('option', {
+      value: p, text: NOMES_PAPEIS[p] || p, selected: p === atual, disabled: p === 'admin' && bloquearAdmin
+    })));
+  }
+
+  async function carregarContas() {
+    mensagem('contas-mensagem', '');
+    const { data, error } = await sb.rpc('listar_contas');
+    if (error) {
+      $('contas-corpo').replaceChildren(el('tr', {}, el('td', { colspan: 6, text: 'Não foi possível carregar as contas.' })));
+      return;
+    }
+    contas = data || [];
+    desenharContas();
+  }
+
+  function desenharContas() {
+    if (!contas.length) {
+      $('contas-corpo').replaceChildren(el('tr', {}, el('td', { colspan: 6, text: 'Ainda não há contas.' })));
+      return;
+    }
+    $('contas-corpo').replaceChildren(...contas.map((c) => {
+      const souEu = c.id === eu.id;
+      const bloqueada = c.papel === 'admin' && !ehAdmin();
+
+      const sel = el('select', { 'aria-label': 'Tipo de utilizador de ' + (c.nome || c.utilizador), disabled: souEu || bloqueada });
+      opcoesPapel(sel, c.papel, !ehAdmin());
+      sel.addEventListener('change', async () => {
+        sel.disabled = true;
+        try {
+          await gerirContas({ acao: 'atualizar', id: c.id, papel: sel.value });
+          c.papel = sel.value;
+          mensagem('contas-mensagem', `Tipo de ${c.nome || c.utilizador} alterado para ${NOMES_PAPEIS[c.papel]}.`, 'ok');
+        } catch (e) {
+          sel.value = c.papel;
+          mensagem('contas-mensagem', e.message);
+        } finally { sel.disabled = false; }
+      });
+
+      const acoes = el('div', { class: 'acoes' });
+      if (!bloqueada) {
+        acoes.append(el('button', { class: 'botao secundario pequeno', type: 'button', text: 'Palavra-passe', onclick: () => abrirSenha(c) }));
+        if (!souEu) acoes.append(el('button', {
+          class: 'botao secundario pequeno', type: 'button', text: c.ativo ? 'Desativar' : 'Ativar',
+          onclick: () => alterarEstado(c)
+        }));
+      }
+
+      return el('tr', { class: c.ativo ? '' : 'inativa' }, [
+        el('td', {}, [c.nome || '—', souEu ? el('span', { class: 'eu', text: ' (eu)' }) : null]),
+        el('td', { text: c.utilizador || '—' }),
+        el('td', { text: c.email }),
+        el('td', {}, sel),
+        el('td', {}, el('span', { class: 'estado ' + (c.ativo ? 'sim' : 'nao'), text: c.ativo ? 'Ativa' : 'Inativa' })),
+        el('td', {}, acoes)
+      ]);
+    }));
+  }
+
+  async function alterarEstado(c) {
+    const acao = c.ativo ? 'desativar' : 'ativar';
+    if (!confirm(`Quer ${acao} a conta de ${c.nome || c.utilizador}?`)) return;
+    try {
+      await gerirContas({ acao: 'ativo', id: c.id, ativo: !c.ativo });
+      c.ativo = !c.ativo;
+      desenharContas();
+      mensagem('contas-mensagem', `Conta ${c.ativo ? 'ativada' : 'desativada'}.`, 'ok');
+    } catch (e) { mensagem('contas-mensagem', e.message); }
+  }
+
+  // Nova conta
+  $('botao-nova-conta').addEventListener('click', () => {
+    $('form-conta').reset();
+    opcoesPapel($('nc-papel'), 'obra', !ehAdmin());
+    $('nc-senha').value = gerarSenha();
+    mensagem('nc-mensagem', '');
+    $('form-conta').hidden = false;
+    $('nc-nome').focus();
+  });
+  $('nc-cancelar').addEventListener('click', () => { $('form-conta').hidden = true; });
+  $('nc-gerar').addEventListener('click', () => { $('nc-senha').value = gerarSenha(); });
+  $('nc-utilizador').addEventListener('input', (e) => { e.target.value = e.target.value.toLowerCase().replace(/\s/g, ''); });
+
+  $('form-conta').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const corpo = {
+      acao: 'criar',
+      nome: $('nc-nome').value.trim(),
+      utilizador: $('nc-utilizador').value.trim(),
+      email: $('nc-email').value.trim(),
+      papel: $('nc-papel').value,
+      senha: $('nc-senha').value
+    };
+    if (!corpo.nome || !corpo.utilizador || !corpo.email) return mensagem('nc-mensagem', 'Preencha o nome, o utilizador e o email.');
+    if (corpo.senha.length < 8) return mensagem('nc-mensagem', 'A palavra-passe tem de ter pelo menos 8 caracteres.');
+
+    const b = $('nc-criar'); b.disabled = true; b.textContent = 'A criar…';
+    try {
+      await gerirContas(corpo);
+      $('form-conta').hidden = true;
+      mensagem('contas-mensagem', `Conta criada. Utilizador: ${corpo.utilizador} · Palavra-passe: ${corpo.senha}`, 'ok');
+      await carregarContas();
+      mensagem('contas-mensagem', `Conta criada. Utilizador: ${corpo.utilizador} · Palavra-passe: ${corpo.senha}`, 'ok');
+    } catch (e) {
+      mensagem('nc-mensagem', e.message);
+    } finally { b.disabled = false; b.textContent = 'Criar conta'; }
+  });
+
+  // Palavra-passe
+  let contaSenha = null;
+  function abrirSenha(c) {
+    contaSenha = c;
+    $('senha-para').textContent = `Conta: ${c.nome || c.utilizador}`;
+    $('ns-senha').value = gerarSenha();
+    mensagem('ns-mensagem', '');
+    $('dialogo-senha').showModal();
+  }
+  $('ns-gerar').addEventListener('click', () => { $('ns-senha').value = gerarSenha(); });
+  $('form-senha').addEventListener('submit', async (ev) => {
+    if (ev.submitter && ev.submitter.value === 'cancelar') return;
+    ev.preventDefault();
+    const senha = $('ns-senha').value;
+    if (senha.length < 8) return mensagem('ns-mensagem', 'Mínimo 8 caracteres.');
+    try {
+      await gerirContas({ acao: 'senha', id: contaSenha.id, senha });
+      $('dialogo-senha').close();
+      mensagem('contas-mensagem', `Nova palavra-passe de ${contaSenha.nome || contaSenha.utilizador}: ${senha}`, 'ok');
+    } catch (e) { mensagem('ns-mensagem', e.message); }
+  });
+
+  // ---------------- Novidades ----------------
+  function desenharNovidades() {
+    $('novidades').replaceChildren(...NOVIDADES.map((n) => {
+      const grupos = [
+        [n.novas, n.novas.length === 1 ? '1 nova funcionalidade' : n.novas.length + ' novas funcionalidades'],
+        [n.alteracoes, n.alteracoes.length === 1 ? '1 alteração' : n.alteracoes.length + ' alterações']
+      ].filter(([itens]) => itens.length);
+      return el('article', { class: 'novidade' }, [
+        el('h2', { class: 'titulo' }, [n.versao, el('span', { text: n.data })]),
+        ...grupos.flatMap(([itens, titulo]) => [el('h3', { text: titulo }), el('ul', {}, itens.map((t) => el('li', { text: t })))])
+      ]);
+    }));
+  }
+
+  // ---------------- Arranque ----------------
+  $('versao').textContent = APP_VERSAO;
+  desenharNovidades();
+
+  (async () => {
+    if (!sb) { $('ecra-carregar').textContent = 'Não foi possível ligar à plataforma.'; return; }
+    sb.auth.onAuthStateChange((evento) => {
+      if (evento === 'SIGNED_OUT') { eu = null; mostrar('ecra-login'); }
+    });
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) await entrarNaApp(); else mostrar('ecra-login');
+  })();
 </script>
 </body>
 </html>

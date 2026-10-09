@@ -24,6 +24,13 @@ Projeto do Sebastião. Responder em português de Portugal.
    ```
    Depois, **verificar o site publicado** no Cloudflare Pages (a versão no rodapé tem de ser a nova).
 
+## Supabase
+
+- Alterações à estrutura da base de dados: aplicar com o conector do Supabase **e** guardar o SQL em `supabase/migrations/NNNN_nome.sql`.
+- Dados pessoais (emails, nomes) não vão para ficheiros do repositório.
+- Edge Functions: código em `supabase/functions/<nome>/index.ts`, publicado com o conector.
+- Antes de mexer em tabelas da checklist antiga (`obras`, `fases`, `items`, `item_*`), confirmar que ela continua a funcionar.
+
 ## Regras
 
 - **Nunca credenciais privadas no código** (só a chave pública do Supabase, via `plataforma-core`). Nada de `service_role`, passwords, tokens ou ficheiros `.env` no repositório.

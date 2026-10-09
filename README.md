@@ -23,6 +23,13 @@
 | Mapa de obras | Todas | Todas | Atribuídas | Atribuídas | — |
 | Dados pessoais da equipa | Ver e editar | Ver e editar | — | — | — |
 
+## Contas
+
+- Só ADMIN e Administrador criam contas, no separador **Colaboradores**.
+- Cada conta tem nome, utilizador, email, tipo de utilizador e palavra-passe.
+- Entra-se com o utilizador **ou** com o email.
+- O registo público tem de estar desligado no Supabase (Authentication → "Allow new users to sign up").
+
 ## Como está construído
 
 O Hub é um site estático, sem passo de build.
@@ -31,7 +38,8 @@ O Hub é um site estático, sem passo de build.
 |---|---|---|
 | Interface | `public/index.html` | Página única: HTML, CSS e JS no mesmo ficheiro. |
 | Dados e login | Supabase | Base de dados Postgres com RLS: cada utilizador só vê os seus dados. |
-| Ligação ao Supabase | `plataforma-core` | Fornece o URL e a chave **pública** (anon) do Supabase. Nada privado no código. |
+| Ligação ao Supabase | `public/js/plataforma-core.js` | Cria o cliente Supabase com a chave **pública**. Nada privado no código. |
+| Gestão de contas | `supabase/functions/gerir-contas` | Edge Function: só ela cria contas e muda tipos. Lê a chave de serviço do ambiente do Supabase. |
 | Base de dados | `supabase/migrations/*.sql` | Tabelas e políticas RLS, por ordem. |
 | Publicação | Cloudflare Pages | Publica a pasta `public/` a cada push para `main`. |
 | Testes | `tests/regressao.cjs` | Garantem que as Decisões fixas continuam válidas. |
@@ -83,9 +91,12 @@ O subdomínio aponta para o Pages com um registo CNAME:
 ├── PATCH NOTES.md     histórico de alterações + Decisões fixas
 ├── package.json
 ├── public/
-│   └── index.html     a app (APP_VERSAO, NOVIDADES)
+│   ├── index.html     a app (APP_VERSAO, NOVIDADES)
+│   ├── js/plataforma-core.js
+│   └── img/           logótipos e favicon
 ├── supabase/
-│   └── migrations/    SQL das tabelas e políticas RLS
+│   ├── migrations/    SQL das tabelas e políticas RLS
+│   └── functions/     Edge Functions (gerir-contas)
 └── tests/
     └── regressao.cjs  testes de regressão
 ```

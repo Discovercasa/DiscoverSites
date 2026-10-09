@@ -12,40 +12,29 @@ Ordem dos blocos: **Base → Equipa → Obras → Custos**.
 
 ## Bloco 1 — Base
 
-### 🔜 v0.1 — Login e visual Discovercasa
-- Visual com as cores Discovercasa (amarelo, cinzento escuro, fundo claro, títulos condensados), a partir do HTML do Sebastião.
-- Login com senha própria de cada utilizador. Sem registo público.
-- Ligação ao Supabase **Sites** só com a chave pública.
-- `https://hub.discovercasa.pt` no Site URL e nos Redirect URLs da autenticação.
-
-### 📝 v0.2 — Papéis e permissões
-- 5 papéis: ADMIN, Administrador, Obra, Subempreiteiro, Cliente (matriz no README).
-- Converter os papéis atuais de `profiles` sem partir o site existente:
-  `discovercasa2010` e `sebalca5` → ADMIN; o terceiro utilizador → Administrador.
-- Acesso por obra através de `obra_membros`.
-
-### 📝 v0.3 — Página central
-- Menu com as áreas que cada papel pode abrir.
-
-### 📝 v0.4 — Gestão de contas
-- ADMIN e Administrador criam contas, definem a senha inicial e atribuem papéis e obras.
-- Feito numa Edge Function (a chave secreta nunca vai para o site).
+### ✅ v0.1 — Entrada, menu inicial e contas
+- Visual Discovercasa (logótipo, amarelo, cinzento escuro, Barlow).
+- Entrada com utilizador **ou** email e palavra-passe; sem registo público.
+- Menu inicial e separadores por tipo de utilizador.
+- 5 tipos de utilizador na base de dados (`profiles.papel`), sincronizados com a checklist antiga (`role`).
+- Separador **Colaboradores**: criar contas, mudar tipo, redefinir palavra-passe, ativar/desativar (Edge Function `gerir-contas`).
+- O tipo de utilizador já não pode ser alterado pelo próprio (correção de segurança).
 
 ---
 
 ## Bloco 2 — Equipa
 
-### 📝 v0.5 — Colaboradores
-- Ficha de colaborador; dados pessoais (NIF, CC, IBAN, aptidão médica) só para ADMIN e Administrador.
+### 🔜 v0.2 — Ficha de colaborador
+- Acrescentar à conta a ficha do colaborador; dados pessoais (NIF, CC, IBAN, aptidão médica) só para ADMIN e Administrador.
 - Alertas de documentos a expirar (carta, CC, aptidão médica).
 
-### 📝 v0.6 — Férias e ausências
+### 📝 v0.3 — Férias e ausências
 - Mapa anual (férias, faltas, teletrabalho, feriados…).
 
-### 📝 v0.7 — Horas extra
+### 📝 v0.4 — Horas extra
 - Registo por obra e colaborador; estado pago / não pago; totais.
 
-### 📝 v0.8 — Veículos e deslocações
+### 📝 v0.5 — Veículos e deslocações
 - Veículos com alertas (revisão, inspeção, seguro, IUC); registo de deslocações; gasóleo.
 - PINs de cartões **não** são guardados.
 
@@ -53,26 +42,26 @@ Ordem dos blocos: **Base → Equipa → Obras → Custos**.
 
 ## Bloco 3 — Obras
 
-### 📝 v0.9 — Obras
-- Obra com código, local e cliente; membros e papéis por obra.
+### 📝 v0.6 — Obras
+- Obra com código, local e cliente; membros por obra (`obra_membros`).
 - Integrar no Hub a checklist existente (fases e itens).
 
-### 📝 v0.10 — Fase, fotos e vídeos
+### 📝 v0.7 — Fase, fotos e vídeos
 - Fase atual da obra; fotos e vídeos (decidir armazenamento: Supabase ou R2).
 - Cliente vê a fase e as fotos da obra dele.
 
-### 📝 v0.11 — Mapa de obras
+### 📝 v0.8 — Mapa de obras
 
 ---
 
 ## Bloco 4 — Custos
 
-### 📝 v0.12 — Fornecedores e catálogo
+### 📝 v0.9 — Fornecedores e catálogo
 - Fornecedores, materiais e serviços com histórico de preços. Importação dos Excels.
 
-### 📝 v0.13 — Materiais por obra
+### 📝 v0.10 — Materiais por obra
 
-### 📝 v0.14 — Custos da obra
+### 📝 v0.11 — Custos da obra
 - Por fase e categoria: material, serviços, mão de obra, alimentação, alojamento, transporte.
 
 ### 📝 v1.0 — Orçamentação
