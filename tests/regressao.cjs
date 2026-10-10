@@ -74,8 +74,8 @@ teste('D2', 'todas as tabelas com RLS', () => {
     const nome = t.split('.').pop();
     const re = new RegExp(`alter\\s+table\\s+(?:only\\s+)?(?:[\\w"]+\\.)?"?${nome}"?\\s+enable\\s+row\\s+level\\s+security`);
     exigir(re.test(sql), `tabela "${t}" sem RLS`);
-    exigir(new RegExp(`create\\s+policy[\\s\\S]*?on\\s+(?:[\\w"]+\\.)?"?${nome}"?[\\s\\S]*?auth\\.uid\\(\\)`).test(sql),
-      `tabela "${t}" sem política com auth.uid()`);
+    exigir(new RegExp(`create\\s+policy[^;]*?on\\s+(?:[\\w"]+\\.)?"?${nome}"?[^;]*?(auth\\.uid\\(\\)|eh_gestor\\(\\)|eh_admin\\(\\))`).test(sql),
+      `tabela "${t}" sem política com auth.uid() ou função de permissão`);
   }
 });
 
@@ -171,6 +171,20 @@ teste('D15', 'cliente e notas da obra só pela função obras_visiveis', () => {
     const txt = ler('public/' + f);
     exigir(!/from\(['"]obras['"]\)\.select\([^)]*\b(notas|cliente_id)\b/.test(txt), `${f} lê campos sensíveis diretamente de obras`);
   }
+});
+
+teste('D10', 'dados pessoais da equipa só para ADMIN e Administrador', () => {
+  const sql = fs.readdirSync(path.join(RAIZ, 'supabase/migrations')).filter(f => f.endsWith('.sql'))
+    .map(f => ler('supabase/migrations/' + f)).join('\n');
+  exigir(/alter table public\.colaboradores enable row level security/.test(sql), 'colaboradores sem RLS');
+  const politicas = sql.match(/create policy [^;]*on public\.colaboradores[^;]*;/g) || [];
+  exigir(politicas.length >= 4, 'faltam políticas em colaboradores');
+  for (const p of politicas) {
+    const regras = (p.match(/(using|with check)\s*\(([^;]*)\)/g) || []).join(' ');
+    exigir(/eh_gestor\(\)/.test(regras) && !/\btrue\b|auth\.uid\(\)/.test(regras), `política demasiado aberta: ${p.slice(0, 60)}…`);
+  }
+  for (const f of fs.readdirSync(path.join(RAIZ, 'public'), { recursive: true }).filter(f => /\.js$/.test(f) && !/colaboradores\.js$/.test(f)))
+    exigir(!/from\(['"]colaboradores['"]\)/.test(ler('public/' + f)) || /index\.html/.test(f), `${f} lê colaboradores fora do módulo da equipa`);
 });
 
 teste('—', 'ROADMAP marca a versão atual', () => {

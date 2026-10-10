@@ -13,7 +13,7 @@ Regras que não se alteram sem confirmação do Sebastião. Cada uma tem, sempre
 7. **O Hub vive em `https://hub.discovercasa.pt`** (Cloudflare Pages `discoversites`, CNAME no cPanel) e usa o projeto Supabase **Sites**, partilhado pelos sites da plataforma. (D7)
 8. **Contas só criadas por ADMIN ou Administrador**, pela Edge Function `gerir-contas`. Sem registo público (o "sign up" está desligado no Supabase); cada utilizador tem a sua palavra-passe. (D8)
 9. **5 papéis com a matriz de permissões do README.** O Cliente nunca vê custos nem preços; Obra também não. (D9)
-10. **Dados pessoais da equipa** (NIF, CC, IBAN, saúde) só visíveis para ADMIN e Administrador. (teste quando as tabelas existirem)
+10. **Dados pessoais da equipa** (NIF, CC, IBAN, saúde) só visíveis para ADMIN e Administrador. (D10)
 11. **PINs de cartões não são guardados** na plataforma. (D11)
 12. **Ordem do roadmap: Base (com checklist e obras) → Equipa → Obras (fotos, mapa) → Custos.** (alterada na v0.2 e na v0.3 a pedido do Sebastião)
 13. **O tipo de utilizador só muda pelo servidor.** Um trigger em `profiles` bloqueia alterações diretas a `papel`, `role`, `utilizador` e `ativo`; um Administrador não cria nem altera contas ADMIN; ninguém muda o próprio tipo. (D13)
@@ -21,9 +21,26 @@ Regras que não se alteram sem confirmação do Sebastião. Cada uma tem, sempre
 16. **Campos da obra por tipo de utilizador**, filtrados na base de dados: cliente e notas internas não se leem diretamente da tabela, só por `obras_visiveis()`. Subempreiteiro não vê cliente, notas nem membros; Cliente vê a sua obra e os seus dados, sem notas. (D15)
 17. **O cliente de uma obra é sempre uma conta Cliente** criada por ADMIN/Administrador, e só vê as obras a que é associado. (D15)
 18. **Largura:** a checklist fica centrada; as outras páginas ocupam a largura toda.
+19. **Tudo numa só página:** as áreas são separadores de `index.html` (sem mudar de página); `/checklist` redireciona para `/#checklist`. O código de cada área fica em `public/js/<área>.js`.
+20. **Todos os colaboradores têm conta.** Quem não tem email usa um endereço interno `<utilizador>@equipa.discovercasa.pt`; entra com o nome de utilizador.
+21. **Alertas de documentos** (carta, CC, aptidão médica) 31 dias antes de expirarem, no Início, para ADMIN e Administrador.
 15. **Todas as páginas** em `public/` são em português de Portugal e ligam-se ao Supabase só pelo `plataforma-core`. (D6)
 
 ## Histórico
+
+### v0.4 — 2026-10-10
+- **Ficha do colaborador** (`public/js/colaboradores.js`): identificação, contactos, trabalho, documentos com validade; criar, editar, apagar.
+- Colaboradores dividido em **Equipa** (fichas) e **Contas de acesso**.
+- **Criar conta a partir da ficha**: sugere utilizador e email interno `@equipa.discovercasa.pt`; a função `gerir-contas` liga a conta à ficha (`colaborador_id`).
+- **Alertas** no Início: documentos expirados ou a expirar em 31 dias.
+- Base de dados (migração `0004_progresso_e_colaboradores`): tabela `colaboradores` com RLS só para ADMIN/Administrador (testado: Administrador vê 13, Obra vê 0).
+- Importados os 13 colaboradores da folha "Colaboradores" do Excel; a ficha do Sebastião ligada à conta `sebastiao`.
+- Testes: D2 aceita políticas com `eh_gestor()`; novo teste D10.
+
+### v0.3a — 2026-10-10
+- A checklist passou para dentro do Hub (`public/js/checklist.js`, separador `#checklist`); `public/checklist.html` removido; `public/_redirects` envia `/checklist` para `/#checklist`.
+- **Total de todas as fases** na checklist e na ficha da obra (função `progresso_obra`, que conta só o que a pessoa vê e não está escondido).
+- Decisão 19 (tudo numa só página) substitui a regra "cada área grande tem a sua página".
 
 ### v0.3 — 2026-10-10
 - Novo separador **Obras** em `index.html` (`public/js/obras.js`): lista com pesquisa e filtro, ficha, criar/editar/apagar, membros.

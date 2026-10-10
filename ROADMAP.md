@@ -21,7 +21,7 @@ Ordem dos blocos: **Base (com checklist e obras) → Equipa → Obras (fotos, ma
 - O tipo de utilizador já não pode ser alterado pelo próprio (correção de segurança).
 
 ### ✅ v0.2 — Checklist
-- Página própria em `hub.discovercasa.pt/checklist`, com separadores no topo e largura total.
+- Separador do Hub (`#checklist`), centrado, com o total da obra e de cada fase (v0.3a).
 - Fases → títulos → checks → subchecks (sem limite de níveis). Estrutura comum a todas as obras; checks marcados por obra.
 - Só ADMIN e Administrador criam, editam, reordenam e apagam.
 - Visibilidade por tipo de utilizador e/ou colaborador, aplicada na base de dados; o que está dentro herda.
@@ -38,11 +38,13 @@ Ordem dos blocos: **Base (com checklist e obras) → Equipa → Obras (fotos, ma
 
 ## Bloco 2 — Equipa
 
-### 🔜 v0.4 — Ficha de colaborador
-- Acrescentar à conta a ficha do colaborador; dados pessoais (NIF, CC, IBAN, aptidão médica) só para ADMIN e Administrador.
-- Alertas de documentos a expirar (carta, CC, aptidão médica).
+### ✅ v0.4 — Ficha de colaborador
+- Ficha de cada colaborador (13 importados do Excel); dados pessoais só para ADMIN e Administrador.
+- Criar a conta a partir da ficha; email interno para quem não tem email.
+- Alertas de documentos a expirar (carta, CC, aptidão médica) no Início.
+- *Fora desta versão:* registo de EPIs.
 
-### 📝 v0.5 — Férias e ausências
+### 🔜 v0.5 — Férias e ausências
 - Mapa anual (férias, faltas, teletrabalho, feriados…).
 
 ### 📝 v0.6 — Horas extra

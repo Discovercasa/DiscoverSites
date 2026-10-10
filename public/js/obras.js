@@ -75,7 +75,9 @@
 
   async function ficha(o) {
     const coords = o.latitude != null && o.longitude != null;
+    const checklist = el('section', { class: 'painel' }, [el('h2', { class: 'titulo', text: 'Checklist' }), el('p', { class: 'ajuda', text: 'A carregar…' })]);
     const blocos = [
+      checklist,
       el('section', { class: 'painel' }, [el('h2', { class: 'titulo', text: 'Localização' }),
         campo('Morada', o.morada || '—'), campo('Localidade', o.localidade || '—'),
         campo('Coordenadas', coords ? el('a', { href: `https://www.google.com/maps?q=${o.latitude},${o.longitude}`, target: '_blank', rel: 'noopener', text: `${o.latitude}, ${o.longitude} ↗` }) : '—')]),
@@ -95,12 +97,25 @@
       el('div', { class: 'barra' }, [
         el('div', {}, [o.codigo ? el('div', { class: 'codigo', text: o.codigo }) : null, el('h1', { class: 'titulo', text: o.nome }), etiquetaEstado(o.estado)]),
         el('div', { class: 'acoes-form' }, [
-          el('a', { class: 'botao', href: '/checklist?obra=' + o.id, text: 'Abrir checklist' }),
+          el('a', { class: 'botao', href: '#checklist/' + o.id, text: 'Abrir checklist' }),
           gestor ? el('a', { class: 'botao secundario', href: `#obras/${o.id}/editar`, text: 'Editar' }) : null
         ])
       ]),
       el('div', { class: 'grelha-ficha' }, blocos)
     );
+
+    sb.rpc('progresso_obra', { p_obra: o.id }).then(({ data: p, error }) => {
+      const r = !error && p && p[0];
+      if (!r) { checklist.lastChild.textContent = 'Não foi possível calcular o total.'; return; }
+      const pct = r.total ? Math.round((r.feitos / r.total) * 100) : 0;
+      checklist.replaceChildren(el('h2', { class: 'titulo', text: 'Checklist' }),
+        el('div', { class: 'total-ficha' }, [
+          el('strong', { class: 'pct', text: pct + '%' }),
+          el('div', {}, [el('div', { class: 'progresso', role: 'progressbar', 'aria-valuenow': pct, 'aria-valuemin': 0, 'aria-valuemax': 100 }, el('div', { style: `width:${pct}%` })),
+            el('span', { class: 'ajuda', text: `${r.feitos} de ${r.total} checks feitos, em todas as fases` })])
+        ]),
+        el('a', { class: 'botao secundario pequeno', href: '#checklist/' + o.id, text: 'Abrir checklist', style: 'margin-top:.8rem' }));
+    });
 
     if (membros) {
       try {

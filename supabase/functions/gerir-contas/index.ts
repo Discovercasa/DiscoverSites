@@ -67,11 +67,23 @@ Deno.serve(async (req) => {
       const { data: existe } = await adm.from("profiles").select("id").ilike("utilizador", utilizador).maybeSingle();
       if (existe) return erro(409, "Esse nome de utilizador já existe.");
 
+      // Opcional: ligar a conta à ficha de um colaborador que ainda não tem conta
+      const colaborador = texto(b.colaborador_id) || null;
+      if (colaborador) {
+        const { data: ficha } = await adm.from("colaboradores").select("user_id").eq("id", colaborador).maybeSingle();
+        if (!ficha) return erro(404, "Ficha de colaborador não encontrada.");
+        if (ficha.user_id) return erro(409, "Este colaborador já tem conta.");
+      }
+
       const { data: criado, error: e1 } = await adm.auth.admin.createUser({ email, password: senha, email_confirm: true });
       if (e1 || !criado.user) return erro(400, e1?.message?.includes("registered") ? "Já existe uma conta com esse email." : "Não foi possível criar a conta.");
 
       const { error: e2 } = await adm.from("profiles").update({ nome, utilizador, papel }).eq("id", criado.user.id);
       if (e2) { await adm.auth.admin.deleteUser(criado.user.id); return erro(500, "Não foi possível guardar o perfil."); }
+      if (colaborador) {
+        const { error: e3 } = await adm.from("colaboradores").update({ user_id: criado.user.id }).eq("id", colaborador);
+        if (e3) return responder(200, { ok: true, id: criado.user.id, aviso: "Conta criada, mas não foi possível ligá-la à ficha." });
+      }
       return responder(200, { ok: true, id: criado.user.id });
     }
 

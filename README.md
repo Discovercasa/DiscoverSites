@@ -30,6 +30,12 @@
 - Entra-se com o utilizador **ou** com o email.
 - O registo público tem de estar desligado no Supabase (Authentication → "Allow new users to sign up").
 
+## Equipa
+
+- Em **Colaboradores → Equipa**: ficha de cada colaborador (identificação, contactos, trabalho, documentos). Só ADMIN e Administrador.
+- Cada colaborador tem conta; cria-se a partir da ficha ("Criar conta"). Sem email próprio, usa-se `<utilizador>@equipa.discovercasa.pt`.
+- Documentos a expirar nos próximos 31 dias aparecem como alertas no Início.
+
 ## Obras
 
 - Separador **Obras** no Hub: lista de todas as obras (cada pessoa vê as suas) e ficha de cada uma.
@@ -105,11 +111,13 @@ O subdomínio aponta para o Pages com um registo CNAME:
 ├── PATCH NOTES.md     histórico de alterações + Decisões fixas
 ├── package.json
 ├── public/
-│   ├── index.html     entrada, início, colaboradores, novidades (APP_VERSAO, NOVIDADES)
-│   ├── checklist.html checklist das obras
+│   ├── index.html     a app inteira: entrada e todos os separadores (APP_VERSAO, NOVIDADES)
 │   ├── css/hub.css    estilos comuns
 │   ├── js/hub.js      cabeçalho, sessão e utilitários comuns
 │   ├── js/obras.js    separador Obras
+│   ├── js/checklist.js separador Checklist
+│   ├── js/colaboradores.js separador Colaboradores → Equipa
+│   ├── _redirects     /checklist → /#checklist
 │   ├── js/plataforma-core.js
 │   └── img/           logótipos e favicon
 ├── supabase/

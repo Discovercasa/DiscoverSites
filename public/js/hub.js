@@ -33,7 +33,7 @@
     return [
       { id: 'inicio', nome: 'Início', href: '/#inicio' },
       { id: 'obras', nome: 'Obras', href: '/#obras' },
-      { id: 'checklist', nome: 'Checklist', href: '/checklist' },
+      { id: 'checklist', nome: 'Checklist', href: '/#checklist' },
       ehGestor(eu) && { id: 'colaboradores', nome: 'Colaboradores', href: '/#colaboradores' },
       { id: 'novidades', nome: 'Novidades', href: '/#novidades' }
     ].filter(Boolean);

@@ -49,6 +49,87 @@
   .acoes { display: flex; gap: .4rem; }
   .eu { font-size: .8rem; color: var(--suave); }
 
+  /* Checklist (centrada) */
+  #aba-checklist { max-width: 72rem; margin: 0 auto; }
+  .barra-obra { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-bottom: 1.2rem; }
+  .barra-obra select {
+    font-family: var(--titulos); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; font-size: 1.1rem;
+    background: var(--escuro); color: #fff; border: 0; border-radius: 4px; padding: .6rem 2.2rem .6rem .9rem; min-width: 14rem;
+  }
+  .barra-obra .espaco { flex: 1; }
+  .modo-edicao { outline: 2px dashed var(--amarelo); outline-offset: 6px; border-radius: 6px; }
+
+  /* Fases */
+  .fases { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1rem; }
+  .fase-aba {
+    border: 1px solid var(--linha); background: var(--branco); border-radius: 4px; cursor: pointer;
+    padding: .5rem .9rem; display: flex; gap: .6rem; align-items: baseline;
+    font-family: var(--titulos); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; font-size: 1.05rem;
+  }
+  .fase-aba small { font-family: Barlow, sans-serif; font-weight: 500; letter-spacing: 0; color: var(--suave); font-size: .85rem; }
+  .fase-aba[aria-selected="true"] { background: var(--escuro); color: #fff; border-color: var(--escuro); box-shadow: inset 0 -3px 0 var(--amarelo); }
+  .fase-aba[aria-selected="true"] small { color: #ddd; }
+
+  .cabeca-fase { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem 1rem; margin-bottom: .8rem; }
+  .cabeca-fase h1 { margin: 0; font-size: clamp(1.5rem, 4vw, 2rem); }
+  .progresso { flex: 1; min-width: 10rem; max-width: 22rem; height: 8px; background: #e6e6e3; border-radius: 4px; overflow: hidden; }
+  .progresso div { height: 100%; background: var(--amarelo); }
+  .contagem { color: var(--suave); font-size: .95rem; }
+
+  /* Árvore */
+  .arvore, .arvore ul { list-style: none; margin: 0; padding: 0; }
+  .arvore ul { margin-left: 1.4rem; padding-left: .7rem; border-left: 2px solid var(--linha); }
+  .no-titulo { margin-top: 1.2rem; }
+  .no-titulo > .linha {
+    background: transparent; padding: .3rem 0; border-left: 4px solid var(--amarelo); padding-left: .7rem; border-radius: 0;
+  }
+  .no-titulo > .linha .texto { font-family: var(--titulos); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; font-size: 1.2rem; }
+  .no-titulo > ul { border-left: 0; margin-left: 0; padding-left: 0; }
+  .linha {
+    display: flex; align-items: flex-start; gap: .65rem; background: var(--branco);
+    border-radius: 4px; padding: .6rem .75rem; margin-top: 4px;
+  }
+  .linha input[type="checkbox"] { width: 1.3rem; height: 1.3rem; margin: .1rem 0 0; accent-color: var(--escuro); flex: none; cursor: pointer; }
+  .corpo { flex: 1; min-width: 0; }
+  .texto { word-wrap: break-word; }
+  .feito > .linha .texto { color: var(--suave); text-decoration: line-through; }
+  .meta { font-size: .82rem; color: var(--suave); margin-top: .15rem; display: flex; flex-wrap: wrap; gap: .2rem .8rem; }
+  .meta .etiqueta { font-size: .72rem; }
+  .ferramentas { display: flex; gap: .25rem; flex: none; }
+  .ferramentas button {
+    border: 1px solid var(--linha); background: var(--branco); border-radius: 3px; cursor: pointer;
+    font-size: .85rem; padding: .15rem .45rem; color: var(--escuro); line-height: 1.4;
+  }
+  .ferramentas button:hover { background: var(--fundo); }
+  .escondido > .linha { opacity: .5; }
+  .adicionar { display: flex; flex-wrap: wrap; gap: .4rem; margin: .5rem 0 0; }
+  .adicionar button { border: 1px dashed #bdbdb9; background: transparent; border-radius: 4px; padding: .35rem .7rem; cursor: pointer; color: var(--suave); }
+  .adicionar button:hover { border-color: var(--escuro); color: var(--escuro); }
+
+  /* Diálogo de opções */
+  .grupo { border-top: 1px solid var(--fundo); padding-top: .9rem; margin-top: .9rem; }
+  .grupo h3 { margin: 0 0 .5rem; font-size: 1rem; }
+  .total-obra { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; background: var(--branco); border-radius: 6px; padding: .8rem 1rem; margin-bottom: 1rem; }
+  .total-obra .rotulo { font-family: var(--titulos); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+  .total-obra .progresso { max-width: none; }
+
+  /* Colaboradores */
+  .sub-abas { display: flex; gap: .3rem; margin-bottom: 1.4rem; border-bottom: 1px solid var(--linha); }
+  .sub-abas a { padding: .5rem .9rem; color: var(--suave); text-decoration: none; border-bottom: 3px solid transparent; margin-bottom: -1px; font-weight: 600; }
+  .sub-abas a[aria-current="page"] { color: var(--escuro); border-bottom-color: var(--amarelo); }
+  .nome-ligacao { color: var(--escuro); font-weight: 600; }
+  .estado.aviso { background: #fff1c2; color: #7a5b00; }
+  td .estado { display: inline-block; margin: .1rem .3rem .1rem 0; }
+  .interruptor { display: flex; gap: .5rem; align-items: center; font-weight: 400; padding: .7rem 0; }
+  .interruptor input { width: auto; }
+  .conta-ficha p { margin: 0; }
+  #colab-equipa .painel { margin-bottom: 1rem; }
+  .alertas { margin-bottom: 1.6rem; border-top-color: #e0a800; }
+  .alertas ul { list-style: none; margin: 0; padding: 0; }
+  .alertas li { display: flex; flex-wrap: wrap; gap: .3rem .8rem; align-items: center; padding: .45rem 0; border-bottom: 1px solid var(--fundo); }
+  .alertas li:last-child { border-bottom: 0; }
+  .alertas a { color: var(--escuro); font-weight: 600; }
+
   /* Obras */
   .filtros { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: 1rem; }
   .filtros input, .filtros select { padding: .6rem .8rem; border: 1px solid var(--linha); border-radius: 4px; background: var(--branco); }
@@ -69,6 +150,10 @@
   .dado .rotulo { flex: 0 0 9.5rem; color: var(--suave); }
   .dado a { color: var(--escuro); }
   .notas { white-space: pre-wrap; margin: 0; }
+  .total-ficha { display: flex; gap: 1rem; align-items: center; }
+  .total-ficha .pct { font-family: var(--titulos); font-size: 2.4rem; line-height: 1; }
+  .total-ficha > div { flex: 1; }
+  .total-ficha .progresso { max-width: none; margin-bottom: .35rem; }
   ul.membros { list-style: none; margin: 0 0 1rem; padding: 0; }
   ul.membros li { padding: .35rem 0; border-bottom: 1px solid var(--fundo); }
   textarea { width: 100%; padding: .7rem .8rem; border: 1px solid var(--linha); border-radius: 4px; font: inherit; resize: vertical; }
@@ -112,6 +197,7 @@
     <section id="aba-inicio" hidden>
       <h1 class="titulo" id="ola"></h1>
       <p class="subtitulo">Escolha uma área.</p>
+      <div id="inicio-alertas"></div>
       <div class="grelha" id="menu-inicial"></div>
     </section>
 
@@ -120,11 +206,28 @@
       <div id="obras-conteudo"></div>
     </section>
 
+    <section id="aba-checklist" hidden>
+      <div class="barra-obra">
+        <select id="ck-obra" aria-label="Obra"></select>
+        <span class="espaco"></span>
+        <a class="botao secundario pequeno" id="ck-ficha" href="#obras" hidden>Ficha da obra</a>
+        <button class="botao escuro pequeno" type="button" id="ck-editar" hidden aria-pressed="false">Editar estrutura</button>
+      </div>
+      <p class="mensagem" id="ck-aviso" role="status"></p>
+      <div id="ck-conteudo"><p class="carregar">A carregar…</p></div>
+    </section>
+
     <section id="aba-colaboradores" hidden>
+      <nav class="sub-abas" aria-label="Colaboradores">
+        <a href="#colaboradores" data-sub="equipa">Equipa</a>
+        <a href="#colaboradores/contas" data-sub="contas">Contas de acesso</a>
+      </nav>
+      <div id="colab-equipa"></div>
+      <div id="colab-contas">
       <div class="barra">
         <div>
-          <h1 class="titulo">Colaboradores</h1>
-          <p class="subtitulo" style="margin:0">Contas de acesso à plataforma e tipo de utilizador.</p>
+          <h1 class="titulo">Contas de acesso</h1>
+          <p class="subtitulo" style="margin:0">Todas as contas da plataforma (equipa, subempreiteiros e clientes) e o tipo de utilizador.</p>
         </div>
         <button class="botao" type="button" id="botao-nova-conta">+ Nova conta</button>
       </div>
@@ -163,6 +266,7 @@
           <tbody id="contas-corpo"><tr><td colspan="6">A carregar…</td></tr></tbody>
         </table>
       </div>
+      </div>
     </section>
 
     <section id="aba-novidades" hidden>
@@ -174,6 +278,75 @@
 
   <footer class="contentor">Discovercasa · Hub · Versão <span id="versao"></span></footer>
 </div>
+
+<!-- Texto (novo / renomear) -->
+<dialog id="d-texto">
+  <form method="dialog" id="f-texto" novalidate>
+    <h2 class="titulo" id="dt-titulo"></h2>
+    <div class="campo"><label for="dt-valor" id="dt-rotulo">Nome</label><input id="dt-valor" autocomplete="off"></div>
+    <div class="acoes-form">
+      <button class="botao" type="submit" value="ok">Guardar</button>
+      <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Cancelar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Opções de uma fase / item -->
+<dialog id="d-opcoes">
+  <form method="dialog" id="f-opcoes" novalidate>
+    <h2 class="titulo" id="do-titulo">Opções</h2>
+    <div class="campo"><label for="do-nome">Texto</label><input id="do-nome" autocomplete="off"></div>
+
+    <div class="grupo">
+      <h3>Quem vê <span class="etiqueta">em todas as obras</span></h3>
+      <p class="ajuda" style="margin:0 0 .6rem">Sem nada escolhido, todos veem. ADMIN e Administrador veem sempre. O que está dentro segue esta regra.</p>
+      <div class="campo" style="margin-bottom:.6rem"><span class="rotulo">Tipos de utilizador</span><div class="opcoes-lista" id="do-papeis"></div></div>
+      <div class="campo" style="margin-bottom:0"><span class="rotulo">Colaboradores</span><div class="opcoes-lista" id="do-pessoas"></div></div>
+    </div>
+
+    <div class="grupo" id="do-obra">
+      <h3>Nesta obra <span class="etiqueta" id="do-obra-nome"></span></h3>
+      <label style="display:flex;gap:.5rem;align-items:center;margin-bottom:.9rem"><input type="checkbox" id="do-esconder"> Esconder nesta obra</label>
+      <div class="campo">
+        <label for="do-responsavel">Responsável</label>
+        <select id="do-responsavel"></select>
+        <input id="do-responsavel-texto" placeholder="Nome (pessoa sem conta)" style="margin-top:.4rem" hidden>
+      </div>
+      <div class="campo" style="margin-bottom:0"><span class="rotulo">Partilhar com <span class="ajuda">(mesmo sem ser membro da obra)</span></span><div class="opcoes-lista" id="do-partilhas"></div></div>
+    </div>
+
+    <div class="rodape-dialogo">
+      <button class="botao" type="submit" value="ok">Guardar</button>
+      <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Cancelar</button>
+      <span class="espaco"></span>
+      <button class="botao perigo" type="button" id="do-apagar">Apagar</button>
+    </div>
+    <p class="mensagem erro" id="do-mensagem" role="alert"></p>
+  </form>
+</dialog>
+
+<!-- Criar conta a partir da ficha do colaborador -->
+<dialog id="d-criar-conta">
+  <form method="dialog" id="f-criar-conta" novalidate>
+    <h2 class="titulo">Criar conta</h2>
+    <p id="cc-para" style="margin-top:0;color:var(--suave)"></p>
+    <div class="campo"><label for="cc-utilizador">Utilizador</label><input id="cc-utilizador" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+    <div class="campo">
+      <label for="cc-email">Email</label><input id="cc-email" type="email" autocomplete="off">
+      <p class="ajuda">Sem email próprio, usa-se um endereço interno @equipa.discovercasa.pt (não recebe mensagens).</p>
+    </div>
+    <div class="campo"><label for="cc-papel">Tipo de utilizador</label><select id="cc-papel"></select></div>
+    <div class="campo">
+      <label for="cc-senha">Palavra-passe inicial</label>
+      <div class="com-botao"><input id="cc-senha" autocomplete="new-password"><button class="botao secundario pequeno" type="button" id="cc-gerar">Gerar</button></div>
+    </div>
+    <div class="rodape-dialogo">
+      <button class="botao" type="submit" value="ok">Criar conta</button>
+      <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Cancelar</button>
+    </div>
+    <p class="mensagem erro" id="cc-mensagem" role="alert"></p>
+  </form>
+</dialog>
 
 <dialog id="d-membros">
   <form method="dialog" id="f-membros" novalidate>
@@ -211,11 +384,36 @@
 <script src="/js/plataforma-core.js"></script>
 <script src="/js/hub.js"></script>
 <script src="/js/obras.js"></script>
+<script src="/js/checklist.js"></script>
+<script src="/js/colaboradores.js"></script>
 <script>
-  const APP_VERSAO = 'v0.3';
+  const APP_VERSAO = 'v0.4';
 
   // Mais recente primeiro. A primeira entrada tem de ser igual a APP_VERSAO.
   const NOVIDADES = [
+    {
+      versao: 'v0.4',
+      data: '2026-10-10',
+      novas: [
+        'Ficha de cada colaborador: identificação, contactos, trabalho e documentos.',
+        'Alertas de documentos a expirar nos próximos 31 dias, no Início.',
+        'Criar a conta de acesso diretamente a partir da ficha.',
+        'Os 13 colaboradores do Excel já estão na plataforma.'
+      ],
+      alteracoes: [
+        'Colaboradores dividido em Equipa e Contas de acesso.'
+      ]
+    },
+    {
+      versao: 'v0.3a',
+      data: '2026-10-10',
+      novas: [
+        'Total de todas as fases na checklist e na ficha da obra.'
+      ],
+      alteracoes: [
+        'A checklist passou a ser um separador do Hub, sem mudar de página.'
+      ]
+    },
     {
       versao: 'v0.3',
       data: '2026-10-10',
@@ -331,7 +529,6 @@
       if (error) throw error;
       $('login-senha').value = '';
       const voltar = new URLSearchParams(location.search).get('voltar');
-      if (voltar === 'checklist') { location.href = '/checklist'; return; }
       await entrarNaApp();
     } catch (e) {
       mensagem('login-mensagem', 'Utilizador ou palavra-passe incorretos.');
@@ -358,12 +555,20 @@
   function irPara(aba) {
     const rota = aba;
     aba = aba.split('/')[0];
-    const permitidas = ['inicio', 'obras', 'novidades', ehGestor() && 'colaboradores'].filter(Boolean);
+    const permitidas = ['inicio', 'obras', 'checklist', 'novidades', ehGestor() && 'colaboradores'].filter(Boolean);
     if (!permitidas.includes(aba)) aba = 'inicio';
     for (const s of document.querySelectorAll('main > section')) s.hidden = s.id !== 'aba-' + aba;
     Hub.marcarAba(aba);
-    if (aba === 'colaboradores') carregarContas();
     if (aba === 'obras') ObrasHub.mostrar(rota, eu);
+    if (aba === 'checklist') ChecklistHub.mostrar(rota, eu);
+    if (aba === 'colaboradores') {
+      const contasAberto = rota === 'colaboradores/contas';
+      $('colab-contas').hidden = !contasAberto; $('colab-equipa').hidden = contasAberto;
+      document.querySelectorAll('.sub-abas a').forEach((a) => a.dataset.sub === (contasAberto ? 'contas' : 'equipa')
+        ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
+      if (contasAberto) carregarContas(); else ColaboradoresHub.mostrar(rota, eu);
+    }
+    if (aba === 'inicio') mostrarAlertas();
     window.scrollTo(0, 0);
   }
   window.addEventListener('hashchange', () => { if (eu) irPara(location.hash.slice(1)); });
@@ -372,9 +577,9 @@
   function construirMenu() {
     const itens = [
       { titulo: 'Obras', texto: 'Lista de obras e ficha de cada uma.', href: '#obras' },
-      { titulo: 'Checklist', texto: 'Fases e checks de cada obra.', href: '/checklist' },
-      ehGestor() && { titulo: 'Colaboradores', texto: 'Criar contas e definir o tipo de utilizador.', href: '#colaboradores' },
-      ehGestor() && { titulo: 'Equipa', texto: 'Ficha, férias, horas extra, veículos e alertas.', futuro: 'v0.4' },
+      { titulo: 'Checklist', texto: 'Fases e checks de cada obra.', href: '#checklist' },
+      ehGestor() && { titulo: 'Colaboradores', texto: 'Fichas da equipa e contas de acesso.', href: '#colaboradores' },
+      ehGestor() && { titulo: 'Férias e horas extra', texto: 'Mapa de férias, ausências e horas extra.', futuro: 'v0.5' },
       { titulo: 'Fotos e vídeos', texto: 'Fase atual, fotos e vídeos de cada obra.', futuro: 'v0.8' },
       eu.papel !== 'cliente' && { titulo: 'Mapa de obras', texto: 'Todas as obras num mapa.', futuro: 'v0.9' },
       ehGestor() && { titulo: 'Materiais e custos', texto: 'Fornecedores, preços e orçamentação.', futuro: 'v0.10' },
@@ -388,6 +593,21 @@
           el('span', { class: 'etiqueta', text: 'Em breve · ' + i.futuro })
         ])
     ));
+  }
+
+  // ---------------- Alertas (Início) ----------------
+  async function mostrarAlertas() {
+    const c = $('inicio-alertas');
+    if (!ehGestor()) { c.replaceChildren(); return; }
+    const lista = await ColaboradoresHub.alertas();
+    c.replaceChildren(...(lista.length ? [el('section', { class: 'painel alertas' }, [
+      el('h2', { class: 'titulo', text: `Alertas · ${lista.length}` }),
+      el('ul', {}, lista.map((a) => el('li', {}, [
+        el('a', { href: '#colaboradores/' + a.id, text: a.nome }), el('span', { text: a.documento }),
+        el('span', { class: 'estado ' + a.estado.classe, text: a.estado.texto }),
+        el('span', { class: 'ajuda', style: 'margin:0', text: new Date(a.data + 'T00:00:00').toLocaleDateString('pt-PT') })
+      ])))
+    ])] : []));
   }
 
   // ---------------- Colaboradores ----------------
