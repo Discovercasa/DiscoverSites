@@ -43,9 +43,20 @@ Regras que não se alteram sem confirmação do Sebastião. Cada uma tem, sempre
 38. **A foto de capa é o fundo do cabeçalho da obra** (não uma faixa por cima).
 39. **Materiais e fornecedores:** só ADMIN e Administrador. Um material (nomenclatura Discovercasa) tem preços de vários fornecedores, ordenados do mais barato (preço final sem IVA, com desconto). (D22)
 40. **Histórico de preços automático:** ao mudar o preço, o desconto, o IVA ou a unidade, o valor anterior é guardado pelo servidor; ninguém escreve diretamente no histórico. Preço com mais de 6 meses = desatualizado. (D22)
+41. **Medidas dos materiais em metros** (comprimento, largura, altura/espessura); quantidade por embalagem e peso em campos próprios; **transporte e "incluído" em cada preço** (não só no fornecedor). (D23)
+42. **Importar Excel de materiais = juntar:** acrescenta o que é novo e atualiza o que mudou (o preço anterior vai para o histórico); nunca apaga; preços alterados no Hub depois da data do Excel ficam como estão. (D23)
 15. **Todas as páginas** em `public/` são em português de Portugal e ligam-se ao Supabase só pelo `plataforma-core`. (D6)
 
 ## Histórico
+
+### v0.9a — 2026-10-11
+- **Novo material numa janela completa** (material + primeiro preço), organizada por blocos: Material, Fornecedor, Medidas e quantidade, Preço, Transporte e entrega.
+- **Medidas** em metros (comprimento, largura, altura/espessura), **quantidade por embalagem** (com unidade) e **peso por unidade**; o campo antigo de "dimensões" foi convertido (o que não deu ficou nos Detalhes).
+- **Conversões** na ficha do material (€/un, €/ml, €/m², €/m³, €/embalagem, €/kg, €/t) para cada fornecedor, com o mais barato a verde; pré-visualização na janela.
+- **Lista de materiais com uma linha por preço**, ordenável por qualquer coluna e com filtros de escolha múltipla (Categoria, Fornecedor, Unidade, Transporte, Incluído, Disponibilidade); o fornecedor abre a sua página; "Mais barato" assinalado.
+- **Transporte e "incluído" por preço** (Sim / Não / Por definir; Incluído / Não incluído / Só c/ quantidade mínima).
+- **Importar Excel** (`public/js/materiais-importar.js`, SheetJS 0.18.5 do cdnjs carregado só ao importar): resumo antes de aplicar; testado com o Excel novo (903 preços, 46 fornecedores, 87 com medidas, 75 com quantidade, 103 medidas por rever). Medidas acima de 30 contam como milímetros; granulometrias (brita 11/22) ficam nos Detalhes.
+- Base de dados (migração `0012_material_precos_medidas`). Novo teste D23 (leitura do Excel).
 
 ### v0.9 — 2026-10-11
 - Novo separador **Materiais** (`public/js/materiais.js`, só ADMIN/Administrador), com as abas **Materiais** e **Fornecedores**.

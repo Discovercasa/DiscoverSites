@@ -279,6 +279,25 @@ teste('D22', 'materiais e fornecedores só para gestores; histórico só pelo se
   exigir(/create trigger material_precos_guardar_historico before update on public\.material_precos/.test(sql), 'falta o trigger do histórico de preços');
 });
 
+teste('D23', 'leitura do Excel de materiais: medidas em metros, quantidades e granulometria', () => {
+  const { medidas, ler } = require(path.join(RAIZ, 'public/js/materiais-importar.js'));
+  const m = (t, un, d = '') => { const r = medidas(t, un, d); return [r.comprimento, r.largura, r.espessura, r.qtd_embalagem, r.qtd_unidade, r.resto].map((x) => x ?? '-').join('|'); };
+  exigir(m('3/0,11/0,075', 'un') === '3|0.11|0.075|-|-|-', 'C/L/A em metros');
+  exigir(m('500/015/200', 'un') === '0.5|0.15|0.2|-|-|-', 'milímetros e "015" convertidos para metros');
+  exigir(m('8000x1200x100', 'm2') === '8|1.2|0.1|-|-|-', 'medidas com "x" em milímetros');
+  exigir(m('25kg', 'un') === '-|-|-|25|kg|-', 'quantidade com unidade');
+  exigir(m('100', 'cx') === '-|-|-|100|un|-', 'caixa com quantidade');
+  exigir(m('11/22', 'm3') === '-|-|-|-|-|11/22', 'granulometria (brita) não é medida');
+  exigir(m('manutenção', 'un') === '-|-|-|-|-|manutenção', 'texto fica para rever');
+  const r = ler([[], ['Varão 12mm', 'Varões 12 mm', '6', null, 9.5, 'un', 0.25, null, 0.23, null, 'Conta corrente', 'Fornecedor X', null, null, 'Sim', 'Não, com quantidade minima'],
+    ['Varão 12mm', 'Varões 12 mm', '6', null, 9.9, 'un', 0, null, 0.23, null, null, 'Fornecedor X', null, null, 'Sim', 'Sim', null, null, null, null, null, null, new Date('2026-01-01')]]);
+  exigir(r.precos.length === 1 && r.repetidas === 1 && r.precos[0].preco === 9.9, 'linhas repetidas: fica a mais recente');
+  exigir(r.precos[0].transporte === 'sim' && r.precos[0].transporte_incluido === 'sim', 'transporte por preço');
+  exigir(ler([[], ['A', 'A', null, null, 1, 'un', 0, null, 0.23, null, null, 'F', null, null, 'Sim', 'Não, com quantidade minima']]).precos[0].transporte_incluido === 'qtd_minima', 'quantidade mínima');
+  const js = ler.toString() + require('fs').readFileSync(path.join(RAIZ, 'public/js/materiais.js'), 'utf8').split('async function aplicar')[1].split('document.addEventListener')[0];
+  exigir(!/\.delete\(/.test(js), 'a importação não pode apagar nada');
+});
+
 teste('—', 'ROADMAP marca a versão atual', () => {
   if (/[a-z]$/.test(versaoNotas || '')) return; // letras entre versões não vão ao roadmap
   exigir(new RegExp(`✅\\s*${versaoNotas?.replace('.', '\\.')}\\b`).test(ler('ROADMAP.md')),

@@ -54,7 +54,8 @@
 
 ## Materiais e fornecedores
 
-- Separador **Materiais** (só ADMIN e Administrador): cada material tem o preço de cada fornecedor, ordenado do mais barato; histórico automático quando um preço muda; fichas dos fornecedores.
+- Separador **Materiais** (só ADMIN e Administrador): lista com um preço por linha (ordenar e filtrar por coluna); ficha do material com os preços de cada fornecedor, **conversões** (€/un, ml, m², m³, embalagem, kg, t) e histórico automático; fichas dos fornecedores.
+- **Importar Excel:** botão na página Materiais; junta ao que existe (nunca apaga). Medidas em metros.
 
 ## Controlo e veículos
 
@@ -155,6 +156,7 @@ O subdomínio aponta para o Pages com um registo CNAME:
 │   ├── js/ferias.js   separador Férias (mapa, Visão Pedro, saldos, feriados)
 │   ├── js/controlo.js separador Controlo (GPS e horas extra)
 │   ├── js/materiais.js separador Materiais (materiais e fornecedores)
+│   ├── js/materiais-importar.js leitura do Excel de materiais (também usada nos testes)
 │   ├── _redirects     /checklist.html → /checklist
 │   ├── js/plataforma-core.js
 │   └── img/           logótipos e favicon

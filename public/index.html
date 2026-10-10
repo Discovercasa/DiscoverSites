@@ -330,6 +330,28 @@
   tr.melhor td { background: #f3fbf4; }
   .tabela-materiais td:first-child { max-width: 28rem; }
 
+  /* v0.9a — Materiais: lista, filtros, conversões, importar */
+  .cab-col { display: flex; align-items: center; gap: .2rem; }
+  .ordenar { border: 0; background: none; font: inherit; color: inherit; cursor: pointer; padding: 0; text-transform: inherit; letter-spacing: inherit; text-align: left; }
+  .ordenar .seta { color: #b0b0ab; }
+  .ordenar.ativa .seta { color: var(--escuro); }
+  .filtro-col { border: 1px solid var(--linha); background: var(--branco); border-radius: 3px; cursor: pointer; font-size: .72rem; padding: 0 .3rem; line-height: 1.5; }
+  .filtro-col.ativo { background: var(--amarelo); border-color: var(--amarelo); font-weight: 700; }
+  .popup-filtro { position: absolute; z-index: 50; width: 17rem; background: var(--branco); border-radius: 6px; box-shadow: 0 8px 28px rgba(0,0,0,.18); padding: .7rem; border-top: 4px solid var(--amarelo); }
+  .popup-filtro input[type="search"] { width: 100%; padding: .45rem .6rem; border: 1px solid var(--linha); border-radius: 4px; margin-bottom: .5rem; }
+  .popup-lista { max-height: 16rem; overflow-y: auto; display: flex; flex-direction: column; gap: .15rem; margin-bottom: .6rem; font-size: .9rem; }
+  .popup-lista label { display: flex; gap: .4rem; align-items: center; cursor: pointer; }
+  .popup-filtro .acoes { justify-content: space-between; }
+  .conversoes { margin: 1.2rem 0; }
+  .conversoes td.minimo { color: var(--ok); font-weight: 700; }
+  .bloco-dialogo { border: 1px solid var(--fundo); border-radius: 6px; padding: .5rem .9rem .2rem; margin: 0 0 .8rem; }
+  .bloco-dialogo legend { font-family: var(--titulos); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; font-size: .9rem; padding: 0 .3rem; }
+  #d-preco { width: min(100% - 2rem, 44rem); }
+  #d-importar { width: min(100% - 2rem, 40rem); }
+  .resumo-importar { padding-left: 1.2rem; }
+  .resumo-importar li { margin-bottom: .2rem; }
+  ul.mudancas { max-height: 14rem; overflow-y: auto; font-size: .88rem; }
+
   /* Obras */
   .filtros { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: 1rem; }
   .filtros input, .filtros select { padding: .6rem .8rem; border: 1px solid var(--linha); border-radius: 4px; background: var(--branco); }
@@ -851,37 +873,88 @@
   </form>
 </dialog>
 
-<!-- Materiais: preço de um fornecedor -->
+<!-- Materiais: janela completa (novo material + preço) / preço de um fornecedor -->
 <dialog id="d-preco">
   <form method="dialog" id="f-preco" novalidate>
     <h2 class="titulo" id="dp2-titulo">Preço</h2>
-    <div class="campo"><label for="mp-fornecedor">Fornecedor</label><select id="mp-fornecedor"></select></div>
-    <div class="campo"><label for="mp-designacao">Nome no fornecedor</label><input id="mp-designacao" autocomplete="off"></div>
-    <div class="form-grelha" style="grid-template-columns:1fr 1fr">
-      <div class="campo"><label for="mp-dimensoes">Dimensões / quantidade</label><input id="mp-dimensoes" autocomplete="off"></div>
+    <fieldset id="mp-bloco-material" class="bloco-dialogo">
+      <legend>Material</legend>
+      <div class="campo"><label for="mpm-nome">Nome (nomenclatura Discovercasa)</label><input id="mpm-nome" autocomplete="off"></div>
+      <div class="form-grelha" style="grid-template-columns:1fr 1fr">
+        <div class="campo"><label for="mpm-categoria">Categoria</label><input id="mpm-categoria" list="categorias-lista" autocomplete="off" placeholder="ex.: Aço, Betão, Madeira…"></div>
+        <div class="campo"><label for="mpm-notas">Notas</label><input id="mpm-notas" autocomplete="off"></div>
+      </div>
+    </fieldset>
+    <fieldset class="bloco-dialogo">
+      <legend>Fornecedor</legend>
+      <div class="form-grelha" style="grid-template-columns:1fr 1fr">
+        <div class="campo"><label for="mp-fornecedor">Fornecedor</label><select id="mp-fornecedor"></select></div>
+        <div class="campo"><label for="mp-designacao">Nome no fornecedor</label><input id="mp-designacao" autocomplete="off"></div>
+      </div>
+    </fieldset>
+    <fieldset class="bloco-dialogo">
+      <legend>Medidas e quantidade</legend>
+      <div class="form-grelha" style="grid-template-columns:repeat(3,1fr)">
+        <div class="campo"><label for="mp-comprimento">Comprimento (m)</label><input id="mp-comprimento" type="number" min="0" step="any"></div>
+        <div class="campo"><label for="mp-largura">Largura (m)</label><input id="mp-largura" type="number" min="0" step="any"></div>
+        <div class="campo"><label for="mp-espessura">Altura / espessura (m)</label><input id="mp-espessura" type="number" min="0" step="any"></div>
+      </div>
+      <div class="form-grelha" style="grid-template-columns:repeat(3,1fr)">
+        <div class="campo"><label for="mp-qtd_embalagem">Quantidade por embalagem</label><input id="mp-qtd_embalagem" type="number" min="0" step="any" placeholder="ex.: 100"></div>
+        <div class="campo"><label for="mp-qtd_unidade">Unidade da quantidade</label><select id="mp-qtd_unidade"><option value="un">un</option><option value="ml">ml</option><option value="m2">m²</option><option value="m3">m³</option><option value="kg">kg</option><option value="L">L</option></select></div>
+        <div class="campo"><label for="mp-peso_kg">Peso por unidade (kg)</label><input id="mp-peso_kg" type="number" min="0" step="any"></div>
+      </div>
       <div class="campo"><label for="mp-detalhes">Detalhes</label><input id="mp-detalhes" autocomplete="off"></div>
-    </div>
-    <div class="form-grelha" style="grid-template-columns:repeat(4,1fr)">
-      <div class="campo"><label for="mp-preco">Preço s/ IVA (€)</label><input id="mp-preco" type="number" min="0" step="0.0001"></div>
-      <div class="campo"><label for="mp-unidade">Unidade</label><input id="mp-unidade" list="unidades-mat" autocomplete="off"><datalist id="unidades-mat"><option value="un"><option value="ml"><option value="m2"><option value="m3"><option value="cx"><option value="kg"><option value="t"></datalist></div>
-      <div class="campo"><label for="mp-desconto">Desconto (%)</label><input id="mp-desconto" type="number" min="0" max="99" step="0.01"></div>
-      <div class="campo"><label for="mp-iva">IVA (%)</label><input id="mp-iva" type="number" min="0" max="99" step="0.01"></div>
-    </div>
-    <p class="contagem-dias" id="mp-final"></p>
-    <div class="form-grelha" style="grid-template-columns:repeat(3,1fr)">
-      <div class="campo"><label for="mp-disponibilidade">Disponibilidade</label><select id="mp-disponibilidade"><option value="">—</option><option value="imediata">Imediata</option><option value="encomenda">Por encomenda</option></select></div>
-      <div class="campo"><label for="mp-prazo">Prazo de receção (dias)</label><input id="mp-prazo" type="number" min="0"></div>
-      <div class="campo"><label for="mp-data">Data de atualização</label><input id="mp-data" type="date"></div>
-    </div>
-    <div class="campo"><label for="mp-obs">Observações</label><input id="mp-obs" autocomplete="off"></div>
-    <p class="ajuda" style="margin-top:-.4rem">Ao mudar o preço, o desconto, o IVA ou a unidade, o valor anterior fica guardado no histórico.</p>
+    </fieldset>
+    <fieldset class="bloco-dialogo">
+      <legend>Preço</legend>
+      <div class="form-grelha" style="grid-template-columns:repeat(4,1fr)">
+        <div class="campo"><label for="mp-preco">Preço s/ IVA (€)</label><input id="mp-preco" type="number" min="0" step="0.0001"></div>
+        <div class="campo"><label for="mp-unidade">Unidade de venda</label><input id="mp-unidade" list="unidades-mat" autocomplete="off"><datalist id="unidades-mat"><option value="un"><option value="ml"><option value="m2"><option value="m3"><option value="cx"><option value="kg"><option value="t"></datalist></div>
+        <div class="campo"><label for="mp-desconto">Desconto (%)</label><input id="mp-desconto" type="number" min="0" max="99" step="0.01"></div>
+        <div class="campo"><label for="mp-iva">IVA (%)</label><input id="mp-iva" type="number" min="0" max="99" step="0.01"></div>
+      </div>
+      <p class="contagem-dias" id="mp-final"></p>
+      <p class="ajuda" id="mp-conv" style="margin-top:-.6rem"></p>
+    </fieldset>
+    <fieldset class="bloco-dialogo">
+      <legend>Transporte e entrega</legend>
+      <div class="form-grelha" style="grid-template-columns:1fr 1fr">
+        <div class="campo"><label for="mp-transporte">Tem transporte?</label><select id="mp-transporte"><option value="">—</option><option value="sim">Sim</option><option value="nao">Não</option><option value="por_definir">Por definir</option></select></div>
+        <div class="campo"><label for="mp-transporte_incluido">Incluído no preço?</label><select id="mp-transporte_incluido"><option value="">—</option><option value="sim">Sim</option><option value="nao">Não</option><option value="qtd_minima">Só a partir de uma quantidade mínima</option></select></div>
+      </div>
+      <div class="form-grelha" style="grid-template-columns:repeat(3,1fr)">
+        <div class="campo"><label for="mp-disponibilidade">Disponibilidade</label><select id="mp-disponibilidade"><option value="">—</option><option value="imediata">Imediata</option><option value="encomenda">Por encomenda</option></select></div>
+        <div class="campo"><label for="mp-prazo">Prazo de receção (dias)</label><input id="mp-prazo" type="number" min="0"></div>
+        <div class="campo"><label for="mp-data">Data de atualização</label><input id="mp-data" type="date"></div>
+      </div>
+      <div class="campo"><label for="mp-obs">Observações</label><input id="mp-obs" autocomplete="off"></div>
+    </fieldset>
+    <p class="ajuda">Ao mudar o preço, o desconto, o IVA ou a unidade, o valor anterior fica guardado no histórico.</p>
     <div class="rodape-dialogo">
       <button class="botao" type="submit" value="ok">Guardar</button>
       <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Cancelar</button>
       <span class="espaco"></span>
-      <button class="botao perigo" type="button" id="mp-apagar">Apagar</button>
+      <button class="botao perigo" type="button" id="mp-apagar">Apagar preço</button>
     </div>
     <p class="mensagem erro" id="mp-mensagem" role="alert"></p>
+  </form>
+</dialog>
+
+<!-- Materiais: importar Excel -->
+<dialog id="d-importar">
+  <form method="dialog">
+    <h2 class="titulo">Importar Excel de materiais</h2>
+    <p class="ajuda" style="margin-top:0">Ficheiro "Valores de material" (folha "Geral Materiais"). Junta ao que já existe: acrescenta o que é novo e atualiza os preços que mudaram. Nada é apagado.</p>
+    <div class="campo"><label for="di-ficheiro">Ficheiro Excel (.xlsx)</label><input id="di-ficheiro" type="file" accept=".xlsx,.xls"></div>
+    <div id="di-resumo"></div>
+    <progress id="di-progresso" max="100" value="0" hidden style="width:100%"></progress>
+    <div class="rodape-dialogo">
+      <button class="botao" type="button" id="di-aplicar" hidden>Aplicar importação</button>
+      <span class="espaco"></span>
+      <button class="botao secundario" type="submit" value="fechar">Fechar</button>
+    </div>
+    <p class="mensagem erro" id="di-mensagem" role="alert"></p>
   </form>
 </dialog>
 
@@ -958,12 +1031,29 @@
 <script src="/js/colaboradores.js"></script>
 <script src="/js/ferias.js"></script>
 <script src="/js/controlo.js"></script>
+<script src="/js/materiais-importar.js"></script>
 <script src="/js/materiais.js"></script>
 <script>
-  const APP_VERSAO = 'v0.9';
+  const APP_VERSAO = 'v0.9a';
 
   // Mais recente primeiro. A primeira entrada tem de ser igual a APP_VERSAO.
   const NOVIDADES = [
+    {
+      versao: 'v0.9a',
+      data: '2026-10-11',
+      novas: [
+        'Novo material numa janela completa, com o primeiro preço.',
+        'Medidas (comprimento, largura, altura), quantidade por embalagem e peso.',
+        'Conversões do preço: por unidade, ml, m², m³, embalagem, kg e tonelada.',
+        'Lista com ordenação e filtros de escolha múltipla em cada coluna.',
+        'Importar o Excel de materiais diretamente no Hub.'
+      ],
+      alteracoes: [
+        'A lista de materiais mostra uma linha por preço, com transporte e se está incluído.',
+        'O transporte passa a estar em cada preço.',
+        'O nome do fornecedor na lista abre a página dele.'
+      ]
+    },
     {
       versao: 'v0.9',
       data: '2026-10-11',

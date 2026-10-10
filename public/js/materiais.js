@@ -4,9 +4,13 @@
   const PAGAMENTO = { conta_corrente: 'Conta corrente', pronto_pagamento: 'Pronto pagamento', antes_levantamento: 'Antes do levantamento' };
   const DISPONIBILIDADE = { imediata: 'Imediata', encomenda: 'Por encomenda' };
   const MESES_DESATUALIZADO = 6;
+  const TRANSPORTE = { sim: 'Sim', nao: 'Não', por_definir: 'Por definir' };
+  const INCLUIDO = { sim: 'Incluído', nao: 'Não incluído', qtd_minima: 'Só c/ quantidade mínima' };
+  const UNIDADES_EMB = ['un', 'ml', 'm2', 'm3', 'kg', 'L'];
 
   let eu = null, carregado = false, materiais = [], precos = [], fornecedores = [];
-  let filtro = Hub.recordar('materiais.filtro', { texto: '', fornecedor: '', categoria: '', desatualizado: false });
+  let lista = Object.assign({ texto: '', ordem: { col: 'material', dir: 1 }, filtros: {}, desatualizado: false }, Hub.recordar('materiais.lista', {}));
+  const lembrarLista = () => Hub.lembrar('materiais.lista', lista);
 
   async function ok(p, msg = 'Não foi possível guardar.') { const { data, error } = await p; if (error) { console.error(error); throw new Error(error.code === '23505' ? 'Já existe um registo com esse nome.' : error.code === '23503' ? 'Não é possível apagar: há preços ligados a este fornecedor.' : msg); } return data; }
   const euros = (n) => Number(n || 0).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 4 });
@@ -17,6 +21,32 @@
   const finalComIva = (p) => finalSemIva(p) * (1 + Number(p.iva || 0));
   const desatualizado = (p) => { const d = new Date(p.data_atualizacao + 'T00:00:00'); d.setMonth(d.getMonth() + MESES_DESATUALIZADO); return d < new Date(); };
   const nomeForn = (id) => (fornecedores.find((f) => f.id === id) || {}).nome || '—';
+  const n = (v) => (v == null || v === '' ? null : Number(v));
+
+  // Preço noutras unidades (a partir do preço final sem IVA, das medidas em metros, da quantidade por embalagem e do peso)
+  function conversoes(p) {
+    const P = finalSemIva(p), U = (p.unidade || 'un').toLowerCase();
+    const C = n(p.comprimento), L = n(p.largura), A = n(p.espessura), Q = n(p.qtd_embalagem), peso = n(p.peso_kg);
+    let peca = null;                                  // preço de uma unidade (peça)
+    if (U === 'un') peca = P;
+    else if (U === 'cx') peca = Q ? P / Q : null;
+    else if (U === 'ml') peca = C ? P * C : null;
+    else if (U === 'm2') peca = C && L ? P * C * L : null;
+    else if (U === 'm3') peca = C && L && A ? P * C * L * A : null;
+    const r = { un: peca };
+    r.ml = U === 'ml' ? P : peca && C ? peca / C : U === 'm2' && L ? P * L : U === 'm3' && L && A ? P * L * A : null;
+    r.m2 = U === 'm2' ? P : peca && C && L ? peca / (C * L) : U === 'm3' && A ? P * A : U === 'ml' && L ? P / L : null;
+    r.m3 = U === 'm3' ? P : peca && C && L && A ? peca / (C * L * A) : U === 'm2' && A ? P / A : U === 'ml' && L && A ? P / (L * A) : null;
+    r.emb = U === 'cx' ? P : Q ? (p.qtd_unidade === 'ml' && r.ml ? r.ml * Q : p.qtd_unidade === 'm2' && r.m2 ? r.m2 * Q : peca ? peca * Q : null) : null;
+    r.kg = U === 'kg' ? P : U === 't' ? P / 1000 : peca && peso ? peca / peso : null;
+    r.t = r.kg != null ? r.kg * 1000 : null;
+    return r;
+  }
+  const CONVERSOES = [['un', '€/un'], ['ml', '€/ml'], ['m2', '€/m²'], ['m3', '€/m³'], ['emb', '€/embalagem'], ['kg', '€/kg'], ['t', '€/t']];
+  const medidasTexto = (p) => {
+    const d = [p.comprimento, p.largura, p.espessura].filter((x) => x != null).map((x) => Number(x).toLocaleString('pt-PT') + ' m');
+    return [d.length ? d.join(' × ') : null, p.qtd_embalagem ? `${Number(p.qtd_embalagem).toLocaleString('pt-PT')} ${p.qtd_unidade || 'un'}/emb.` : null, p.peso_kg ? `${Number(p.peso_kg).toLocaleString('pt-PT')} kg` : null].filter(Boolean).join(' · ');
+  };
   const precosDe = (materialId) => precos.filter((p) => p.material_id === materialId).sort((a, b) => finalSemIva(a) - finalSemIva(b));
   function aviso(t, tipo = 'erro') { const m = $('mt-aviso'); m.textContent = t || ''; m.className = 'mensagem ' + (t ? tipo : ''); }
 
@@ -54,54 +84,105 @@
   const opcoes = (lista, valor, vazio) => [el('option', { value: '', text: vazio }), ...lista.map(([v, t]) => el('option', { value: v, text: t, selected: v === valor }))];
   const categorias = () => [...new Set(materiais.map((m) => m.categoria).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 
-  // ======================= LISTA DE MATERIAIS =======================
+  // ======================= LISTA (uma linha por preço) =======================
+  const COLUNAS = [
+    { id: 'material', nome: 'Material', valor: (r) => r.m.nome },
+    { id: 'categoria', nome: 'Categoria', valor: (r) => r.m.categoria || '—', filtro: true },
+    { id: 'fornecedor', nome: 'Fornecedor', valor: (r) => nomeForn(r.p.fornecedor_id), filtro: true },
+    { id: 'preco', nome: 'Final s/ IVA', valor: (r) => finalSemIva(r.p), num: true },
+    { id: 'unidade', nome: 'Unidade', valor: (r) => r.p.unidade || '—', filtro: true },
+    { id: 'transporte', nome: 'Transporte', valor: (r) => TRANSPORTE[r.p.transporte] || '—', filtro: true },
+    { id: 'incluido', nome: 'Incluído', valor: (r) => INCLUIDO[r.p.transporte_incluido] || '—', filtro: true },
+    { id: 'disponibilidade', nome: 'Disponibilidade', valor: (r) => DISPONIBILIDADE[r.p.disponibilidade] || '—', filtro: true },
+    { id: 'data', nome: 'Atualizado', valor: (r) => r.p.data_atualizacao || '' }
+  ];
+  let popup = null;
+  function fecharPopup() { if (popup) { popup.remove(); popup = null; } }
+  document.addEventListener('click', (e) => { if (popup && !popup.contains(e.target) && !e.target.closest('.filtro-col')) fecharPopup(); });
+
   function listaMateriais() {
-    const pesquisa = el('input', { type: 'search', placeholder: 'Procurar material, designação ou fornecedor', value: filtro.texto, 'aria-label': 'Procurar materiais' });
-    const forn = el('select', { 'aria-label': 'Fornecedor' }, opcoes(fornecedores.map((f) => [f.id, f.nome]), filtro.fornecedor, 'Todos os fornecedores'));
-    const cat = el('select', { 'aria-label': 'Categoria' }, opcoes([...categorias().map((c) => [c, c]), ['__sem', 'Sem categoria']], filtro.categoria, 'Todas as categorias'));
-    const desat = el('input', { type: 'checkbox', checked: filtro.desatualizado });
-    const corpo = el('tbody');
-    const contagem = el('p', { class: 'ajuda' });
+    const todas = precos.map((p) => ({ p, m: materiais.find((m) => m.id === p.material_id) || { nome: '—' } }));
+    // o mais barato de cada material com 2+ preços
+    const maisBarato = new Set(materiais.map((m) => precosDe(m.id)).filter((ps) => ps.length > 1).map((ps) => ps[0].id));
+    const pesquisa = el('input', { type: 'search', placeholder: 'Procurar material, nome no fornecedor ou fornecedor', value: lista.texto, 'aria-label': 'Procurar' });
+    const desat = el('input', { type: 'checkbox', checked: lista.desatualizado });
+    const corpo = el('tbody'), cabeca = el('tr'), contagem = el('p', { class: 'ajuda' });
+
+    function desenharCabeca() {
+      cabeca.replaceChildren(...COLUNAS.map((c) => {
+        const ativa = lista.ordem.col === c.id, f = (lista.filtros[c.id] || []).length;
+        return el('th', { class: c.num ? 'num' : '' }, el('div', { class: 'cab-col' }, [
+          el('button', { type: 'button', class: 'ordenar' + (ativa ? ' ativa' : ''), title: 'Ordenar', onclick: () => {
+            lista.ordem = { col: c.id, dir: ativa ? -lista.ordem.dir : 1 }; lembrarLista(); desenharCabeca(); desenharLinhas(); } },
+            [c.nome, el('span', { class: 'seta', text: ativa ? (lista.ordem.dir > 0 ? ' ▲' : ' ▼') : ' ↕' })]),
+          c.filtro ? el('button', { type: 'button', class: 'filtro-col' + (f ? ' ativo' : ''), title: 'Filtrar', 'aria-label': 'Filtrar ' + c.nome,
+            text: f ? `⏷${f}` : '⏷', onclick: (e) => abrirFiltro(c, e.currentTarget) }) : null
+        ].filter(Boolean)));
+      }));
+    }
+
+    function abrirFiltro(c, botao) {
+      fecharPopup();
+      const valores = [...new Set(todas.map(c.valor))].sort((a, b) => String(a).localeCompare(String(b), 'pt'));
+      const sel = new Set(lista.filtros[c.id] || []);
+      const procura = el('input', { type: 'search', placeholder: 'Procurar…', 'aria-label': 'Procurar valores' });
+      const caixas = el('div', { class: 'popup-lista' });
+      const aplicar = () => { lista.filtros[c.id] = [...sel]; if (!sel.size) delete lista.filtros[c.id]; lembrarLista(); desenharCabeca(); desenharLinhas(); };
+      const desenharCaixas = () => caixas.replaceChildren(...valores.filter((v) => normal(v).includes(normal(procura.value))).map((v) =>
+        el('label', {}, [el('input', { type: 'checkbox', checked: sel.has(v), onchange: (e) => { e.target.checked ? sel.add(v) : sel.delete(v); aplicar(); } }), ` ${v} (${todas.filter((r) => c.valor(r) === v).length})`])));
+      procura.addEventListener('input', desenharCaixas);
+      popup = el('div', { class: 'popup-filtro', role: 'dialog', 'aria-label': 'Filtrar ' + c.nome }, [
+        procura, caixas,
+        el('div', { class: 'acoes' }, [el('button', { class: 'botao secundario pequeno', type: 'button', text: 'Limpar', onclick: () => { sel.clear(); aplicar(); desenharCaixas(); } }),
+          el('button', { class: 'botao pequeno', type: 'button', text: 'Fechar', onclick: fecharPopup })])
+      ]);
+      document.body.append(popup);
+      const r = botao.getBoundingClientRect();
+      popup.style.top = `${r.bottom + window.scrollY + 4}px`;
+      popup.style.left = `${Math.max(8, Math.min(r.left + window.scrollX - 120, document.documentElement.clientWidth - popup.offsetWidth - 8))}px`;
+      desenharCaixas(); procura.focus();
+    }
 
     function desenharLinhas() {
-      const t = normal(filtro.texto.trim());
-      const linhas = materiais.map((m) => ({ m, ps: precosDe(m.id) })).filter(({ m, ps }) => {
-        if (filtro.fornecedor && !ps.some((p) => p.fornecedor_id === filtro.fornecedor)) return false;
-        if (filtro.categoria === '__sem' ? m.categoria : filtro.categoria && m.categoria !== filtro.categoria) return false;
-        if (filtro.desatualizado && !ps.some(desatualizado)) return false;
-        if (t && !normal([m.nome, m.categoria, ...ps.map((p) => p.designacao), ...ps.map((p) => nomeForn(p.fornecedor_id))].join(' ')).includes(t)) return false;
+      const t = normal(lista.texto.trim());
+      const col = COLUNAS.find((c) => c.id === lista.ordem.col) || COLUNAS[0];
+      const linhas = todas.filter((r) => {
+        for (const [id, vals] of Object.entries(lista.filtros)) { const c = COLUNAS.find((x) => x.id === id); if (c && vals.length && !vals.includes(c.valor(r))) return false; }
+        if (lista.desatualizado && !desatualizado(r.p)) return false;
+        if (t && !normal([r.m.nome, r.m.categoria, r.p.designacao, nomeForn(r.p.fornecedor_id)].join(' ')).includes(t)) return false;
         return true;
-      });
-      contagem.textContent = `${linhas.length} de ${materiais.length} materiais`;
-      corpo.replaceChildren(...(linhas.length ? linhas.map(({ m, ps }) => {
-        const melhor = ps[0];
-
-        return el('tr', { class: 'clicavel', onclick: () => Hub.ir('materiais/' + m.id), title: 'Abrir' }, [
-          el('td', {}, [el('strong', { text: m.nome }), melhor && melhor.designacao && melhor.designacao !== m.nome ? el('div', { class: 'ajuda', style: 'margin:0', text: melhor.designacao }) : null].filter(Boolean)),
-          el('td', { text: m.categoria || '—' }),
-          el('td', { class: 'num' }, melhor ? [el('strong', { text: euros(finalSemIva(melhor)) }), el('span', { class: 'ajuda', text: ` /${melhor.unidade || 'un'}` })] : '—'),
-          el('td', { text: melhor ? nomeForn(melhor.fornecedor_id) : '—' }),
-          el('td', { class: 'num', text: ps.length > 1 ? `${ps.length} fornecedores` : ps.length ? '1' : '—' }),
-          el('td', {}, melhor ? el('span', { class: desatualizado(melhor) ? 'estado aviso' : '', title: desatualizado(melhor) ? `Mais de ${MESES_DESATUALIZADO} meses` : '', text: dataPT(melhor.data_atualizacao) }) : '—')
-        ]);
-      }) : [el('tr', {}, el('td', { colspan: 6, text: 'Nenhum material com estes filtros.' }))]));
+      }).sort((a, b) => { const x = col.valor(a), y = col.valor(b); return lista.ordem.dir * (col.num ? x - y : String(x).localeCompare(String(y), 'pt', { numeric: true })); });
+      contagem.textContent = `${linhas.length} de ${todas.length} preços · ${materiais.length} materiais`;
+      corpo.replaceChildren(...(linhas.length ? linhas.map(({ p, m }) => el('tr', { class: 'clicavel', title: 'Abrir o material', onclick: () => Hub.ir('materiais/' + m.id) }, [
+        el('td', {}, [el('strong', { text: m.nome }), p.designacao && p.designacao !== m.nome ? el('div', { class: 'ajuda', style: 'margin:0', text: p.designacao }) : null].filter(Boolean)),
+        el('td', { text: m.categoria || '—' }),
+        el('td', {}, el('a', { href: '/materiais/fornecedores/' + p.fornecedor_id, onclick: (e) => e.stopPropagation(), text: nomeForn(p.fornecedor_id) })),
+        el('td', { class: 'num' }, [el('strong', { text: euros(finalSemIva(p)) }), maisBarato.has(p.id) ? el('div', {}, el('span', { class: 'estado sim', text: 'Mais barato' })) : null].filter(Boolean)),
+        el('td', { text: p.unidade || '—' }),
+        el('td', { text: TRANSPORTE[p.transporte] || '—' }),
+        el('td', { text: INCLUIDO[p.transporte_incluido] || '—' }),
+        el('td', { text: DISPONIBILIDADE[p.disponibilidade] || '—' }),
+        el('td', {}, el('span', { class: desatualizado(p) ? 'estado aviso' : '', title: desatualizado(p) ? `Mais de ${MESES_DESATUALIZADO} meses` : '', text: dataPT(p.data_atualizacao) }))
+      ])) : [el('tr', {}, el('td', { colspan: COLUNAS.length, text: 'Nenhum preço com estes filtros.' }))]));
     }
-    const mudar = () => { filtro = { texto: pesquisa.value, fornecedor: forn.value, categoria: cat.value, desatualizado: desat.checked }; Hub.lembrar('materiais.filtro', filtro); desenharLinhas(); };
-    pesquisa.addEventListener('input', mudar); [forn, cat, desat].forEach((x) => x.addEventListener('change', mudar));
+    pesquisa.addEventListener('input', () => { lista.texto = pesquisa.value; lembrarLista(); desenharLinhas(); });
+    desat.addEventListener('change', () => { lista.desatualizado = desat.checked; lembrarLista(); desenharLinhas(); });
+    const limpar = el('button', { class: 'botao secundario pequeno', type: 'button', text: 'Limpar filtros', onclick: () => {
+      lista = { texto: '', ordem: { col: 'material', dir: 1 }, filtros: {}, desatualizado: false }; lembrarLista(); listaMateriais(); } });
 
     $('mt-conteudo').replaceChildren(
       el('div', { class: 'barra' }, [
-        el('div', {}, [el('h1', { class: 'titulo', text: 'Materiais' }), el('p', { class: 'subtitulo', style: 'margin:0', text: 'Preço final sem IVA (com desconto). O mais barato de cada material aparece primeiro.' })]),
-        el('button', { class: 'botao', type: 'button', text: '+ Novo material', onclick: () => abrirMaterial(null) })
+        el('div', {}, [el('h1', { class: 'titulo', text: 'Materiais' }), el('p', { class: 'subtitulo', style: 'margin:0', text: 'Um preço por linha. Clique no título de uma coluna para ordenar; em ⏷ para filtrar.' })]),
+        el('div', { class: 'acoes-form' }, [
+          el('button', { class: 'botao secundario', type: 'button', text: 'Importar Excel', onclick: abrirImportar }),
+          el('button', { class: 'botao', type: 'button', text: '+ Novo material', onclick: () => abrirPreco(null, null) })
+        ])
       ]),
-      el('div', { class: 'filtros' }, [pesquisa, forn, cat, el('label', { class: 'interruptor' }, [desat, `Preço com mais de ${MESES_DESATUALIZADO} meses`])]),
+      el('div', { class: 'filtros' }, [pesquisa, el('label', { class: 'interruptor' }, [desat, `Preço com mais de ${MESES_DESATUALIZADO} meses`]), limpar]),
       contagem,
-      el('div', { class: 'tabela-envolvente' }, el('table', { class: 'tabela-materiais' }, [
-        el('thead', {}, el('tr', {}, ['Material', 'Categoria', 'Melhor preço s/ IVA', 'Fornecedor', 'Preços', 'Atualizado'].map((t) => el('th', { text: t })))),
-        corpo
-      ]))
+      el('div', { class: 'tabela-envolvente' }, el('table', { class: 'tabela-materiais' }, [el('thead', {}, cabeca), corpo]))
     );
-    desenharLinhas();
+    desenharCabeca(); desenharLinhas();
   }
 
   // ======================= FICHA DO MATERIAL =======================
@@ -121,19 +202,21 @@
       ]),
       el('h2', { class: 'titulo-grupo', text: `Preços por fornecedor (${ps.length})` }),
       ps.length ? el('div', { class: 'tabela-envolvente' }, el('table', {}, [
-        el('thead', {}, el('tr', {}, ['Fornecedor', 'Designação', 'Preço', 'Desconto', 'Final s/ IVA', 'Final c/ IVA', 'Disponibilidade', 'Atualizado', ''].map((t) => el('th', { text: t })))),
-        el('tbody', {}, ps.map((p, i) => el('tr', { class: i === 0 && ps.length > 1 ? 'melhor' : '' }, [
+        el('thead', {}, el('tr', {}, ['Fornecedor', 'Nome no fornecedor', 'Preço', 'Desconto', 'Final s/ IVA', 'Final c/ IVA', 'Transporte', 'Disponibilidade', 'Atualizado', ''].map((t) => el('th', { text: t })))),
+        el('tbody', {}, ps.map((p, i) => el('tr', { class: 'clicavel' + (i === 0 && ps.length > 1 ? ' melhor' : ''), title: 'Editar este preço', onclick: (e) => { if (!e.target.closest('a, button')) abrirPreco(p, m); } }, [
           el('td', {}, [el('a', { href: '/materiais/fornecedores/' + p.fornecedor_id, text: nomeForn(p.fornecedor_id) }), i === 0 && ps.length > 1 ? el('span', { class: 'estado sim', text: ' Mais barato' }) : null].filter(Boolean)),
-          el('td', {}, [p.designacao || '—', p.dimensoes ? el('div', { class: 'ajuda', style: 'margin:0', text: p.dimensoes }) : null, p.detalhes ? el('div', { class: 'ajuda', style: 'margin:0', text: p.detalhes }) : null].filter(Boolean)),
+          el('td', {}, [p.designacao || '—', medidasTexto(p) ? el('div', { class: 'ajuda', style: 'margin:0', text: medidasTexto(p) }) : null, p.detalhes ? el('div', { class: 'ajuda', style: 'margin:0', text: p.detalhes }) : null].filter(Boolean)),
           el('td', { class: 'num', text: `${euros(p.preco)} /${p.unidade || 'un'}` }),
           el('td', { class: 'num', text: Number(p.desconto) ? pct(p.desconto) : '—' }),
           el('td', { class: 'num' }, el('strong', { text: euros(finalSemIva(p)) })),
           el('td', { class: 'num', title: `IVA ${pct(p.iva)}`, text: euros(finalComIva(p)) }),
+          el('td', { text: [TRANSPORTE[p.transporte], p.transporte === 'sim' ? INCLUIDO[p.transporte_incluido] : null].filter(Boolean).join(' · ') || '—' }),
           el('td', { text: [DISPONIBILIDADE[p.disponibilidade], p.prazo_dias != null ? `${p.prazo_dias} dias` : null].filter(Boolean).join(' · ') || '—' }),
           el('td', {}, el('span', { class: desatualizado(p) ? 'estado aviso' : '', text: dataPT(p.data_atualizacao), title: desatualizado(p) ? `Mais de ${MESES_DESATUALIZADO} meses` : '' })),
           el('td', {}, el('button', { class: 'botao secundario pequeno', type: 'button', text: 'Editar', title: 'Editar este preço', onclick: () => abrirPreco(p, m) }))
         ])))
       ])) : el('div', { class: 'vazio', text: 'Ainda sem preços. Acrescente o primeiro com "+ Preço de fornecedor".' }),
+      caixaConversoes(ps),
       el('h2', { class: 'titulo-grupo', text: 'Histórico de preços' }),
       historico
     );
@@ -146,6 +229,27 @@
         el('td', { class: 'num', text: Number(x.desconto) ? pct(x.desconto) : '—' }), el('td', { class: 'num', text: euros(Number(x.preco) * (1 - Number(x.desconto))) }),
         el('td', { text: dataPT(x.data_atualizacao) }), el('td', { text: new Date(x.registado_em).toLocaleDateString('pt-PT') })]); }))
     ])) : el('p', { class: 'ajuda', text: 'Ainda sem alterações de preço. Quando um preço mudar, o anterior fica aqui.' }));
+  }
+
+  // Caixa de conversões: o preço de cada fornecedor por unidade, ml, m², m³, embalagem, kg e tonelada
+  function caixaConversoes(ps) {
+    if (!ps.length) return null;
+    const linhas = ps.map((p) => ({ p, c: conversoes(p) }));
+    const cols = CONVERSOES.filter(([k]) => linhas.some((l) => l.c[k] != null));
+    const minimo = Object.fromEntries(cols.map(([k]) => [k, Math.min(...linhas.map((l) => l.c[k]).filter((v) => v != null))]));
+    return el('section', { class: 'painel conversoes' }, [
+      el('h2', { class: 'titulo', text: 'Conversões' }),
+      cols.length > 1 ? el('div', { class: 'tabela-envolvente' }, el('table', {}, [
+        el('thead', {}, el('tr', {}, [el('th', { text: 'Fornecedor' }), el('th', { text: 'Medidas' }), ...cols.map(([, t]) => el('th', { class: 'num', text: t }))])),
+        el('tbody', {}, linhas.map(({ p, c }) => el('tr', {}, [
+          el('td', { text: nomeForn(p.fornecedor_id) }), el('td', { class: 'ajuda', text: medidasTexto(p) || '—' }),
+          ...cols.map(([k]) => el('td', { class: 'num' + (ps.length > 1 && c[k] != null && c[k] === minimo[k] ? ' minimo' : '') }, c[k] != null ? euros(c[k]) : '—'))
+        ])))
+      ])) : null,
+      el('p', { class: 'ajuda', text: cols.length > 1
+        ? 'Calculado a partir do preço final sem IVA, das medidas (em metros), da quantidade por embalagem e do peso. O valor mais baixo de cada coluna aparece a verde.'
+        : 'Para ver o preço por ml, m², m³, embalagem ou kg, preencha as medidas, a quantidade por embalagem ou o peso no preço ("Editar").' })
+    ]);
   }
 
   // ======================= FORNECEDORES =======================
@@ -210,20 +314,32 @@
   }
   function abrirPreco(p, m) {
     precoAtual = p; precoMaterial = m;
-    $('dp2-titulo').textContent = (p ? 'Editar preço · ' : 'Novo preço · ') + m.nome;
+    const novo = !m;
+    $('dp2-titulo').textContent = novo ? 'Novo material' : (p ? 'Editar preço · ' : 'Novo preço · ') + m.nome;
+    $('mp-bloco-material').hidden = !novo;
+    if (novo) { $('mpm-nome').value = ''; $('mpm-categoria').value = ''; $('mpm-notas').value = ''; $('categorias-lista').replaceChildren(...categorias().map((c) => el('option', { value: c }))); }
     $('mp-fornecedor').replaceChildren(...opcoes(fornecedores.map((f) => [f.id, f.nome]), p ? p.fornecedor_id : '', '— Escolher fornecedor —'));
     const v = (c, padrao = '') => (p && p[c] != null ? p[c] : padrao);
-    $('mp-designacao').value = v('designacao', m.nome); $('mp-dimensoes').value = v('dimensoes'); $('mp-detalhes').value = v('detalhes');
+    $('mp-designacao').value = v('designacao', m ? m.nome : ''); $('mp-detalhes').value = v('detalhes');
+    for (const c of ['comprimento', 'largura', 'espessura', 'qtd_embalagem', 'peso_kg']) $('mp-' + c).value = v(c);
+    $('mp-qtd_unidade').value = v('qtd_unidade', 'un');
     $('mp-preco').value = v('preco'); $('mp-unidade').value = v('unidade', 'un');
     $('mp-desconto').value = p ? Math.round(Number(p.desconto) * 10000) / 100 : 0; $('mp-iva').value = p ? Math.round(Number(p.iva) * 10000) / 100 : 23;
+    $('mp-transporte').value = v('transporte'); $('mp-transporte_incluido').value = v('transporte_incluido');
     $('mp-disponibilidade').value = v('disponibilidade'); $('mp-prazo').value = v('prazo_dias');
     $('mp-data').value = p ? p.data_atualizacao : new Date().toLocaleDateString('sv'); $('mp-obs').value = v('observacoes');
     $('mp-apagar').hidden = !p; $('mp-mensagem').textContent = '';
     calcular(); $('d-preco').showModal();
+    (novo ? $('mpm-nome') : $('mp-fornecedor')).focus();
   }
   function calcular() {
     const preco = parseFloat($('mp-preco').value), desc = (parseFloat($('mp-desconto').value) || 0) / 100, iva = (parseFloat($('mp-iva').value) || 0) / 100;
     $('mp-final').textContent = isNaN(preco) ? '' : `Final: ${euros(preco * (1 - desc))} sem IVA · ${euros(preco * (1 - desc) * (1 + iva))} com IVA`;
+    // pré-visualização das conversões
+    const num = (id) => ($(id).value === '' ? null : parseFloat($(id).value));
+    const c = isNaN(preco) ? {} : conversoes({ preco, desconto: desc, unidade: $('mp-unidade').value, comprimento: num('mp-comprimento'), largura: num('mp-largura'),
+      espessura: num('mp-espessura'), qtd_embalagem: num('mp-qtd_embalagem'), qtd_unidade: $('mp-qtd_unidade').value, peso_kg: num('mp-peso_kg') });
+    $('mp-conv').textContent = CONVERSOES.filter(([k]) => c[k] != null).map(([k, t]) => `${t} ${euros(c[k])}`).join(' · ');
   }
   function abrirFornecedor(f) {
     fornecedorAtual = f;
@@ -236,7 +352,110 @@
     $('d-fornecedor').showModal();
   }
 
+  // ======================= IMPORTAR EXCEL =======================
+  // Junta: acrescenta fornecedores, materiais e preços novos; atualiza os preços que mudaram (o anterior vai para o histórico).
+  // Preços alterados no Hub depois da data do Excel ficam como estão.
+  const CAMPOS_PRECO = ['designacao', 'detalhes', 'preco', 'unidade', 'desconto', 'iva', 'comprimento', 'largura', 'espessura', 'qtd_embalagem', 'qtd_unidade',
+    'transporte', 'transporte_incluido', 'disponibilidade', 'prazo_dias', 'data_atualizacao', 'observacoes'];
+  let plano = null;
+  function carregarSheetJS() {
+    if (window.XLSX) return Promise.resolve();
+    return new Promise((ok, falha) => document.head.append(el('script', {
+      src: 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js', onload: ok, onerror: () => falha(new Error('Não foi possível carregar o leitor de Excel.')) })));
+  }
+  function abrirImportar() {
+    plano = null;
+    $('di-ficheiro').value = ''; $('di-resumo').replaceChildren(); $('di-aplicar').hidden = true; $('di-mensagem').textContent = '';
+    $('d-importar').showModal();
+  }
+  const igual = (a, b) => (a == null || a === '') && (b == null || b === '') ? true
+    : typeof a === 'number' || typeof b === 'number' || (!isNaN(parseFloat(a)) && !isNaN(parseFloat(b)) && /^-?[\d.]+$/.test(String(a)) && /^-?[\d.]+$/.test(String(b)))
+      ? Math.abs(Number(a) - Number(b)) < 1e-6 : String(a ?? '') === String(b ?? '');
+
+  async function analisar(ficheiro) {
+    $('di-resumo').replaceChildren(el('p', { class: 'carregar', text: 'A ler o Excel…' }));
+    await carregarSheetJS();
+    const wb = XLSX.read(await ficheiro.arrayBuffer(), { cellDates: true });
+    const folha = wb.Sheets['Geral Materiais'];
+    if (!folha) throw new Error('O ficheiro não tem a folha "Geral Materiais".');
+    const lido = LerMateriais.ler(XLSX.utils.sheet_to_json(folha, { header: 1, raw: true, defval: null }));
+    await carregar();
+    const fornPorNome = new Map(fornecedores.map((f) => [f.nome.toLowerCase(), f]));
+    const matPorNome = new Map(materiais.map((m) => [m.nome.toLowerCase(), m]));
+    const precoPorChave = new Map(precos.map((p) => [`${p.fornecedor_id}|${(p.designacao || '').toLowerCase()}`, p]));
+    const novosForn = lido.fornecedores.filter((f) => !fornPorNome.has(f.nome.toLowerCase()));
+    const novosMat = [...new Set(lido.precos.map((p) => p.material).filter((nm) => !matPorNome.has(nm.toLowerCase())))];
+    const novos = [], alterados = [], iguais = [], maisRecentesHub = [];
+    for (const p of lido.precos) {
+      const f = fornPorNome.get(p.fornecedor.toLowerCase());
+      const atual = f && precoPorChave.get(`${f.id}|${p.designacao.toLowerCase()}`);
+      if (!atual) { novos.push(p); continue; }
+      const mud = CAMPOS_PRECO.filter((c) => p[c] !== undefined && !(c === 'data_atualizacao' && !p[c]) && !igual(p[c], atual[c]));
+      if (!mud.length) iguais.push(p);
+      else if (p.data_atualizacao && atual.data_atualizacao > p.data_atualizacao) maisRecentesHub.push(p);
+      else alterados.push({ p, atual, mud });
+    }
+    plano = { lido, novosForn, novosMat, novos, alterados, iguais, maisRecentesHub };
+    const precoMudou = alterados.filter((a) => a.mud.some((c) => ['preco', 'desconto', 'iva', 'unidade'].includes(c)));
+    $('di-resumo').replaceChildren(...[
+      el('ul', { class: 'resumo-importar' }, [
+        el('li', {}, [el('strong', { text: lido.precos.length }), ' preços no Excel', lido.repetidas ? ` (${lido.repetidas} linhas repetidas: fica a mais recente)` : '']),
+        el('li', {}, [el('strong', { text: novosForn.length }), ' fornecedores novos']),
+        el('li', {}, [el('strong', { text: novosMat.length }), ' materiais novos']),
+        el('li', {}, [el('strong', { text: novos.length }), ' preços novos']),
+        el('li', {}, [el('strong', { text: alterados.length }), ` preços a atualizar (${precoMudou.length} com o valor alterado — o anterior fica no histórico)`]),
+        el('li', {}, [el('strong', { text: iguais.length }), ' sem alterações']),
+        maisRecentesHub.length ? el('li', {}, [el('strong', { text: maisRecentesHub.length }), ' alterados no Hub depois da data do Excel (ficam como estão)']) : null,
+        lido.ignoradas.length ? el('li', {}, [el('strong', { text: lido.ignoradas.length }), ' linhas ignoradas: ', lido.ignoradas.map((x) => `linha ${x.linha} (${x.motivo})`).join(', ')]) : null
+      ].filter(Boolean)),
+      precoMudou.length ? el('details', {}, [el('summary', { text: 'Ver os preços que mudam' }),
+        el('ul', { class: 'mudancas' }, precoMudou.slice(0, 200).map(({ p, atual }) => el('li', {}, `${p.designacao} · ${p.fornecedor}: ${euros(finalSemIva(atual))} → ${euros(finalSemIva(p))}`)))]) : null,
+      el('p', { class: 'ajuda', text: 'Nada é apagado. Os fornecedores existentes só recebem os dados que lhes faltam.' })
+    ].filter(Boolean));
+    $('di-aplicar').hidden = !(novosForn.length || novosMat.length || novos.length || alterados.length);
+    if ($('di-aplicar').hidden) $('di-mensagem').textContent = 'O Hub já está igual ao Excel.';
+  }
+
+  async function aplicar() {
+    const { lido, novosForn, novosMat, novos, alterados } = plano;
+    const progresso = $('di-progresso'), b = $('di-aplicar');
+    b.disabled = true; progresso.hidden = false;
+    const total = novosForn.length + novosMat.length + novos.length + alterados.length; let feitos = 0;
+    const passo = (n = 1) => { feitos += n; progresso.value = Math.round((feitos / total) * 100); };
+    const lotes = (lista, tam = 200) => Array.from({ length: Math.ceil(lista.length / tam) }, (_, i) => lista.slice(i * tam, i * tam + tam));
+    try {
+      if (novosForn.length) { await ok(sb.from('fornecedores').insert(novosForn), 'Não foi possível criar os fornecedores.'); passo(novosForn.length); }
+      // dados que faltam nos fornecedores existentes
+      for (const f of lido.fornecedores) {
+        const atual = fornecedores.find((x) => x.nome.toLowerCase() === f.nome.toLowerCase()); if (!atual) continue;
+        const falta = Object.fromEntries(Object.entries(f).filter(([k, v]) => k !== 'nome' && v != null && (atual[k] == null || atual[k] === '')));
+        if (Object.keys(falta).length) await ok(sb.from('fornecedores').update(falta).eq('id', atual.id));
+      }
+      for (const l of lotes(novosMat)) { await ok(sb.from('materiais').insert(l.map((nome) => ({ nome }))), 'Não foi possível criar os materiais.'); passo(l.length); }
+      await carregar();
+      const fId = new Map(fornecedores.map((f) => [f.nome.toLowerCase(), f.id])), mId = new Map(materiais.map((m) => [m.nome.toLowerCase(), m.id]));
+      const linha = (p) => { const r = { material_id: mId.get(p.material.toLowerCase()), fornecedor_id: fId.get(p.fornecedor.toLowerCase()) };
+        for (const c of CAMPOS_PRECO) r[c] = p[c] ?? null; if (!r.data_atualizacao) r.data_atualizacao = new Date().toLocaleDateString('sv'); return r; };
+      for (const l of lotes(novos)) { await ok(sb.from('material_precos').insert(l.map(linha)), 'Não foi possível criar os preços.'); passo(l.length); }
+      // atualizações: 6 de cada vez
+      for (const l of lotes(alterados, 6)) {
+        await Promise.all(l.map(({ p, atual, mud }) => ok(sb.from('material_precos').update(Object.fromEntries(mud.map((c) => [c, p[c] ?? null]))).eq('id', atual.id), 'Não foi possível atualizar um preço.')));
+        passo(l.length);
+      }
+      $('d-importar').close();
+      aviso(`Importação concluída: ${novos.length} preços novos, ${alterados.length} atualizados, ${novosMat.length} materiais e ${novosForn.length} fornecedores novos.`, 'ok');
+      await recarregar();
+    } catch (e) { $('di-mensagem').textContent = e.message + ' O que já foi importado ficou guardado; pode voltar a importar o mesmo ficheiro para continuar.'; }
+    finally { b.disabled = false; progresso.hidden = true; }
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
+    $('di-ficheiro').addEventListener('change', async (e) => {
+      const f = e.target.files[0]; if (!f) return;
+      $('di-mensagem').textContent = ''; $('di-aplicar').hidden = true;
+      try { await analisar(f); } catch (err) { $('di-resumo').replaceChildren(); $('di-mensagem').textContent = err.message; }
+    });
+    $('di-aplicar').addEventListener('click', aplicar);
     const enviar = (form, fn) => $(form).addEventListener('submit', async (ev) => { if (!ev.submitter || ev.submitter.value !== 'ok') return; ev.preventDefault(); await fn(); });
     // material
     enviar('f-material', async () => {
@@ -256,18 +475,40 @@
     // preço
     // ao mudar o valor, a data de atualização passa a ser hoje
     ['mp-preco', 'mp-desconto', 'mp-iva'].forEach((id) => $(id).addEventListener('input', () => { calcular(); $('mp-data').value = new Date().toLocaleDateString('sv'); }));
+    ['mp-unidade', 'mp-comprimento', 'mp-largura', 'mp-espessura', 'mp-qtd_embalagem', 'mp-qtd_unidade', 'mp-peso_kg'].forEach((id) => $(id).addEventListener('input', calcular));
+    // fornecedor escolhido num preço novo: sugere o transporte desse fornecedor
+    $('mp-fornecedor').addEventListener('change', () => {
+      const f = fornecedores.find((x) => x.id === $('mp-fornecedor').value); if (!f || precoAtual) return;
+      if (!$('mp-transporte').value && f.transporte != null) $('mp-transporte').value = f.transporte ? 'sim' : 'nao';
+      if (!$('mp-transporte_incluido').value && f.transporte_pago != null) $('mp-transporte_incluido').value = f.transporte_pago ? 'sim' : 'nao';
+    });
     enviar('f-preco', async () => {
       const num = (id) => ($(id).value === '' ? null : parseFloat($(id).value));
-      const r = { material_id: precoMaterial.id, fornecedor_id: $('mp-fornecedor').value || null, designacao: $('mp-designacao').value.trim() || null,
-        dimensoes: $('mp-dimensoes').value.trim() || null, detalhes: $('mp-detalhes').value.trim() || null, preco: num('mp-preco'), unidade: $('mp-unidade').value.trim() || null,
+      const r = { material_id: precoMaterial ? precoMaterial.id : null, fornecedor_id: $('mp-fornecedor').value || null, designacao: $('mp-designacao').value.trim() || null,
+        detalhes: $('mp-detalhes').value.trim() || null, preco: num('mp-preco'), unidade: $('mp-unidade').value.trim() || null,
+        comprimento: num('mp-comprimento'), largura: num('mp-largura'), espessura: num('mp-espessura'), qtd_embalagem: num('mp-qtd_embalagem'),
+        qtd_unidade: $('mp-qtd_embalagem').value === '' ? null : $('mp-qtd_unidade').value, peso_kg: num('mp-peso_kg'),
+        transporte: $('mp-transporte').value || null, transporte_incluido: $('mp-transporte').value === 'sim' ? ($('mp-transporte_incluido').value || null) : null,
         desconto: (num('mp-desconto') || 0) / 100, iva: (num('mp-iva') ?? 23) / 100, disponibilidade: $('mp-disponibilidade').value || null,
         prazo_dias: $('mp-prazo').value === '' ? null : parseInt($('mp-prazo').value, 10), data_atualizacao: $('mp-data').value || new Date().toLocaleDateString('sv'),
         observacoes: $('mp-obs').value.trim() || null };
       if (!r.fornecedor_id) { $('mp-mensagem').textContent = 'Escolha o fornecedor.'; return; }
       if (r.preco == null || isNaN(r.preco) || r.preco < 0) { $('mp-mensagem').textContent = 'Indique o preço sem IVA.'; return; }
       if (r.desconto < 0 || r.desconto >= 1) { $('mp-mensagem').textContent = 'O desconto tem de estar entre 0 e 99%.'; return; }
-      try { await ok(precoAtual ? sb.from('material_precos').update(r).eq('id', precoAtual.id) : sb.from('material_precos').insert(r)); $('d-preco').close(); await recarregar(); }
-      catch (e) { $('mp-mensagem').textContent = e.message; }
+      for (const c of ['comprimento', 'largura', 'espessura', 'qtd_embalagem', 'peso_kg']) if (r[c] != null && !(r[c] > 0)) { $('mp-mensagem').textContent = 'As medidas, a quantidade e o peso têm de ser maiores que zero.'; return; }
+      try {
+        if (!precoMaterial) {
+          // janela completa: cria o material e o primeiro preço
+          const nome = $('mpm-nome').value.trim();
+          if (!nome) { $('mp-mensagem').textContent = 'Indique o nome do material.'; return; }
+          const novo = await ok(sb.from('materiais').insert({ nome, categoria: $('mpm-categoria').value.trim() || null, notas: $('mpm-notas').value.trim() || null }).select('id').single());
+          r.material_id = novo.id;
+          if (!r.designacao) r.designacao = nome;
+          await ok(sb.from('material_precos').insert(r), 'O material foi criado, mas não o preço.');
+          $('d-preco').close(); await carregar(); Hub.ir('materiais/' + novo.id); return;
+        }
+        await ok(precoAtual ? sb.from('material_precos').update(r).eq('id', precoAtual.id) : sb.from('material_precos').insert(r)); $('d-preco').close(); await recarregar();
+      } catch (e) { $('mp-mensagem').textContent = e.message; }
     });
     $('mp-apagar').addEventListener('click', async () => {
       if (!confirm(`Apagar o preço de ${nomeForn(precoAtual.fornecedor_id)}? O histórico deste preço também é apagado.`)) return;
