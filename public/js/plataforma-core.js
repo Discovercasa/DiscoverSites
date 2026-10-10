@@ -12,6 +12,7 @@
 
   window.PlataformaCore = {
     url: URL,
+    chave: CHAVE_PUBLICA,
     cliente: window.supabase.createClient(URL, CHAVE_PUBLICA),
     papeis: {
       admin: 'ADMIN',

@@ -20,7 +20,7 @@
   // ---------- rota: "obras", "obras/nova", "obras/<id>", "obras/<id>/editar" ----------
   async function mostrar(rota, utilizador) {
     eu = utilizador; gestor = Hub.ehGestor(eu);
-    const [, id, acao] = rota.split('/');
+    const [, id, acao, extra] = rota.split('/');
     const c = $('obras-conteudo');
     c.replaceChildren(el('p', { class: 'carregar', text: 'A carregar…' }));
     aviso('');
@@ -31,7 +31,7 @@
       const o = obras.find((x) => x.id === id);
       if (!o) { c.replaceChildren(el('div', { class: 'vazio', text: 'Obra não encontrada.' })); return; }
       if (acao === 'editar' && gestor) return formulario(o);
-      return paginaObra(o, acao || 'inicio');
+      return paginaObra(o, acao || 'inicio', extra);
     }
     lista();
   }
@@ -49,7 +49,7 @@
       const t = filtro.texto.toLowerCase();
       const vis = obras.filter((o) => (!filtro.estado || o.estado === filtro.estado) &&
         (!t || [o.codigo, o.nome, o.localidade].some((v) => (v || '').toLowerCase().includes(t))));
-      grelha.replaceChildren(...(vis.length ? vis.map((o) => el('a', { class: 'cartao', href: '#obras/' + o.id }, [
+      grelha.replaceChildren(...(vis.length ? vis.map((o) => el('a', { class: 'cartao', href: '/obras/' + o.id }, [
         o.codigo ? el('div', { class: 'codigo', text: o.codigo }) : null,
         el('h2', { class: 'titulo', text: o.nome }),
         el('p', { text: o.localidade || o.morada || 'Sem localidade' }),
@@ -60,15 +60,36 @@
     pesquisa.addEventListener('input', () => { filtro.texto = pesquisa.value; desenharCartoes(); });
     estado.addEventListener('change', () => { filtro.estado = estado.value; desenharCartoes(); });
 
-    $('obras-conteudo').replaceChildren(
+    $('obras-conteudo').replaceChildren(...[
       el('div', { class: 'barra' }, [
         el('div', {}, [el('h1', { class: 'titulo', text: 'Obras' }), el('p', { class: 'subtitulo', style: 'margin:0', text: gestor ? 'Todas as obras.' : 'As obras a que tem acesso.' })]),
-        gestor ? el('a', { class: 'botao', href: '#obras/nova', text: '+ Nova obra' }) : null
+        gestor ? el('a', { class: 'botao', href: '/obras/nova', text: '+ Nova obra' }) : null
       ]),
       el('div', { class: 'filtros' }, [pesquisa, estado]),
+      gestor ? el('div', { id: 'estado-drive', class: 'estado-drive' }) : null,
       grelha
-    );
+    ].filter(Boolean));
     desenharCartoes();
+    if (gestor) mostrarEstadoDrive();
+  }
+
+  // ---------- Google Drive (estado da ligação) ----------
+  async function mostrarEstadoDrive() {
+    const c = $('estado-drive'); if (!c) return;
+    const p = new URLSearchParams(location.search).get('drive');
+    if (p) history.replaceState(null, '', location.pathname);
+    const avisoLigacao = { ligado: ['ok', 'Google Drive ligado com sucesso.'], cancelado: ['erro', 'A ligação ao Google Drive foi cancelada.'],
+      invalido: ['erro', 'O pedido de ligação expirou. Tente de novo.'], erro: ['erro', 'Não foi possível ligar o Google Drive. Tente de novo.'] }[p];
+    if (avisoLigacao) aviso(avisoLigacao[1], avisoLigacao[0]);
+    try {
+      const e = await ObraDrive.estado();
+      c.replaceChildren(e.ligado
+        ? el('span', {}, [el('span', { class: 'estado sim', text: 'Google Drive ligado' }), e.email ? ` · ${e.email} · pasta "Discovercasa Sites / Obras"` : ''])
+        : el('span', {}, [el('span', { class: 'estado nao', text: 'Google Drive não ligado' }), ' ',
+            eu.papel === 'admin' ? el('button', { class: 'botao pequeno', type: 'button', text: 'Ligar Google Drive', onclick: async (ev) => {
+              ev.target.disabled = true; try { await ObraDrive.ligar(); } catch (err) { aviso(err.message); ev.target.disabled = false; } } })
+              : el('span', { class: 'ajuda', text: 'Só um ADMIN pode ligar.' })]));
+    } catch (err) { c.replaceChildren(el('span', { class: 'ajuda', text: err.message })); }
   }
 
   // ---------- ficha ----------
@@ -101,7 +122,7 @@
       pedidos.replaceChildren(el('h2', { class: 'titulo', text: 'Pedidos e falhas' }),
         el('div', { class: 'total-ficha' }, [el('strong', { class: 'pct', text: String(n) }),
           el('div', {}, [el('span', { text: n === 1 ? 'pedido em aberto' : 'pedidos em aberto' }), u ? el('div', {}, el('span', { class: 'estado nao', text: `${u} urgente${u === 1 ? '' : 's'}` })) : null])]),
-        el('a', { class: 'botao secundario pequeno', href: `#obras/${o.id}/pedidos`, text: 'Ver pedidos', style: 'margin-top:.8rem' }));
+        el('a', { class: 'botao secundario pequeno', href: `/obras/${o.id}/pedidos`, text: 'Ver pedidos', style: 'margin-top:.8rem' }));
     });
 
     sb.rpc('progresso_obra', { p_obra: o.id }).then(({ data: p, error }) => {
@@ -114,7 +135,7 @@
           el('div', {}, [el('div', { class: 'progresso', role: 'progressbar', 'aria-valuenow': pct, 'aria-valuemin': 0, 'aria-valuemax': 100 }, el('div', { style: `width:${pct}%` })),
             el('span', { class: 'ajuda', text: `${r.feitos} de ${r.total} checks feitos, em todas as fases` })])
         ]),
-        el('a', { class: 'botao secundario pequeno', href: '#checklist/' + o.id, text: 'Abrir checklist', style: 'margin-top:.8rem' }));
+        el('a', { class: 'botao secundario pequeno', href: '/checklist/' + o.id, text: 'Abrir checklist', style: 'margin-top:.8rem' }));
     });
 
     if (membros) {
@@ -133,21 +154,21 @@
     ['inicio', 'Início'], ['projeto', 'Projeto'], ['mapa', 'Mapa'], ['documentos', 'Documentos'],
     ['fotos', 'Fotos'], ['entregas', 'Entregas'], ['pedidos', 'Pedidos']
   ];
-  function paginaObra(o, aba) {
+  function paginaObra(o, aba, extra) {
     const abas = ABAS.filter(([id]) => !(id === 'entregas' && eu.papel === 'cliente'));
     if (!abas.some(([id]) => id === aba)) aba = 'inicio';
     const alvo = el('div', { class: 'conteudo-aba' }, el('p', { class: 'carregar', text: 'A carregar…' }));
     $('obras-conteudo').replaceChildren(
-      el('a', { class: 'voltar', href: '#obras', text: '← Obras' }),
+      el('a', { class: 'voltar', href: '/obras', text: '← Obras' }),
       el('div', { class: 'barra' }, [
         el('div', {}, [o.codigo ? el('div', { class: 'codigo', text: o.codigo }) : null, el('h1', { class: 'titulo', text: o.nome }), etiquetaEstado(o.estado)]),
         el('div', { class: 'acoes-form' }, [
-          el('a', { class: 'botao', href: '#checklist/' + o.id, text: 'Abrir checklist' }),
-          gestor ? el('a', { class: 'botao secundario', href: `#obras/${o.id}/editar`, text: 'Editar' }) : null
+          el('a', { class: 'botao', href: '/checklist/' + o.id, text: 'Abrir checklist' }),
+          gestor ? el('a', { class: 'botao secundario', href: `/obras/${o.id}/editar`, text: 'Editar' }) : null
         ])
       ]),
       el('nav', { class: 'sub-abas abas-obra', 'aria-label': 'Abas da obra' }, abas.map(([id, nome]) =>
-        el('a', { href: `#obras/${o.id}${id === 'inicio' ? '' : '/' + id}`, 'aria-current': id === aba ? 'page' : false, text: nome }))),
+        el('a', { href: `/obras/${o.id}${id === 'inicio' ? '' : '/' + id}`, 'aria-current': id === aba ? 'page' : false, text: nome }))),
       alvo
     );
     const vazio = (texto) => alvo.replaceChildren(el('div', { class: 'vazio' }, [el('span', { class: 'etiqueta', text: 'Em breve' }), ' ', texto]));
@@ -156,8 +177,8 @@
     if (aba === 'entregas') return ObraAbas.entregas(o, alvo, eu);
     if (aba === 'pedidos') return ObraAbas.pedidos(o, alvo, eu);
     if (aba === 'mapa') return vazio('O mapa da obra será desenvolvido mais tarde.');
-    if (aba === 'documentos') return vazio('Documentos ligados à pasta da obra no Google Drive (v0.7).');
-    if (aba === 'fotos') return vazio('Fotografias ligadas à pasta "Fotografias" da obra no Google Drive (v0.7).');
+    if (aba === 'documentos') return ObraDrive.mostrar(o, alvo, eu, 'documentos', extra);
+    if (aba === 'fotos') return ObraDrive.mostrar(o, alvo, eu, 'fotografias', extra);
   }
 
   // ---------- criar / editar ----------
@@ -188,7 +209,7 @@
       el('div', { class: 'campo' }, [el('label', { for: 'ob-notas', text: 'Notas internas' }), el('textarea', { id: 'ob-notas', rows: 4 }, o.notas || '')]),
       el('div', { class: 'acoes-form' }, [
         el('button', { class: 'botao', type: 'submit', text: novo ? 'Criar obra' : 'Guardar' }),
-        el('a', { class: 'botao secundario', href: novo ? '#obras' : '#obras/' + o.id, text: 'Cancelar' }),
+        el('a', { class: 'botao secundario', href: novo ? '/obras' : '/obras/' + o.id, text: 'Cancelar' }),
         novo ? null : el('button', { class: 'botao perigo', type: 'button', text: 'Apagar obra', style: 'margin-left:auto', onclick: () => apagar(o) })
       ]),
       el('p', { class: 'mensagem erro', id: 'ob-mensagem', role: 'alert' })
@@ -214,15 +235,17 @@
       try {
         if (novo) {
           const criada = await ok(sb.from('obras').insert(registo).select('id').single(), 'Não foi possível criar a obra (o código já existe?).');
-          location.hash = 'obras/' + criada.id;
+          try { await ObraDrive.prepararObra(criada.id); } catch (_) { /* Drive ainda não ligada: as pastas criam-se mais tarde */ }
+          Hub.ir('obras/' + criada.id);
         } else {
           await ok(sb.from('obras').update(registo).eq('id', o.id), 'Não foi possível guardar (o código já existe?).');
-          location.hash = 'obras/' + o.id;
+          if (registo.codigo !== o.codigo || registo.nome !== o.nome) ObraDrive.prepararObra(o.id).catch(() => {}); // renomeia a pasta na Drive
+          Hub.ir('obras/' + o.id);
         }
       } catch (e) { msg(e.message); }
     });
 
-    $('obras-conteudo').replaceChildren(el('a', { class: 'voltar', href: novo ? '#obras' : '#obras/' + o.id, text: '← Voltar' }), form);
+    $('obras-conteudo').replaceChildren(el('a', { class: 'voltar', href: novo ? '/obras' : '/obras/' + o.id, text: '← Voltar' }), form);
     $('ob-nome').focus();
   }
 
@@ -230,7 +253,7 @@
     if (!confirm(`Apagar a obra "${nomeObra(o)}"?\n\nApaga também os checks marcados, responsáveis e membros desta obra. Não pode ser desfeito.`)) return;
     try {
       await ok(sb.from('obras').delete().eq('id', o.id), 'Não foi possível apagar a obra.');
-      location.hash = 'obras';
+      Hub.ir('obras');
     } catch (e) { $('ob-mensagem').textContent = e.message; }
   }
 

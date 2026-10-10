@@ -49,6 +49,13 @@
 - O cliente é uma conta do tipo Cliente; ao ser escolhido passa a membro da obra.
 - Campos por tipo: Subempreiteiro não vê cliente, notas nem membros; Cliente vê a obra e os seus dados, sem notas.
 
+## Google Drive
+
+- Conta `discoversebastiao@gmail.com`, pasta **Discovercasa Sites / Obras**. Cada obra tem `<código · nome>/Documentos` e `/Fotografias`.
+- Ligação feita uma vez por um ADMIN (página Obras → "Ligar Google Drive"). As credenciais (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`) estão nos Secrets do Supabase; nunca no código.
+- Funções do servidor: `supabase/functions/drive` (pastas e ficheiros) e `supabase/functions/drive-ligar` (regresso da autorização Google).
+- Quem vê cada pasta decide-se no Hub ("Quem vê"), não na Drive. Ninguém precisa de conta Google.
+
 ## Abas da obra
 
 - **Início** (ficha e resumo) · **Projeto** · **Mapa** (em breve) · **Documentos** e **Fotos** (Google Drive, v0.7) · **Entregas** · **Pedidos**.
@@ -98,6 +105,8 @@ Tem de terminar com **0 falhas**.
 
 ### Publicação no Cloudflare Pages
 
+- O Hub é uma só página com endereços como `/obras/<id>/pedidos`. Como não há `404.html`, a Cloudflare devolve o `index.html` para qualquer endereço e o Hub abre o separador certo.
+
 - Repositório ligado: este repo, ramo `main`.
 - Build command: *(vazio)*.
 - Build output directory: `public`.
@@ -128,15 +137,16 @@ O subdomínio aponta para o Pages com um registo CNAME:
 │   ├── js/hub.js      cabeçalho, sessão e utilitários comuns
 │   ├── js/obras.js    separador Obras (lista, ficha, abas)
 │   ├── js/obra-abas.js abas Projeto, Entregas e Pedidos
+│   ├── js/drive.js    abas Documentos e Fotos (Google Drive)
 │   ├── js/checklist.js separador Checklist
 │   ├── js/colaboradores.js separador Colaboradores → Equipa
 │   ├── js/ferias.js   separador Férias
-│   ├── _redirects     /checklist → /#checklist
+│   ├── _redirects     /checklist.html → /checklist
 │   ├── js/plataforma-core.js
 │   └── img/           logótipos e favicon
 ├── supabase/
 │   ├── migrations/    SQL das tabelas e políticas RLS
-│   └── functions/     Edge Functions (gerir-contas)
+│   └── functions/     Edge Functions (gerir-contas, drive, drive-ligar)
 └── tests/
     └── regressao.cjs  testes de regressão
 ```

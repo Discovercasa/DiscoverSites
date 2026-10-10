@@ -58,13 +58,14 @@ Ordem dos blocos: **Base → Equipa (fichas, férias) → Obras (abas, Drive, ma
 - Entregas de materiais (com linhas de material); Cliente não vê.
 - Pedidos e falhas: tipo, prioridade, fotografia, respostas, fechar/reabrir; pedidos em aberto no Início.
 
-### 🔜 v0.7 — Documentos e Fotos (Google Drive)
+### ✅ v0.7 — Documentos e Fotos (Google Drive)
 - Ligação à Drive da conta Gmail da empresa (autorização guardada no Supabase, nunca no código).
 - Ao criar uma obra, cria a pasta da obra com "Documentos" e "Fotografias"; ligar as obras atuais às pastas que já existam.
 - Pastas de Documentos com visibilidade por tipo de utilizador e/ou colaborador, decidida no Hub.
-- Ver, carregar e descarregar ficheiros a partir do Hub; foto da guia de remessa nas entregas.
+- Ver, carregar e descarregar ficheiros (e vídeos) a partir do Hub.
+- *Passou para depois:* foto da guia de remessa nas entregas.
 
-### 📝 v0.8 — Mapa da obra
+### 🔜 v0.8 — Mapa da obra
 - *A definir.*
 
 ### 📝 v0.9 — Mapa de obras

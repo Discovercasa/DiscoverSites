@@ -196,6 +196,35 @@
   .linha-material input { padding: .5rem .6rem; border: 1px solid var(--linha); border-radius: 4px; min-width: 0; }
   .pedidos-obras li .estado { margin-left: .2rem; }
 
+  /* Documentos e Fotos (Google Drive) */
+  .estado-drive { margin: -.3rem 0 1rem; font-size: .92rem; color: var(--suave); display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+  .barra-drive { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-bottom: 1rem; }
+  .barra-drive .espaco { flex: 1; }
+  .migalhas { font-size: 1.05rem; }
+  .migalhas a { color: var(--suave); }
+  .grelha-pastas { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: .6rem; margin-bottom: 1.2rem; }
+  .pasta { display: flex; align-items: center; gap: .55rem; flex-wrap: wrap; background: var(--branco); border-radius: 6px; padding: .7rem .85rem; color: var(--escuro); text-decoration: none; border: 1px solid transparent; }
+  .pasta:hover { border-color: var(--amarelo); }
+  .pasta .icone { font-size: 1.3rem; }
+  .pasta .nome { font-weight: 600; flex: 1 1 8rem; min-width: 0; overflow-wrap: break-word; }
+  .grelha-fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: .6rem; }
+  .miniatura { margin: 0; background: var(--branco); border-radius: 6px; overflow: hidden; }
+  .miniatura .abrir { display: block; width: 100%; aspect-ratio: 1; border: 0; padding: 0; background: #e8e8e5; cursor: zoom-in; position: relative; }
+  .miniatura img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .miniatura.sem-miniatura .abrir::before { content: '🖼'; position: absolute; inset: 0; display: grid; place-items: center; font-size: 2rem; opacity: .4; }
+  .miniatura .play { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-size: 2rem; text-shadow: 0 1px 6px rgba(0,0,0,.6); }
+  .miniatura figcaption { display: flex; justify-content: space-between; align-items: center; padding: .3rem .5rem; font-size: .8rem; color: var(--suave); }
+  .miniatura .apagar { border: 0; background: none; color: var(--erro); cursor: pointer; font-size: .9rem; }
+  table.ficheiros td { vertical-align: middle; }
+  .icone-tipo { width: 16px; height: 16px; vertical-align: -3px; margin-right: .45rem; }
+  .progresso-envio:empty { display: none; }
+  .progresso-envio { background: var(--branco); border-radius: 6px; padding: .6rem .9rem; margin-bottom: 1rem; }
+  .envio { display: grid; grid-template-columns: 1fr 8rem auto; gap: .6rem; align-items: center; font-size: .9rem; padding: .2rem 0; }
+  .envio .nome { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .envio.falhou .pct { color: var(--erro); }
+  #d-ver { width: min(100% - 2rem, 60rem); }
+  #dv-conteudo img, #dv-conteudo video { display: block; max-width: 100%; max-height: 70vh; margin: 0 auto; border-radius: 4px; }
+
   /* Obras */
   .filtros { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: 1rem; }
   .filtros input, .filtros select { padding: .6rem .8rem; border: 1px solid var(--linha); border-radius: 4px; background: var(--branco); }
@@ -276,7 +305,7 @@
       <div class="barra-obra">
         <select id="ck-obra" aria-label="Obra"></select>
         <span class="espaco"></span>
-        <a class="botao secundario pequeno" id="ck-ficha" href="#obras" hidden>Ficha da obra</a>
+        <a class="botao secundario pequeno" id="ck-ficha" href="/obras" hidden>Ficha da obra</a>
         <button class="botao escuro pequeno" type="button" id="ck-editar" hidden aria-pressed="false">Editar estrutura</button>
       </div>
       <p class="mensagem" id="ck-aviso" role="status"></p>
@@ -290,8 +319,8 @@
 
     <section id="aba-colaboradores" hidden>
       <nav class="sub-abas" aria-label="Colaboradores">
-        <a href="#colaboradores" data-sub="equipa">Equipa</a>
-        <a href="#colaboradores/contas" data-sub="contas">Contas de acesso</a>
+        <a href="/colaboradores" data-sub="equipa">Equipa</a>
+        <a href="/colaboradores/contas" data-sub="contas">Contas de acesso</a>
       </nav>
       <div id="colab-equipa"></div>
       <div id="colab-contas">
@@ -536,6 +565,34 @@
   </form>
 </dialog>
 
+<!-- Documentos/Fotos: ver fotografia ou vídeo -->
+<dialog id="d-ver">
+  <form method="dialog">
+    <h2 class="titulo" id="dv-titulo" style="overflow-wrap:anywhere"></h2>
+    <div id="dv-conteudo"></div>
+    <div class="rodape-dialogo">
+      <button class="botao secundario" type="button" id="dv-descarregar">Descarregar</button>
+      <span class="espaco"></span>
+      <button class="botao" type="submit" value="fechar">Fechar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Documentos/Fotos: quem vê a pasta -->
+<dialog id="d-pasta-vis">
+  <form method="dialog" id="f-pasta-vis" novalidate>
+    <h2 class="titulo">Quem vê esta pasta</h2>
+    <p class="ajuda" style="margin-top:0"><strong id="dpv-nome"></strong> · Sem nada escolhido, todos os membros da obra veem. ADMIN e Administrador veem sempre. As pastas dentro desta seguem esta regra.</p>
+    <div class="campo"><span class="rotulo">Tipos de utilizador</span><div class="opcoes-lista" id="dpv-papeis"></div></div>
+    <div class="campo"><span class="rotulo">Colaboradores</span><div class="opcoes-lista" id="dpv-pessoas"></div></div>
+    <div class="rodape-dialogo">
+      <button class="botao" type="submit" value="ok">Guardar</button>
+      <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Cancelar</button>
+    </div>
+    <p class="mensagem erro" id="dpv-mensagem" role="alert"></p>
+  </form>
+</dialog>
+
 <dialog id="d-membros">
   <form method="dialog" id="f-membros" novalidate>
     <h2 class="titulo">Membros da obra</h2>
@@ -573,14 +630,36 @@
 <script src="/js/hub.js"></script>
 <script src="/js/obras.js"></script>
 <script src="/js/obra-abas.js"></script>
+<script src="/js/drive.js"></script>
 <script src="/js/checklist.js"></script>
 <script src="/js/colaboradores.js"></script>
 <script src="/js/ferias.js"></script>
 <script>
-  const APP_VERSAO = 'v0.6';
+  const APP_VERSAO = 'v0.7';
 
   // Mais recente primeiro. A primeira entrada tem de ser igual a APP_VERSAO.
   const NOVIDADES = [
+    {
+      versao: 'v0.7',
+      data: '2026-10-10',
+      novas: [
+        'Documentos e Fotos de cada obra ligados ao Google Drive.',
+        'Ao criar uma obra, as pastas são criadas na Drive automaticamente.',
+        'Carregar ficheiros, fotos e vídeos diretamente do Hub, também no telemóvel.',
+        'Pastas com visibilidade por tipo de utilizador ou colaborador.',
+        'Ver fotos e vídeos, e descarregar documentos, sem conta Google.'
+      ],
+      alteracoes: []
+    },
+    {
+      versao: 'v0.6a',
+      data: '2026-10-10',
+      novas: [],
+      alteracoes: [
+        'Endereços mais limpos, sem "#" (ex.: hub.discovercasa.pt/obras).',
+        'Na checklist já é possível mudar de obra.'
+      ]
+    },
     {
       versao: 'v0.6',
       data: '2026-10-10',
@@ -767,7 +846,7 @@
     Hub.desenharTopo(eu, 'inicio');
     construirMenu();
     mostrar('ecra-app');
-    irPara(location.hash.slice(1) || 'inicio');
+    irPara(Hub.rota());
   }
 
   // ---------------- Separadores ----------------
@@ -791,19 +870,19 @@
     if (aba === 'inicio') mostrarAlertas();
     window.scrollTo(0, 0);
   }
-  window.addEventListener('hashchange', () => { if (eu) irPara(location.hash.slice(1)); });
+  window.addEventListener('rota', () => { if (eu) irPara(Hub.rota()); });
 
   // ---------------- Menu inicial ----------------
   function construirMenu() {
     const itens = [
-      { titulo: 'Obras', texto: 'Projeto, entregas, pedidos e ficha de cada obra.', href: '#obras' },
-      { titulo: 'Checklist', texto: 'Fases e checks de cada obra.', href: '#checklist' },
-      ehGestor() && { titulo: 'Colaboradores', texto: 'Fichas da equipa e contas de acesso.', href: '#colaboradores' },
-      (ehGestor() || eu.ficha) && { titulo: 'Férias', texto: ehGestor() ? 'Mapa da equipa, pedidos, saldos e feriados.' : 'O meu saldo e pedidos de férias.', href: '#ferias' },
+      { titulo: 'Obras', texto: 'Projeto, entregas, pedidos e ficha de cada obra.', href: '/obras' },
+      { titulo: 'Checklist', texto: 'Fases e checks de cada obra.', href: '/checklist' },
+      ehGestor() && { titulo: 'Colaboradores', texto: 'Fichas da equipa e contas de acesso.', href: '/colaboradores' },
+      (ehGestor() || eu.ficha) && { titulo: 'Férias', texto: ehGestor() ? 'Mapa da equipa, pedidos, saldos e feriados.' : 'O meu saldo e pedidos de férias.', href: '/ferias' },
       eu.papel !== 'cliente' && { titulo: 'Mapa de obras', texto: 'Todas as obras num mapa.', futuro: 'v0.9' },
       ehGestor() && { titulo: 'Horas extra', texto: 'Horas extra por obra e colaborador.', futuro: 'v0.10' },
       ehGestor() && { titulo: 'Materiais e custos', texto: 'Fornecedores, preços e orçamentação.', futuro: 'v0.12' },
-      { titulo: 'Novidades', texto: 'O que mudou em cada versão.', href: '#novidades' }
+      { titulo: 'Novidades', texto: 'O que mudou em cada versão.', href: '/novidades' }
     ].filter(Boolean);
 
     $('menu-inicial').replaceChildren(...itens.map((i) => i.href
@@ -821,19 +900,19 @@
     const { data: abertos } = await sb.rpc('pedidos_abertos');
     const blocoPedidosObra = abertos && abertos.length ? el('section', { class: 'painel alertas pedidos-obras' }, [
       el('h2', { class: 'titulo', text: 'Pedidos e falhas em aberto' }),
-      el('ul', {}, abertos.map((p) => el('li', {}, [el('a', { href: `#obras/${p.obra_id}/pedidos`, text: p.obra }),
+      el('ul', {}, abertos.map((p) => el('li', {}, [el('a', { href: `/obras/${p.obra_id}/pedidos`, text: p.obra }),
         el('span', { text: `${p.abertos} em aberto` }), p.urgentes ? el('span', { class: 'estado nao', text: `${p.urgentes} urgente${p.urgentes === 1 ? '' : 's'}` }) : null])))
     ]) : null;
     if (!ehGestor()) { c.replaceChildren(...[blocoPedidosObra].filter(Boolean)); return; }
     const [lista, nPedidos] = await Promise.all([ColaboradoresHub.alertas(), FeriasHub.pendentes()]);
     const pedidos = nPedidos ? el('section', { class: 'painel alertas' }, [
       el('h2', { class: 'titulo', text: `Pedidos de férias · ${nPedidos}` }),
-      el('p', { style: 'margin:0' }, [`Há ${nPedidos} pedido${nPedidos === 1 ? '' : 's'} à espera de decisão. `, el('a', { href: '#ferias', text: 'Ver pedidos' })])
+      el('p', { style: 'margin:0' }, [`Há ${nPedidos} pedido${nPedidos === 1 ? '' : 's'} à espera de decisão. `, el('a', { href: '/ferias', text: 'Ver pedidos' })])
     ]) : null;
     c.replaceChildren(...[blocoPedidosObra, pedidos].filter(Boolean), ...(lista.length ? [el('section', { class: 'painel alertas' }, [
       el('h2', { class: 'titulo', text: `Alertas · ${lista.length}` }),
       el('ul', {}, lista.map((a) => el('li', {}, [
-        el('a', { href: '#colaboradores/' + a.id, text: a.nome }), el('span', { text: a.documento }),
+        el('a', { href: '/colaboradores/' + a.id, text: a.nome }), el('span', { text: a.documento }),
         el('span', { class: 'estado ' + a.estado.classe, text: a.estado.texto }),
         el('span', { class: 'ajuda', style: 'margin:0', text: new Date(a.data + 'T00:00:00').toLocaleDateString('pt-PT') })
       ])))

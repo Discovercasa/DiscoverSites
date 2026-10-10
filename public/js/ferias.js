@@ -91,7 +91,7 @@
         el('button', { class: 'botao perigo pequeno', type: 'button', text: 'Recusar', onclick: () => decidir(a, 'recusado') })
       ])))
     ]));
-    const sub = (id, nome) => el('a', { href: '#ferias/' + id, 'aria-current': vista === id ? 'page' : false, text: nome });
+    const sub = (id, nome) => el('a', { href: '/ferias/' + id, 'aria-current': vista === id ? 'page' : false, text: nome });
     conteudo.push(el('nav', { class: 'sub-abas' }, [sub('mapa', 'Mapa'), sub('saldos', 'Saldos'), sub('feriados', 'Feriados')]));
     conteudo.push(vista === 'saldos' ? vistaSaldos() : vista === 'feriados' ? vistaFeriados() : vistaMapa());
     $('fe-conteudo').replaceChildren(...conteudo);

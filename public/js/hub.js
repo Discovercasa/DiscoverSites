@@ -32,19 +32,19 @@
 
   function separadores(eu) {
     return [
-      { id: 'inicio', nome: 'Início', href: '/#inicio' },
-      { id: 'obras', nome: 'Obras', href: '/#obras' },
-      { id: 'checklist', nome: 'Checklist', href: '/#checklist' },
-      (ehGestor(eu) || (eu && eu.ficha)) && { id: 'ferias', nome: 'Férias', href: '/#ferias' },
-      ehGestor(eu) && { id: 'colaboradores', nome: 'Colaboradores', href: '/#colaboradores' },
-      { id: 'novidades', nome: 'Novidades', href: '/#novidades' }
+      { id: 'inicio', nome: 'Início', href: '/' },
+      { id: 'obras', nome: 'Obras', href: '/obras' },
+      { id: 'checklist', nome: 'Checklist', href: '/checklist' },
+      (ehGestor(eu) || (eu && eu.ficha)) && { id: 'ferias', nome: 'Férias', href: '/ferias' },
+      ehGestor(eu) && { id: 'colaboradores', nome: 'Colaboradores', href: '/colaboradores' },
+      { id: 'novidades', nome: 'Novidades', href: '/novidades' }
     ].filter(Boolean);
   }
 
   function desenharTopo(eu, ativa) {
     const topo = $('topo');
     topo.replaceChildren(el('div', { class: 'topo-linha' }, [
-      el('a', { class: 'topo-logo', href: '/#inicio' }, el('img', { src: '/img/logo.png', alt: 'Discovercasa — início' })),
+      el('a', { class: 'topo-logo', href: '/' }, el('img', { src: '/img/logo.png', alt: 'Discovercasa — início' })),
       el('nav', { class: 'abas', 'aria-label': 'Separadores' },
         separadores(eu).map((s) => el('a', { href: s.href, 'data-aba': s.id, text: s.nome }))),
       el('div', { class: 'quem' }, [
@@ -73,5 +73,29 @@
   function guardar(chave, valor) { try { localStorage.setItem('hub.' + chave, valor); } catch (_) {} }
   function ler(chave) { try { return localStorage.getItem('hub.' + chave); } catch (_) { return null; } }
 
-  window.Hub = { sb, PAPEIS, $, el, ehGestor, perfilAtual, separadores, desenharTopo, marcarAba, sair, gerarSenha, guardar, ler };
+  // ---------- Endereços sem "#": /obras/<id>/pedidos ----------
+  // Ligações antigas com "#" (ex.: /#obras/...) passam para o formato novo.
+  if (/^#[a-z]/.test(location.hash)) history.replaceState(null, '', '/' + location.hash.slice(1));
+
+  function rota() {
+    const p = decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g, ''));
+    return !p || p === 'index.html' ? 'inicio' : p;
+  }
+  function ir(destino, substituir = false) {
+    const url = '/' + (destino === 'inicio' ? '' : destino.replace(/^\/+/, ''));
+    if (url !== location.pathname) history[substituir ? 'replaceState' : 'pushState'](null, '', url);
+    window.dispatchEvent(new Event('rota'));
+  }
+  // Ligações internas (href="/...") mudam de separador sem recarregar a página
+  document.addEventListener('click', (ev) => {
+    const a = ev.target.closest && ev.target.closest('a[href]');
+    if (!a || ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || a.target) return;
+    const href = a.getAttribute('href');
+    if (!href.startsWith('/') || href.startsWith('//')) return;
+    ev.preventDefault();
+    ir(href.slice(1) || 'inicio');
+  });
+  window.addEventListener('popstate', () => window.dispatchEvent(new Event('rota')));
+
+  window.Hub = { sb, PAPEIS, $, el, ehGestor, perfilAtual, separadores, desenharTopo, marcarAba, sair, gerarSenha, guardar, ler, rota, ir };
 })();

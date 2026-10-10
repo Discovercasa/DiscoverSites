@@ -61,10 +61,10 @@
         const conta = f.user_id && contas.get(f.user_id);
         const alertas = alertasDe(f);
         return el('tr', {}, [
-          el('td', {}, el('a', { href: '#colaboradores/' + f.id, class: 'nome-ligacao', text: f.nome })),
+          el('td', {}, el('a', { href: '/colaboradores/' + f.id, class: 'nome-ligacao', text: f.nome })),
           el('td', { text: AREAS[f.area] || '—' }),
           el('td', {}, conta ? [conta.utilizador, ' ', el('span', { class: 'etiqueta', text: PAPEIS[conta.papel] || conta.papel })]
-            : el('a', { class: 'botao secundario pequeno', href: '#colaboradores/' + f.id, text: 'Sem conta' })),
+            : el('a', { class: 'botao secundario pequeno', href: '/colaboradores/' + f.id, text: 'Sem conta' })),
           el('td', { text: f.telefone || '—' }),
           el('td', {}, alertas.length ? alertas.map((a) => el('span', { class: 'estado ' + a.estado.classe, title: a.nome, text: `${a.nome}: ${a.estado.texto}` })) : '—')
         ]);
@@ -75,7 +75,7 @@
     $('colab-equipa').replaceChildren(
       el('div', { class: 'barra' }, [
         el('div', {}, [el('h1', { class: 'titulo', text: 'Equipa' }), el('p', { class: 'subtitulo', style: 'margin:0', text: `${fichas.length} colaboradores · fichas visíveis só para ADMIN e Administrador.` })]),
-        el('a', { class: 'botao', href: '#colaboradores/novo', text: '+ Novo colaborador' })
+        el('a', { class: 'botao', href: '/colaboradores/novo', text: '+ Novo colaborador' })
       ]),
       el('p', { class: 'mensagem', id: 'equipa-aviso', role: 'status' }),
       el('div', { class: 'filtros' }, pesquisa),
@@ -105,7 +105,7 @@
       el('h2', { class: 'titulo', text: 'Conta de acesso' }),
       conta
         ? el('p', {}, [`Utilizador: `, el('strong', { text: conta.utilizador }), ' · ', el('span', { class: 'etiqueta', text: PAPEIS[conta.papel] }),
-            conta.ativo ? '' : el('span', { class: 'estado nao', text: ' Inativa' }), ' · ', el('a', { href: '#colaboradores/contas', text: 'gerir em Contas de acesso' })])
+            conta.ativo ? '' : el('span', { class: 'estado nao', text: ' Inativa' }), ' · ', el('a', { href: '/colaboradores/contas', text: 'gerir em Contas de acesso' })])
         : el('div', {}, [el('p', { class: 'ajuda', style: 'margin-top:0', text: 'Este colaborador ainda não tem conta na plataforma.' }),
             el('button', { class: 'botao', type: 'button', text: 'Criar conta', onclick: () => abrirCriarConta(f) })])
     ]);
@@ -134,7 +134,7 @@
       secao(`Documentos · alerta ${DIAS_ALERTA} dias antes`, DOCUMENTOS.map(([c, n]) => validade(c, n))),
       el('div', { class: 'acoes-form' }, [
         el('button', { class: 'botao', type: 'submit', text: novo ? 'Criar ficha' : 'Guardar' }),
-        el('a', { class: 'botao secundario', href: '#colaboradores', text: 'Cancelar' }),
+        el('a', { class: 'botao secundario', href: '/colaboradores', text: 'Cancelar' }),
         novo ? null : el('button', { class: 'botao perigo', type: 'button', style: 'margin-left:auto', text: 'Apagar ficha', onclick: () => apagar(f) })
       ]),
       el('p', { class: 'mensagem erro', id: 'cb-mensagem', role: 'alert' })
@@ -154,16 +154,16 @@
       try {
         if (novo) {
           const criada = await ok(sb.from('colaboradores').insert(registo).select('id').single());
-          location.hash = 'colaboradores/' + criada.id;
+          Hub.ir('colaboradores/' + criada.id);
         } else {
           await ok(sb.from('colaboradores').update(registo).eq('id', f.id));
-          location.hash = 'colaboradores';
+          Hub.ir('colaboradores');
         }
       } catch (e) { $('cb-mensagem').textContent = e.message; }
     });
 
     $('colab-equipa').replaceChildren(
-      el('a', { class: 'voltar', href: '#colaboradores', text: '← Equipa' }),
+      el('a', { class: 'voltar', href: '/colaboradores', text: '← Equipa' }),
       el('h1', { class: 'titulo', text: novo ? 'Novo colaborador' : f.nome }),
       el('p', { class: 'subtitulo', text: 'Dados pessoais visíveis só para ADMIN e Administrador.' }),
       ...[caixaConta, form].filter(Boolean)
@@ -172,7 +172,7 @@
 
   async function apagar(f) {
     if (!confirm(`Apagar a ficha de ${f.nome}?\n\nA conta de acesso (se existir) não é apagada.`)) return;
-    try { await ok(sb.from('colaboradores').delete().eq('id', f.id), 'Não foi possível apagar.'); location.hash = 'colaboradores'; }
+    try { await ok(sb.from('colaboradores').delete().eq('id', f.id), 'Não foi possível apagar.'); Hub.ir('colaboradores'); }
     catch (e) { $('cb-mensagem').textContent = e.message; }
   }
 

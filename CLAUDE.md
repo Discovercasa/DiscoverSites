@@ -28,7 +28,8 @@ Projeto do Sebastião. Responder em português de Portugal.
 
 - Alterações à estrutura da base de dados: aplicar com o conector do Supabase **e** guardar o SQL em `supabase/migrations/NNNN_nome.sql`.
 - Dados pessoais (emails, nomes) não vão para ficheiros do repositório.
-- Edge Functions: código em `supabase/functions/<nome>/index.ts`, publicado com o conector.
+- Edge Functions: código em `supabase/functions/<nome>/index.ts`, publicado com o conector. A `drive-ligar` publica-se com `verify_jwt: false` (o Google chama-a sem sessão); todas as outras com `verify_jwt: true`.
+- Credenciais de serviços externos (Google, etc.) só nos Secrets do Supabase, configurados pelo Sebastião no painel. Nunca pedir que sejam coladas no chat.
 - Antes de mexer em tabelas da checklist antiga (`obras`, `fases`, `items`, `item_*`), confirmar que ela continua a funcionar.
 
 ## Regras
@@ -36,4 +37,5 @@ Projeto do Sebastião. Responder em português de Portugal.
 - **Nunca credenciais privadas no código** (só a chave pública do Supabase, via `plataforma-core`). Nada de `service_role`, passwords, tokens ou ficheiros `.env` no repositório.
 - **Dados do utilizador só dele (RLS).** Todas as tabelas novas em `supabase/migrations/` com `enable row level security` e políticas com `auth.uid()`.
 - Tudo numa só página (`public/index.html`): cada área é um separador e o seu código fica em `public/js/<área>.js`; o que é comum fica em `public/css/hub.css` e `public/js/hub.js`.
+- Endereços sem "#": ligações internas com `href="/area/..."` e mudanças por código com `Hub.ir('area/...')`. Nunca criar `public/404.html`.
 - Não acrescentar dependências sem perguntar.

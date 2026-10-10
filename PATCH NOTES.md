@@ -21,7 +21,7 @@ Regras que não se alteram sem confirmação do Sebastião. Cada uma tem, sempre
 16. **Campos da obra por tipo de utilizador**, filtrados na base de dados: cliente e notas internas não se leem diretamente da tabela, só por `obras_visiveis()`. Subempreiteiro não vê cliente, notas nem membros; Cliente vê a sua obra e os seus dados, sem notas. (D15)
 17. **O cliente de uma obra é sempre uma conta Cliente** criada por ADMIN/Administrador, e só vê as obras a que é associado. (D15)
 18. **Largura:** a checklist fica centrada; as outras páginas ocupam a largura toda.
-19. **Tudo numa só página:** as áreas são separadores de `index.html` (sem mudar de página); `/checklist` redireciona para `/#checklist`. O código de cada área fica em `public/js/<área>.js`.
+19. **Tudo numa só página:** as áreas são separadores de `index.html` (sem mudar de página), com **endereços sem "#"** (`/obras/<id>/pedidos`); a Cloudflare Pages devolve o `index.html` para qualquer endereço (não pode existir `public/404.html`). O código de cada área fica em `public/js/<área>.js`. (D18)
 20. **Todos os colaboradores têm conta.** Quem não tem email usa um endereço interno `<utilizador>@equipa.discovercasa.pt`; entra com o nome de utilizador.
 21. **Alertas de documentos** (carta, CC, aptidão médica) 31 dias antes de expirarem, no Início, para ADMIN e Administrador.
 22. **Férias:** ADMIN e Administrador registam e aprovam; cada colaborador vê só as suas e pode pedir (fica pendente). Saldo de 22 dias/ano por omissão, mais transitados; descontam férias pessoais e Férias Discovercasa aprovadas, em dias úteis. (D16)
@@ -29,10 +29,29 @@ Regras que não se alteram sem confirmação do Sebastião. Cada uma tem, sempre
 24. **Abas da obra:** Início · Projeto · Mapa · Documentos · Fotos · Entregas · Pedidos. Só membros da obra (e ADMIN/Administrador) veem o conteúdo. (D17)
 25. **Entregas:** registam ADMIN, Administrador e Obra; Subempreiteiro só vê; **Cliente não vê**. (D17)
 26. **Pedidos e falhas:** qualquer membro cria e responde; **fecha** ADMIN/Administrador ou quem criou; só ADMIN/Administrador alteram o texto. Fotografias num armazenamento privado, só para membros da obra. (D17)
-27. **Google Drive (v0.7):** conta Gmail da empresa; quem vê cada pasta decide-se no Hub, não na Drive.
+27. **Google Drive:** conta `discoversebastiao@gmail.com`; pastas em **A minha unidade / Discovercasa Sites / Obras / <código · nome> / Documentos e Fotografias**. Quem vê cada pasta decide-se no Hub (herda da pasta-mãe), não na Drive; ninguém precisa de conta Google.
+28. **Credenciais do Google** só nos Secrets do Supabase (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`); o refresh token fica em `drive_config`, tabela sem acesso para utilizadores. Só um ADMIN liga a Drive. (D19)
+29. **Carregar:** Documentos — ADMIN, Administrador e Obra; Fotos (fotografias e vídeos) — todos os membros. Criar/apagar pastas, apagar ficheiros e mudar "Quem vê" — só ADMIN e Administrador. Apagar envia para o lixo da Drive.
 15. **Todas as páginas** em `public/` são em português de Portugal e ligam-se ao Supabase só pelo `plataforma-core`. (D6)
 
 ## Histórico
+
+### v0.7 — 2026-10-10
+- **Documentos e Fotos** de cada obra ligados ao Google Drive (`public/js/drive.js`; Edge Functions `drive` e `drive-ligar`).
+- Página Obras: estado da ligação e botão "Ligar Google Drive" (só ADMIN); ao criar uma obra, as pastas são criadas na Drive; ao mudar o código/nome, a pasta é renomeada.
+- Navegar por pastas (`/obras/<id>/documentos/<pasta>`), carregar vários ficheiros com barra de progresso (envio direto do browser para a Drive, sem limite de tamanho do servidor), descarregar (Google Docs vão em PDF), ver fotos e vídeos, criar e apagar pastas, "Quem vê" por pasta.
+- Pastas criadas diretamente na Drive aparecem no Hub e herdam a visibilidade da pasta-mãe.
+- Base de dados (migração `0007_drive_pastas`): `drive_config` (privada), `drive_pastas` com RLS recursiva (`pode_ver_pasta`).
+- Testado: Obra vê 5/5 pastas; Cliente não vê a pasta só para Obra nem as subpastas dela; Cliente não muda a visibilidade; quem não é membro não vê nada.
+- `plataforma-core` passa a expor também a chave pública (`chave`) para pedidos de ficheiros.
+- Novo teste D19.
+- *Fica para depois:* foto da guia de remessa nas entregas.
+
+### v0.6a — 2026-10-10
+- **Endereços sem "#":** `hub.discovercasa.pt/obras/<id>/pedidos`, `/checklist/<obra>`, `/ferias/saldos`… (`Hub.rota()` e `Hub.ir()` em `public/js/hub.js`; as ligações internas mudam de separador sem recarregar; o botão Voltar funciona). Ligações antigas com "#" são convertidas.
+- `public/_redirects`: só `/checklist.html → /checklist`.
+- **Correção:** na checklist não era possível mudar de obra (ficava sempre a anterior).
+- Decisão 19 atualizada; novo teste D18.
 
 ### v0.6 — 2026-10-10
 - Página da obra com **abas** (`public/js/obras.js`, `public/js/obra-abas.js`): Início (a antiga ficha, agora com o total de pedidos), Projeto, Mapa (em breve), Documentos e Fotos (em breve, v0.7), Entregas, Pedidos.

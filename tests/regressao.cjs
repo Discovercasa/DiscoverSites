@@ -74,6 +74,8 @@ teste('D2', 'todas as tabelas com RLS', () => {
     const nome = t.split('.').pop();
     const re = new RegExp(`alter\\s+table\\s+(?:only\\s+)?(?:[\\w"]+\\.)?"?${nome}"?\\s+enable\\s+row\\s+level\\s+security`);
     exigir(re.test(sql), `tabela "${t}" sem RLS`);
+    // Tabelas só do servidor: RLS ligada, sem políticas e fechadas a anon e authenticated
+    if (new RegExp(`revoke all on public\\.${nome} from anon, authenticated`).test(sql)) continue;
     exigir(new RegExp(`create\\s+policy[^;]*?on\\s+(?:[\\w"]+\\.)?"?${nome}"?[^;]*?(auth\\.uid\\(\\)|public\\.(eh_gestor|eh_admin|membro_obra|ve_entregas|edita_entregas|minha_ficha_id|tem_acesso\\w*|pode_ver_\\w+)\\()`).test(sql),
       `tabela "${t}" sem política com auth.uid() ou função de permissão`);
   }
@@ -212,6 +214,32 @@ teste('D17', 'abas da obra: só membros; Cliente sem entregas; pedidos fechados 
   exigir(/Só ADMIN e Administrador podem alterar o pedido/.test(sql), 'o autor pode reescrever o pedido');
   exigir(/'pedidos', 'pedidos', false/.test(sql), 'as fotografias dos pedidos não estão num armazenamento privado');
   exigir(/bucket_id = 'pedidos' and public\.membro_obra/.test(sql), 'as fotografias dos pedidos não estão limitadas aos membros da obra');
+});
+
+teste('D18', 'endereços sem "#"', () => {
+  for (const f of fs.readdirSync(path.join(RAIZ, 'public'), { recursive: true }).filter(f => /\.(html|js)$/.test(f))) {
+    const txt = ler('public/' + f);
+    exigir(!/href(:\s*|=)["'`]\/?#[a-z]/.test(txt), `${f} tem ligações com "#"`);
+    exigir(!/location\.hash\s*=/.test(txt), `${f} muda de página com location.hash`);
+  }
+  exigir(!fs.existsSync(path.join(RAIZ, 'public/404.html')), 'um 404.html desliga o modo de página única da Cloudflare Pages');
+});
+
+teste('D19', 'Google Drive: ligação privada e pastas com visibilidade', () => {
+  const sql = fs.readdirSync(path.join(RAIZ, 'supabase/migrations')).filter(f => f.endsWith('.sql'))
+    .map(f => ler('supabase/migrations/' + f)).join('\n');
+  exigir(/alter table public\.drive_config enable row level security/.test(sql), 'drive_config sem RLS');
+  exigir(!/create policy [^;]*on public\.drive_config/.test(sql), 'drive_config não pode ter políticas (só o servidor lhe acede)');
+  exigir(/revoke all on public\.drive_config from anon, authenticated/.test(sql), 'drive_config acessível a utilizadores');
+  exigir(!/create policy [^;]*on public\.drive_pastas for (insert|delete|all)/.test(sql), 'pastas da Drive só se criam/apagam pelo servidor');
+  exigir(/acima[\s\S]*cumpre_visibilidade\(vis_papeis, vis_utilizadores\)/.test(sql), 'a visibilidade das pastas não é herdada');
+  for (const f of fs.readdirSync(path.join(RAIZ, 'public'), { recursive: true }).filter(f => /\.(html|js)$/.test(f))) {
+    const txt = ler('public/' + f);
+    exigir(!/refresh_token|GOOGLE_CLIENT_SECRET|client_secret/.test(txt), `${f} menciona credenciais do Google`);
+    exigir(!/from\(['"]drive_config['"]\)/.test(txt), `${f} lê a ligação da Drive`);
+  }
+  const fn = ler('supabase/functions/drive/google.ts');
+  exigir(/Deno\.env\.get\("GOOGLE_CLIENT_SECRET"\)/.test(fn), 'o segredo do Google tem de vir dos Secrets do Supabase');
 });
 
 teste('—', 'ROADMAP marca a versão atual', () => {

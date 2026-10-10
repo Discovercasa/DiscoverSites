@@ -80,9 +80,12 @@
     const { data: o, error } = await sb.from('obras').select('id, codigo, nome').order('nome');
     if (error) throw new Error('Não foi possível carregar as obras.');
     obras = o.sort((a, b) => (a.codigo || '~').localeCompare(b.codigo || '~') || a.nome.localeCompare(b.nome));
-    if (pedida && obras.some((x) => x.id === pedida)) Hub.guardar('obra', pedida);
     const guardada = Hub.ler('obra');
-    obraId = obras.some((x) => x.id === obraId) ? obraId : obras.some((x) => x.id === guardada) ? guardada : (obras[0] && obras[0].id);
+    // A obra pedida no endereço tem prioridade; depois a atual; depois a última usada; senão a primeira.
+    obraId = obras.some((x) => x.id === pedida) ? pedida
+      : obras.some((x) => x.id === obraId) ? obraId
+      : obras.some((x) => x.id === guardada) ? guardada : (obras[0] && obras[0].id);
+    if (obraId) Hub.guardar('obra', obraId);
     $('ck-obra').replaceChildren(...obras.map((x) => el('option', { value: x.id, text: x.codigo ? `${x.codigo} · ${x.nome}` : x.nome, selected: x.id === obraId })));
     $('ck-obra').hidden = !obras.length;
   }
@@ -125,7 +128,7 @@
     $('ck-editar').textContent = editar ? 'Terminar edição' : 'Editar estrutura';
     $('ck-editar').setAttribute('aria-pressed', editar);
     $('ck-ficha').hidden = !obraId;
-    if (obraId) $('ck-ficha').href = '#obras/' + obraId;
+    if (obraId) $('ck-ficha').href = '/obras/' + obraId;
     const c = $('ck-conteudo');
 
     if (!obras.length) {
@@ -388,7 +391,7 @@
   // ---------- obras ----------
   $('ck-obra').addEventListener('change', (e) => {
     Hub.guardar('obra', e.target.value);
-    location.hash = 'checklist/' + e.target.value;
+    Hub.ir('checklist/' + e.target.value);
   });
 
   $('ck-editar').addEventListener('click', () => { editar = !editar; desenhar(); });
