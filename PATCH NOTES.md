@@ -15,7 +15,7 @@ Regras que não se alteram sem confirmação do Sebastião. Cada uma tem, sempre
 9. **5 papéis com a matriz de permissões do README.** O Cliente nunca vê custos nem preços; Obra também não. (D9)
 10. **Dados pessoais da equipa** (NIF, CC, IBAN, saúde) só visíveis para ADMIN e Administrador. (D10)
 11. **PINs de cartões não são guardados** na plataforma. (D11)
-12. **Ordem do roadmap: Base → Equipa (fichas, férias) → Obras (abas, Drive, mapas) → Equipa (horas, veículos) → Custos.** (alterada na v0.2, v0.3 e v0.6 a pedido do Sebastião)
+12. **Ordem do roadmap: Base → Equipa (fichas, férias) → Obras (abas, Drive) → Controlo e veículos → Mapas → Custos.** (alterada na v0.2, v0.3, v0.6 e v0.8 a pedido do Sebastião)
 13. **O tipo de utilizador só muda pelo servidor.** Um trigger em `profiles` bloqueia alterações diretas a `papel`, `role`, `utilizador` e `ativo`; um Administrador não cria nem altera contas ADMIN; ninguém muda o próprio tipo. (D13)
 14. **A visibilidade da checklist é aplicada na base de dados** (RLS em `fases` e `items`), não só no ecrã. O que está dentro de um item escondido também fica escondido. (D14)
 16. **Campos da obra por tipo de utilizador**, filtrados na base de dados: cliente e notas internas não se leem diretamente da tabela, só por `obras_visiveis()`. Subempreiteiro não vê cliente, notas nem membros; Cliente vê a sua obra e os seus dados, sem notas. (D15)
@@ -35,10 +35,29 @@ Regras que não se alteram sem confirmação do Sebastião. Cada uma tem, sempre
 30. **Voltar onde estava:** no mesmo dia, cada separador volta ao mesmo sítio (sub-página, filtros, pesquisa, posição); abrir o Hub volta à última página. **Noutro dia, tudo recomeça** no Início, sem filtros. (D20)
 31. **Abas já vistas abrem logo** (mostram o que se viu e atualizam em segundo plano); "A carregar" só na primeira vez.
 32. **Foto de capa da obra:** escolhida por ADMIN/Administrador (das Fotos da obra ou carregada), guardada em privado no Supabase; vista por todos os membros, incluindo o Cliente; aparece também nos cartões da lista. (D20)
-33. **Checklist:** pesquisa em todas as fases (sem distinguir acentos) e filtros (estado, responsável, escondidos, visibilidade restrita); em "Editar estrutura" arrastam-se fases, títulos, checks e subchecks (títulos só no primeiro nível).
+33. **Checklist:** pesquisa em todas as fases (sem distinguir acentos; cada resultado mostra Fase › Título) e filtros (estado, responsável, visibilidade restrita); em "Editar estrutura" arrastam-se fases, títulos, checks e subchecks (títulos só no primeiro nível); títulos e checks com subchecks abrem e fecham.
+34. **Escondidos numa obra desaparecem para todos** (também ADMIN/Administrador); o botão "Mostrar escondidos nesta obra (N)" mostra-os a cinzento no lugar deles.
+35. **Pedidos:** "Concluir"/"Concluídos" (não "Fechar"); campo "Necessário até"; ordenados pela data de necessidade; a aba Pedidos mostra quantos estão por concluir (vermelho se algum for urgente ou estiver atrasado).
+36. **Contactos de emergência e alojamento** da obra (hospital, polícia/GNR, bombeiros, alojamento): visíveis para os membros, **exceto o Cliente**. (D21)
+37. **Controlo** (GPS e Horas extra) e **Veículos**: só ADMIN e Administrador. Dos cartões dos veículos guardam-se **só os últimos 4 dígitos**; nunca PINs nem números completos. (D21)
+38. **A foto de capa é o fundo do cabeçalho da obra** (não uma faixa por cima).
 15. **Todas as páginas** em `public/` são em português de Portugal e ligam-se ao Supabase só pelo `plataforma-core`. (D6)
 
 ## Histórico
+
+### v0.8 — 2026-10-11
+- Novo separador **Controlo** (`public/js/controlo.js`, só ADMIN/Administrador): **GPS** (condutor, veículo, partidas e chegadas de manhã/almoço/tarde, tempo de condução, observações; filtros por mês, condutor e veículo) e **Horas extra** (obra, colaborador, horas × €/hora com 8,50 € por omissão, ou valor fixo; Pago/Não pago com um clique; totais e resumo por colaborador).
+- **Veículos** em Colaboradores (`public/js/colaboradores.js`): ficha do veículo, validades de revisão/inspeção/seguro/IUC com alertas no Início (31 dias), cartões BP e Pontos só com os últimos 4 dígitos.
+- Base de dados (migração `0010_controlo_veiculos`): `veiculos`, `gps_registos`, `horas_extra` com RLS só para gestores (testado: Administrador vê 9/10/27; Obra e Cliente veem 0).
+- Importados do Excel: 9 veículos (sem PINs; cartões só com 4 dígitos), 10 registos de GPS (os do "Scenic" ficam com o veículo em texto, porque há dois), 27 horas extra (as de "Cães" ligadas à obra Caes; nomes sem ficha ficam em texto).
+- Roadmap: Controlo e Veículos passam a v0.8; Mapa da obra e Mapa de obras para depois (Decisão 12 atualizada). Novo teste D21.
+
+### v0.7c — 2026-10-11
+- Obra: a **capa é o fundo do cabeçalho**; aviso com o número de pedidos por concluir na aba Pedidos; bloco **Emergência e alojamento** (ficha e formulário), com "Ligar" e "Mapa".
+- Pedidos: "Necessário até", ordem pela data de necessidade, atrasados em destaque, "Concluir"/"Concluídos".
+- Checklist: abrir/fechar (▸/▾, "Abrir tudo"/"Fechar tudo", com memória); escondidos desaparecem para todos e o botão "Mostrar escondidos nesta obra (N)" mostra-os; a pesquisa mostra Fase › Título.
+- Férias: aba **Visão Pedro** (ano de um colaborador, dias alinhados pelo dia da semana, cores como no Excel, contagem de gozados/marcados/pendentes/por marcar); "As minhas férias" passa a mostrar a mesma vista.
+- Separadores do topo mais compactos para caberem todos.
 
 ### v0.7b — 2026-10-11
 - **Voltar onde estava:** memória do dia em `public/js/hub.js` (`lembrar`/`recordar`, rota de cada secção, posição na página); o separador do topo volta à última sub-página dessa secção; noutro dia recomeça tudo.

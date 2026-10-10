@@ -36,6 +36,7 @@
       { id: 'obras', nome: 'Obras', href: '/obras' },
       { id: 'checklist', nome: 'Checklist', href: '/checklist' },
       (ehGestor(eu) || (eu && eu.ficha)) && { id: 'ferias', nome: 'Férias', href: '/ferias' },
+      ehGestor(eu) && { id: 'controlo', nome: 'Controlo', href: '/controlo' },
       ehGestor(eu) && { id: 'colaboradores', nome: 'Colaboradores', href: '/colaboradores' },
       { id: 'novidades', nome: 'Novidades', href: '/novidades' }
     ].filter(Boolean);

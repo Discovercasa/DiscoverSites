@@ -261,6 +261,70 @@
   #ck-conteudo.editando ul.filhos:empty { border-left-color: transparent; }
   #ck-conteudo.editando ul.arvore:empty { min-height: 3rem; border: 2px dashed var(--linha); border-radius: 6px; }
 
+  /* v0.7c — cabeçalho da obra com capa de fundo */
+  .cabeca-obra { position: relative; margin: -1.8rem calc(var(--margem) * -1) 0; padding: 1.4rem var(--margem) 1rem; overflow: hidden; }
+  .cabeca-obra .fundo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+  .cabeca-obra .sombra { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.25) 0%, rgba(0,0,0,.65) 100%); z-index: 1; }
+  .cabeca-obra .conteudo-cabeca { position: relative; z-index: 2; }
+  .cabeca-obra .barra { margin-bottom: 0; }
+  .cabeca-obra.com-capa { min-height: clamp(11rem, 24vw, 17rem); display: flex; align-items: flex-end; }
+  .cabeca-obra.com-capa .conteudo-cabeca { width: 100%; }
+  .cabeca-obra.com-capa h1, .cabeca-obra.com-capa .codigo, .cabeca-obra.com-capa .voltar { color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,.5); }
+  .cabeca-obra.com-capa .botao.secundario { background: rgba(255,255,255,.92); }
+  .abas-obra { margin-top: 1rem; }
+  .aviso-aba { display: inline-grid; place-items: center; min-width: 1.25rem; height: 1.25rem; padding: 0 .3rem; margin-left: .35rem; border-radius: 999px;
+    background: var(--amarelo); color: var(--escuro); font-size: .75rem; font-weight: 700; vertical-align: 1px; }
+  .aviso-aba.urgente { background: var(--erro); color: #fff; }
+  .necessario { font-size: .82rem; color: var(--suave); }
+  .necessario.atrasado { color: var(--erro); font-weight: 600; }
+  .painel-contactos .contacto { display: flex; flex-wrap: wrap; gap: .25rem .8rem; align-items: center; padding: .6rem 0; border-bottom: 1px solid var(--fundo); }
+  .painel-contactos .contacto:last-child { border-bottom: 0; }
+  .painel-contactos .rotulo { flex-basis: 100%; color: var(--suave); font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+  .painel-contactos .info { flex: 1 1 10rem; min-width: 0; }
+  .painel-contactos .acoes { flex: none; }
+
+  /* v0.7c — checklist: abrir/fechar */
+  .alternar { border: 0; background: none; cursor: pointer; width: 1.3rem; flex: none; font-size: 1rem; line-height: 1.4; color: var(--suave); padding: 0; }
+  .alternar:hover { color: var(--escuro); }
+  .alternar.vazio-alt { display: inline-block; cursor: default; }
+  ul.filhos.recolhido { display: none; }
+  .abrir-fechar button { font-size: .8rem; }
+  #ck-f-esc[aria-pressed="true"] { background: var(--escuro); color: #fff; border-color: var(--escuro); }
+
+  /* v0.7c — Visão Pedro (férias) */
+  .escolher-colab { padding: .45rem .7rem; border: 1px solid var(--linha); border-radius: 4px; background: var(--branco); font-weight: 600; }
+  table.anual { min-width: 0; width: auto; border-collapse: collapse; font-size: .8rem; }
+  table.anual th, table.anual td { border: 1px solid #d6d6d2; padding: 0; width: 1.7rem; min-width: 1.7rem; height: 1.55rem; text-align: center; }
+  table.anual thead th { background: #fafaf8; font-family: Barlow, sans-serif; text-transform: none; letter-spacing: 0; font-weight: 600; font-size: .72rem; }
+  table.anual thead th.fds { background: #cfe8da; }
+  table.anual th.mes { width: auto; min-width: 6rem; text-align: right; padding: 0 .5rem; font-weight: 700; font-family: Barlow, sans-serif; text-transform: none; position: sticky; left: 0; background: var(--branco); z-index: 1; }
+  table.anual th.mes.atual { background: var(--erro); color: #fff; }
+  table.anual td { background: #fff; }
+  table.anual td.fora { background: #e9e9e6; }
+  table.anual td.fds { background: #cfe8da; font-weight: 700; }
+  table.anual td.feriado { background: #e06c66; color: #fff; font-weight: 700; }
+  table.anual td.aus { background: var(--cor, #bbb); }
+  table.anual td.aus-ferias { background: #111; color: #fff; font-weight: 700; }
+  table.anual td.aus-ferias_empresa { background: #9ec3ea; font-weight: 700; }
+  table.anual td.pendente { background: repeating-linear-gradient(45deg, #111 0 3px, #fff 3px 6px); color: #111; }
+  table.anual td.hoje { outline: 3px solid var(--erro); outline-offset: -3px; }
+  table.anual td[title] { cursor: default; }
+  .legenda i.l-ferias { background: #111; } .legenda i.l-empresa { background: #9ec3ea; } .legenda i.l-feriado { background: #e06c66; }
+  .legenda i.l-fds { background: #cfe8da; } .legenda i.l-outro { background: linear-gradient(90deg, #64b5f6, #e57373); } .legenda i.l-hoje { background: #fff; outline: 3px solid var(--erro); outline-offset: -3px; }
+
+  /* v0.8 — Controlo e Veículos */
+  tr.clicavel { cursor: pointer; }
+  tr.clicavel:hover td { background: #fafaf8; }
+  td.obs { max-width: 22rem; color: var(--suave); font-size: .9rem; }
+  .botao-estado { border: 0; cursor: pointer; font: inherit; font-size: .8rem; font-weight: 600; }
+  .tabela-horas { display: grid; grid-template-columns: 5rem 1fr 1fr; gap: .4rem .6rem; align-items: center; margin-bottom: 1rem; }
+  .tabela-horas input { padding: .5rem; border: 1px solid var(--linha); border-radius: 4px; }
+  .resumo-colab { margin-bottom: 1rem; }
+  .resumo-colab summary { cursor: pointer; font-weight: 600; margin-bottom: .5rem; }
+  .cartao-veiculo { text-align: left; border: 0; font: inherit; cursor: pointer; width: 100%; display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; }
+  .cartao-veiculo.inativo { opacity: .6; }
+  #d-gps, #d-horas, #d-veiculo { width: min(100% - 2rem, 36rem); }
+
   /* Obras */
   .filtros { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: 1rem; }
   .filtros input, .filtros select { padding: .6rem .8rem; border: 1px solid var(--linha); border-radius: 4px; background: var(--branco); }
@@ -348,7 +412,7 @@
         <input type="search" id="ck-procurar" placeholder="Procurar em todas as fases" aria-label="Procurar na checklist">
         <select id="ck-f-estado" aria-label="Estado"><option value="">Todos</option><option value="por_fazer">Por fazer</option><option value="feitos">Feitos</option></select>
         <select id="ck-f-resp" aria-label="Responsável"></select>
-        <label class="interruptor" id="ck-f-esc-l" hidden><input type="checkbox" id="ck-f-esc"> Escondidos nesta obra</label>
+        <button class="botao secundario pequeno" type="button" id="ck-f-esc" hidden aria-pressed="false">Escondidos nesta obra</button>
         <label class="interruptor" id="ck-f-res-l" hidden><input type="checkbox" id="ck-f-res"> Visibilidade restrita</label>
         <button class="botao secundario pequeno" type="button" id="ck-f-limpar" hidden>Limpar</button>
       </div>
@@ -361,12 +425,23 @@
       <div id="fe-conteudo"></div>
     </section>
 
+    <section id="aba-controlo" hidden>
+      <nav class="sub-abas" aria-label="Controlo">
+        <a href="/controlo/gps" data-sub="gps">GPS</a>
+        <a href="/controlo/horas" data-sub="horas">Horas extra</a>
+      </nav>
+      <p class="mensagem" id="ct-aviso" role="status"></p>
+      <div id="ct-conteudo"></div>
+    </section>
+
     <section id="aba-colaboradores" hidden>
       <nav class="sub-abas" aria-label="Colaboradores">
         <a href="/colaboradores" data-sub="equipa">Equipa</a>
+        <a href="/colaboradores/veiculos" data-sub="veiculos">Veículos</a>
         <a href="/colaboradores/contas" data-sub="contas">Contas de acesso</a>
       </nav>
       <div id="colab-equipa"></div>
+      <div id="colab-veiculos" hidden></div>
       <div id="colab-contas">
       <div class="barra">
         <div>
@@ -584,7 +659,10 @@
   <form method="dialog" id="f-pedido-obra" novalidate>
     <h2 class="titulo">Novo pedido ou falha</h2>
     <div class="campo"><label for="dpd-tipo">Tipo</label><select id="dpd-tipo"></select></div>
-    <div class="campo"><label for="dpd-prioridade">Prioridade</label><select id="dpd-prioridade"></select></div>
+    <div class="form-grelha" style="grid-template-columns:1fr 1fr">
+      <div class="campo"><label for="dpd-prioridade">Prioridade</label><select id="dpd-prioridade"></select></div>
+      <div class="campo"><label for="dpd-necessario">Necessário até (opcional)</label><input id="dpd-necessario" type="date"></div>
+    </div>
     <div class="campo"><label for="dpd-descricao">Descrição *</label><textarea id="dpd-descricao" rows="5"></textarea></div>
     <div class="campo"><label for="dpd-foto">Fotografia (opcional)</label><input id="dpd-foto" type="file" accept="image/*" capture="environment"></div>
     <div class="rodape-dialogo">
@@ -652,6 +730,96 @@
   </form>
 </dialog>
 
+<!-- Controlo: registo de GPS -->
+<dialog id="d-gps">
+  <form method="dialog" id="f-gps" novalidate>
+    <h2 class="titulo" id="dg-titulo">Registo de GPS</h2>
+    <div class="form-grelha" style="grid-template-columns:repeat(auto-fill,minmax(9rem,1fr))">
+      <div class="campo"><label for="dg-data">Data</label><input id="dg-data" type="date"></div>
+      <div class="campo"><label for="dg-condutor">Condutor</label><select id="dg-condutor"></select></div>
+      <div class="campo"><label for="dg-veiculo">Veículo</label><select id="dg-veiculo"></select></div>
+    </div>
+    <div class="tabela-horas">
+      <span></span><strong>Partida</strong><strong>Chegada</strong>
+      <span>Manhã</span><input id="dg-manha_partida" type="time" aria-label="Manhã — partida"><input id="dg-manha_chegada" type="time" aria-label="Manhã — chegada">
+      <span>Almoço</span><input id="dg-almoco_partida" type="time" aria-label="Almoço — partida"><input id="dg-almoco_chegada" type="time" aria-label="Almoço — chegada">
+      <span>Tarde</span><input id="dg-tarde_partida" type="time" aria-label="Tarde — partida"><input id="dg-tarde_chegada" type="time" aria-label="Tarde — chegada">
+    </div>
+    <div class="campo"><label for="dg-obs">Observações</label><textarea id="dg-obs" rows="2"></textarea></div>
+    <div class="rodape-dialogo">
+      <button class="botao" type="submit" value="ok">Guardar</button>
+      <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Cancelar</button>
+      <span class="espaco"></span>
+      <button class="botao perigo" type="button" id="dg-apagar">Apagar</button>
+    </div>
+    <p class="mensagem erro" id="dg-mensagem" role="alert"></p>
+  </form>
+</dialog>
+
+<!-- Controlo: horas extra -->
+<dialog id="d-horas">
+  <form method="dialog" id="f-horas" novalidate>
+    <h2 class="titulo" id="dh-titulo">Horas extra</h2>
+    <div class="form-grelha" style="grid-template-columns:1fr 1fr">
+      <div class="campo"><label for="dh-data">Data</label><input id="dh-data" type="date"></div>
+      <div class="campo"><label for="dh-estado">Estado</label><select id="dh-estado"><option value="nao_pago">Não pago</option><option value="pago">Pago</option></select></div>
+    </div>
+    <div class="campo"><label for="dh-colab">Colaborador</label><select id="dh-colab"></select><input id="dh-colab-texto" placeholder="Nome" style="margin-top:.4rem" hidden></div>
+    <div class="campo"><label for="dh-obra">Obra</label><select id="dh-obra"></select><input id="dh-obra-texto" placeholder="Nome da obra" style="margin-top:.4rem" hidden></div>
+    <div class="form-grelha" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="campo"><label for="dh-horas">Nº de horas</label><input id="dh-horas" type="number" min="0" step="0.25"></div>
+      <div class="campo"><label for="dh-valor-hora">€ / hora</label><input id="dh-valor-hora" type="number" min="0" step="0.01"></div>
+      <div class="campo"><label for="dh-total">Total (€)</label><input id="dh-total" type="number" min="0" step="0.01"></div>
+    </div>
+    <p class="ajuda" style="margin-top:-.6rem">O total calcula-se das horas × €/hora; num valor fixo (ex.: um sábado), escreva só o total.</p>
+    <div class="campo"><label for="dh-obs">Observações</label><input id="dh-obs" autocomplete="off"></div>
+    <div class="rodape-dialogo">
+      <button class="botao" type="submit" value="ok">Guardar</button>
+      <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Cancelar</button>
+      <span class="espaco"></span>
+      <button class="botao perigo" type="button" id="dh-apagar">Apagar</button>
+    </div>
+    <p class="mensagem erro" id="dh-mensagem" role="alert"></p>
+  </form>
+</dialog>
+
+<!-- Colaboradores: veículo -->
+<dialog id="d-veiculo">
+  <form method="dialog" id="f-veiculo" novalidate>
+    <h2 class="titulo" id="dv2-titulo">Veículo</h2>
+    <div class="form-grelha" style="grid-template-columns:repeat(auto-fill,minmax(9rem,1fr))">
+      <div class="campo"><label for="vc-nome">Nome</label><input id="vc-nome" autocomplete="off"></div>
+      <div class="campo"><label for="vc-matricula">Matrícula</label><input id="vc-matricula" autocomplete="off"></div>
+      <div class="campo"><label for="vc-marca">Marca</label><input id="vc-marca" autocomplete="off"></div>
+      <div class="campo"><label for="vc-modelo">Modelo</label><input id="vc-modelo" autocomplete="off"></div>
+      <div class="campo"><label for="vc-ano">Ano</label><input id="vc-ano" type="number" min="1950" max="2100"></div>
+      <div class="campo"><label for="vc-km">Km</label><input id="vc-km" type="number" min="0"></div>
+    </div>
+    <h3 class="titulo-grupo">Validades · alerta 31 dias antes</h3>
+    <div class="form-grelha" style="grid-template-columns:repeat(auto-fill,minmax(9rem,1fr))">
+      <div class="campo"><label for="vc-revisao">Revisão</label><input id="vc-revisao" type="date"></div>
+      <div class="campo"><label for="vc-inspecao">Inspeção</label><input id="vc-inspecao" type="date"></div>
+      <div class="campo"><label for="vc-seguro">Seguro</label><input id="vc-seguro" type="date"></div>
+      <div class="campo"><label for="vc-iuc">IUC</label><input id="vc-iuc" type="date"></div>
+    </div>
+    <h3 class="titulo-grupo">Cartões</h3>
+    <div class="form-grelha" style="grid-template-columns:1fr 1fr">
+      <div class="campo"><label for="vc-cartao_bp_fim">Cartão BP — últimos 4 dígitos</label><input id="vc-cartao_bp_fim" inputmode="numeric" maxlength="4" autocomplete="off"></div>
+      <div class="campo"><label for="vc-cartao_pontos_fim">Cartão Pontos — últimos 4 dígitos</label><input id="vc-cartao_pontos_fim" inputmode="numeric" maxlength="4" autocomplete="off"></div>
+    </div>
+    <p class="ajuda" style="margin-top:-.6rem">Não se guardam números completos nem PINs dos cartões.</p>
+    <div class="campo"><label for="vc-notas">Notas</label><input id="vc-notas" autocomplete="off"></div>
+    <label class="interruptor"><input type="checkbox" id="vc-ativo"> Veículo ativo</label>
+    <div class="rodape-dialogo">
+      <button class="botao" type="submit" value="ok">Guardar</button>
+      <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Cancelar</button>
+      <span class="espaco"></span>
+      <button class="botao perigo" type="button" id="vc-apagar">Apagar</button>
+    </div>
+    <p class="mensagem erro" id="vc-mensagem" role="alert"></p>
+  </form>
+</dialog>
+
 <dialog id="d-membros">
   <form method="dialog" id="f-membros" novalidate>
     <h2 class="titulo">Membros da obra</h2>
@@ -694,11 +862,39 @@
 <script src="/js/checklist.js"></script>
 <script src="/js/colaboradores.js"></script>
 <script src="/js/ferias.js"></script>
+<script src="/js/controlo.js"></script>
 <script>
-  const APP_VERSAO = 'v0.7b';
+  const APP_VERSAO = 'v0.8';
 
   // Mais recente primeiro. A primeira entrada tem de ser igual a APP_VERSAO.
   const NOVIDADES = [
+    {
+      versao: 'v0.8',
+      data: '2026-10-11',
+      novas: [
+        'Novo separador Controlo, com GPS das deslocações e horas extra.',
+        'Horas extra com totais pagos e por pagar, por colaborador.',
+        'Nova aba Veículos em Colaboradores, com alertas de revisão, inspeção, seguro e IUC.',
+        'Os registos de GPS, horas extra e veículos do Excel já estão na plataforma.'
+      ],
+      alteracoes: []
+    },
+    {
+      versao: 'v0.7c',
+      data: '2026-10-11',
+      novas: [
+        'Contactos de emergência e alojamento em cada obra.',
+        'Pedidos com data de necessidade e aviso na aba Pedidos.',
+        'Checklist: abrir e fechar títulos e checks.',
+        'Férias: nova vista "Visão Pedro" com o ano inteiro de cada colaborador.'
+      ],
+      alteracoes: [
+        'A foto de capa passa a ser o fundo do cabeçalho da obra.',
+        'Pedidos: "Fechar" passa a "Concluir".',
+        'Os itens escondidos numa obra deixam de aparecer; um botão mostra-os.',
+        'A pesquisa da checklist mostra a fase e o título de cada resultado.'
+      ]
+    },
     {
       versao: 'v0.7b',
       data: '2026-10-11',
@@ -936,7 +1132,7 @@
   function irPara(aba) {
     let rota = aba;
     aba = aba.split('/')[0];
-    const permitidas = ['inicio', 'obras', 'checklist', 'novidades', ehGestor() && 'colaboradores', (ehGestor() || eu.ficha) && 'ferias'].filter(Boolean);
+    const permitidas = ['inicio', 'obras', 'checklist', 'novidades', ehGestor() && 'colaboradores', ehGestor() && 'controlo', (ehGestor() || eu.ficha) && 'ferias'].filter(Boolean);
     if (!permitidas.includes(aba)) { aba = 'inicio'; rota = 'inicio'; }
     Hub.registarRota(rota);
     for (const s of document.querySelectorAll('main > section')) s.hidden = s.id !== 'aba-' + aba;
@@ -945,12 +1141,13 @@
     if (aba === 'obras') pronto = ObrasHub.mostrar(rota, eu);
     if (aba === 'checklist') pronto = ChecklistHub.mostrar(rota, eu);
     if (aba === 'ferias') pronto = FeriasHub.mostrar(rota, eu);
+    if (aba === 'controlo') pronto = ControloHub.mostrar(rota, eu);
     if (aba === 'colaboradores') {
-      const contasAberto = rota === 'colaboradores/contas';
-      $('colab-contas').hidden = !contasAberto; $('colab-equipa').hidden = contasAberto;
-      document.querySelectorAll('.sub-abas a').forEach((a) => a.dataset.sub === (contasAberto ? 'contas' : 'equipa')
+      const sub = rota === 'colaboradores/contas' ? 'contas' : rota === 'colaboradores/veiculos' ? 'veiculos' : 'equipa';
+      $('colab-contas').hidden = sub !== 'contas'; $('colab-veiculos').hidden = sub !== 'veiculos'; $('colab-equipa').hidden = sub !== 'equipa';
+      document.querySelectorAll('#aba-colaboradores .sub-abas a').forEach((a) => a.dataset.sub === sub
         ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
-      pronto = contasAberto ? carregarContas() : ColaboradoresHub.mostrar(rota, eu);
+      pronto = sub === 'contas' ? carregarContas() : sub === 'veiculos' ? ColaboradoresHub.mostrarVeiculos(eu) : ColaboradoresHub.mostrar(rota, eu);
     }
     if (aba === 'inicio') pronto = mostrarAlertas();
     // volta à mesma posição da página (depois de o conteúdo aparecer)
@@ -965,10 +1162,10 @@
     const itens = [
       { titulo: 'Obras', texto: 'Projeto, entregas, pedidos e ficha de cada obra.', href: '/obras' },
       { titulo: 'Checklist', texto: 'Fases e checks de cada obra.', href: '/checklist' },
-      ehGestor() && { titulo: 'Colaboradores', texto: 'Fichas da equipa e contas de acesso.', href: '/colaboradores' },
+      ehGestor() && { titulo: 'Colaboradores', texto: 'Fichas da equipa, veículos e contas de acesso.', href: '/colaboradores' },
       (ehGestor() || eu.ficha) && { titulo: 'Férias', texto: ehGestor() ? 'Mapa da equipa, pedidos, saldos e feriados.' : 'O meu saldo e pedidos de férias.', href: '/ferias' },
       eu.papel !== 'cliente' && { titulo: 'Mapa de obras', texto: 'Todas as obras num mapa.', futuro: 'v0.9' },
-      ehGestor() && { titulo: 'Horas extra', texto: 'Horas extra por obra e colaborador.', futuro: 'v0.10' },
+      ehGestor() && { titulo: 'Controlo', texto: 'GPS das deslocações e horas extra.', href: '/controlo' },
       ehGestor() && { titulo: 'Materiais e custos', texto: 'Fornecedores, preços e orçamentação.', futuro: 'v0.12' },
       { titulo: 'Novidades', texto: 'O que mudou em cada versão.', href: '/novidades' }
     ].filter(Boolean);
@@ -1000,7 +1197,7 @@
     c.replaceChildren(...[blocoPedidosObra, pedidos].filter(Boolean), ...(lista.length ? [el('section', { class: 'painel alertas' }, [
       el('h2', { class: 'titulo', text: `Alertas · ${lista.length}` }),
       el('ul', {}, lista.map((a) => el('li', {}, [
-        el('a', { href: '/colaboradores/' + a.id, text: a.nome }), el('span', { text: a.documento }),
+        el('a', { href: a.ligacao, text: a.nome }), el('span', { text: a.documento }),
         el('span', { class: 'estado ' + a.estado.classe, text: a.estado.texto }),
         el('span', { class: 'ajuda', style: 'margin:0', text: new Date(a.data + 'T00:00:00').toLocaleDateString('pt-PT') })
       ])))

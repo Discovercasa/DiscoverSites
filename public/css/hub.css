@@ -36,8 +36,8 @@ header.topo {
 .topo-logo img { height: 42px; width: auto; display: block; }
 nav.abas { display: flex; gap: .15rem; flex: 1; overflow-x: auto; scrollbar-width: none; }
 nav.abas a {
-  color: var(--escuro); text-decoration: none; padding: .5rem .8rem .35rem; white-space: nowrap;
-  font-family: var(--titulos); font-weight: 600; font-size: 1.05rem; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--escuro); text-decoration: none; padding: .5rem clamp(.45rem, .9vw, .8rem) .35rem; white-space: nowrap;
+  font-family: var(--titulos); font-weight: 600; font-size: clamp(.95rem, 1.1vw, 1.05rem); text-transform: uppercase; letter-spacing: .05em;
   border-bottom: 3px solid transparent; border-radius: 3px 3px 0 0;
 }
 nav.abas a:hover { background: var(--fundo); }

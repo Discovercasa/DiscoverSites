@@ -51,7 +51,7 @@
   async function mostrar(rota, utilizador) {
     eu = utilizador; gestor = Hub.ehGestor(eu);
     const sub = rota.split('/')[1];
-    if (['mapa', 'saldos', 'feriados'].includes(sub)) vista = sub;
+    if (['mapa', 'anual', 'saldos', 'feriados'].includes(sub)) vista = sub;
     lembrarVista();
     aviso('');
     if (carregado && anoCarregado === ano) {
@@ -102,8 +102,8 @@
       ])))
     ]));
     const sub = (id, nome) => el('a', { href: '/ferias/' + id, 'aria-current': vista === id ? 'page' : false, text: nome });
-    conteudo.push(el('nav', { class: 'sub-abas' }, [sub('mapa', 'Mapa'), sub('saldos', 'Saldos'), sub('feriados', 'Feriados')]));
-    conteudo.push(vista === 'saldos' ? vistaSaldos() : vista === 'feriados' ? vistaFeriados() : vistaMapa());
+    conteudo.push(el('nav', { class: 'sub-abas' }, [sub('mapa', 'Mapa'), sub('anual', 'Visão Pedro'), sub('saldos', 'Saldos'), sub('feriados', 'Feriados')]));
+    conteudo.push(vista === 'saldos' ? vistaSaldos() : vista === 'feriados' ? vistaFeriados() : vista === 'anual' ? vistaAnualGestor() : vistaMapa());
     $('fe-conteudo').replaceChildren(...conteudo);
   }
 
@@ -197,6 +197,63 @@
     ]);
   }
 
+  // ---------- Visão Pedro: o ano de um colaborador, com os dias alinhados pelo dia da semana ----------
+  const SEMANA_PT = ['2ª', '3ª', '4ª', '5ª', '6ª', 'Sáb', 'Dom'];
+  function vistaAnualGestor() {
+    let id = Hub.recordar('ferias.anual', null);
+    if (!fichas.some((f) => f.id === id)) id = fichas[0] && fichas[0].id;
+    const sel = el('select', { 'aria-label': 'Colaborador', class: 'escolher-colab' }, fichas.map((f) => el('option', { value: f.id, text: f.nome, selected: f.id === id })));
+    sel.addEventListener('change', () => { Hub.lembrar('ferias.anual', sel.value); desenhar(); });
+    return el('div', {}, [el('div', { class: 'navega' }, [seletorAno(), sel]), id ? anual(id) : el('p', { class: 'ajuda', text: 'Sem colaboradores.' })]);
+  }
+
+  function anual(colabId) {
+    const hoje = iso(new Date());
+    const doColab = ausencias.filter((a) => a.colaborador_id === colabId && a.estado !== 'recusado');
+    const dia = new Map(); // AAAA-MM-DD -> ausência
+    for (const a of doColab) for (let d = new Date(a.data_inicio + 'T00:00:00'); iso(d) <= a.data_fim; d.setDate(d.getDate() + 1)) if (!dia.has(iso(d))) dia.set(iso(d), a);
+
+    // contagem: férias (pessoais + Discovercasa) em dias úteis
+    const s = saldos.find((x) => x.colaborador_id === colabId) || { dias: 22, transitados: 0, pendentes: 0 };
+    let gozados = 0, marcados = 0;
+    for (const a of doColab.filter((a) => a.estado === 'aprovado' && ['ferias', 'ferias_empresa'].includes(a.tipo))) {
+      const ini = a.data_inicio < `${ano}-01-01` ? `${ano}-01-01` : a.data_inicio, fim = a.data_fim > `${ano}-12-31` ? `${ano}-12-31` : a.data_fim;
+      if (a.meio_dia) { (ini < hoje ? (gozados += 0.5) : (marcados += 0.5)); continue; }
+      for (let d = new Date(ini + 'T00:00:00'); iso(d) <= fim; d.setDate(d.getDate() + 1))
+        if (d.getDay() % 6 !== 0 && !feriados.has(iso(d))) iso(d) < hoje ? gozados++ : marcados++;
+    }
+    const total = +s.dias + +s.transitados, porMarcar = total - gozados - marcados;
+    const cartao = (r, v, c) => el('div', { class: 'saldo' + (c ? ' ' + c : '') }, [el('span', { text: r }), el('strong', { text: num(v) })]);
+
+    // grelha: 12 meses × 37 colunas (segunda a domingo, repetido)
+    const cab = el('tr', {}, [el('th', { class: 'mes', text: '' }), ...Array.from({ length: 37 }, (_, i) => el('th', { class: i % 7 >= 5 ? 'fds' : '', text: SEMANA_PT[i % 7] }))]);
+    const linhas = MESES.map((nomeMes, m) => {
+      const primeiro = new Date(ano, m, 1), desloc = (primeiro.getDay() + 6) % 7, nDias = new Date(ano, m + 1, 0).getDate();
+      const mesAtual = ano === new Date().getFullYear() && m === new Date().getMonth();
+      return el('tr', {}, [el('th', { class: 'mes' + (mesAtual ? ' atual' : ''), scope: 'row', text: nomeMes }), ...Array.from({ length: 37 }, (_, i) => {
+        const n = i - desloc + 1;
+        if (n < 1 || n > nDias) return el('td', { class: 'fora' });
+        const d = new Date(ano, m, n), k = iso(d), a = dia.get(k), fer = feriados.get(k);
+        const cl = [d.getDay() % 6 === 0 ? 'fds' : '', fer ? 'feriado' : '', k === hoje ? 'hoje' : ''];
+        if (a) cl.push('aus', 'aus-' + a.tipo, a.estado === 'pendente' ? 'pendente' : '');
+        return el('td', {
+          class: cl.filter(Boolean).join(' '), style: a && !['ferias', 'ferias_empresa'].includes(a.tipo) ? `--cor:${TIPOS[a.tipo].cor}` : null,
+          title: [dataPT(k), fer ? fer.nome : '', a ? TIPOS[a.tipo].nome + (a.estado === 'pendente' ? ' (pendente)' : '') : ''].filter(Boolean).join(' · '),
+          onclick: gestor ? () => (a ? abrirAusencia(a) : abrirAusencia(null, { colaborador_id: colabId, data_inicio: k, data_fim: k })) : null
+        }, String(n));
+      })]);
+    });
+    return el('div', { class: 'visao-anual' }, [
+      el('div', { class: 'saldos-cartoes' }, [cartao('Dias do ano', total), cartao('Gozados', gozados), cartao('Marcados', marcados), cartao('Pendentes', s.pendentes), cartao('Por marcar', porMarcar, 'destaque')]),
+      el('div', { class: 'tabela-envolvente' }, el('table', { class: 'anual' }, [el('thead', {}, cab), el('tbody', {}, linhas)])),
+      el('div', { class: 'legenda' }, [
+        el('span', {}, [el('i', { class: 'l-ferias' }), 'Férias']), el('span', {}, [el('i', { class: 'l-empresa' }), 'Férias Discovercasa']),
+        el('span', {}, [el('i', { class: 'l-feriado' }), 'Feriado']), el('span', {}, [el('i', { class: 'l-fds' }), 'Fim de semana']),
+        el('span', {}, [el('i', { class: 'l-outro' }), 'Outras ausências (cor do tipo)']), el('span', {}, [el('i', { class: 'l-hoje' }), 'Hoje'])
+      ])
+    ]);
+  }
+
   // ---------- registar / editar ausência (gestores) ----------
   let emEdicao = null;
   function abrirAusencia(a, pre = {}) {
@@ -237,7 +294,7 @@
         el('button', { class: 'botao', type: 'button', text: '+ Pedir', onclick: abrirPedido })
       ]),
       el('div', { class: 'navega' }, [seletorAno()]),
-      el('div', { class: 'saldos-cartoes' }, [cartao('Dias do ano', s.dias), cartao('Transitados', s.transitados), cartao('Gozados', s.gozados), cartao('Pendentes', s.pendentes), cartao('Disponíveis', s.disponivel, true)]),
+      anual(s.colaborador_id),
       el('div', { class: 'tabela-envolvente' }, el('table', {}, [
         el('thead', {}, el('tr', {}, ['Tipo', 'Período', 'Dias úteis', 'Estado', ''].map((t) => el('th', { text: t })))),
         el('tbody', {}, minhas.length ? minhas.map((a) => el('tr', {}, [

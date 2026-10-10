@@ -226,13 +226,83 @@
     });
   });
 
-  // ---------- alertas para o Início ----------
-  async function alertas() {
-    const { data, error } = await sb.from('colaboradores').select('id, nome, carta_validade, cc_validade, aptidao_validade');
-    if (error) return [];
-    return data.flatMap((f) => alertasDe(f).map((a) => ({ id: f.id, nome: f.nome, documento: a.nome, estado: a.estado, data: a.data })))
-      .sort((a, b) => (a.data || '').localeCompare(b.data || ''));
+  // ======================= VEÍCULOS =======================
+  const VALIDADES = [['revisao', 'Revisão'], ['inspecao', 'Inspeção'], ['seguro', 'Seguro'], ['iuc', 'IUC']];
+  let veiculos = [], veiculoAtual = null;
+  const alertasVeiculo = (v) => VALIDADES.map(([c, n]) => ({ nome: n, estado: estadoDoc(v[c]), data: v[c] })).filter((a) => a.estado && a.estado.classe !== 'sim');
+
+  async function mostrarVeiculos(utilizador) {
+    eu = utilizador;
+    const c = $('colab-veiculos');
+    if (!veiculos.length) c.replaceChildren(el('p', { class: 'carregar', text: 'A carregar…' }));
+    try { veiculos = await ok(sb.from('veiculos').select('*').order('nome'), 'Não foi possível carregar os veículos.'); }
+    catch (e) { c.replaceChildren(el('p', { class: 'mensagem erro', text: e.message })); return; }
+    const cartao = (v) => {
+      const al = alertasVeiculo(v);
+      return el('button', { class: 'cartao cartao-veiculo' + (v.ativo ? '' : ' inativo'), type: 'button', onclick: () => abrirVeiculo(v) }, [
+        el('h2', { class: 'titulo', text: v.nome }),
+        el('p', { text: [v.matricula && v.matricula !== v.nome ? v.matricula : null, [v.marca, v.modelo].filter(Boolean).join(' '), v.ano].filter(Boolean).join(' · ') || '—' }),
+        el('div', { class: 'linha-estado' }, [
+          v.km != null ? el('span', { class: 'ajuda', text: `${Number(v.km).toLocaleString('pt-PT')} km` }) : null,
+          v.cartao_bp_fim ? el('span', { class: 'etiqueta', text: 'BP •••• ' + v.cartao_bp_fim }) : null,
+          v.cartao_pontos_fim ? el('span', { class: 'etiqueta', text: 'Pontos •••• ' + v.cartao_pontos_fim }) : null,
+          ...al.map((a) => el('span', { class: 'estado ' + a.estado.classe, text: `${a.nome}: ${a.estado.texto}` })),
+          v.ativo ? null : el('span', { class: 'estado nao', text: 'Inativo' })
+        ].filter(Boolean))
+      ]);
+    };
+    c.replaceChildren(
+      el('div', { class: 'barra' }, [
+        el('div', {}, [el('h1', { class: 'titulo', text: 'Veículos' }), el('p', { class: 'subtitulo', style: 'margin:0', text: `${veiculos.length} veículos · alertas de revisão, inspeção, seguro e IUC ${DIAS_ALERTA} dias antes.` })]),
+        el('button', { class: 'botao', type: 'button', text: '+ Novo veículo', onclick: () => abrirVeiculo(null) })
+      ]),
+      veiculos.length ? el('div', { class: 'grelha' }, veiculos.map(cartao)) : el('div', { class: 'vazio', text: 'Ainda não há veículos.' })
+    );
   }
 
-  window.ColaboradoresHub = { mostrar, alertas, AREAS };
+  function abrirVeiculo(v) {
+    veiculoAtual = v;
+    $('dv2-titulo').textContent = v ? v.nome : 'Novo veículo';
+    for (const c of ['nome', 'matricula', 'marca', 'modelo', 'ano', 'km', 'cartao_pontos_fim', 'cartao_bp_fim', 'notas', 'revisao', 'inspecao', 'seguro', 'iuc'])
+      $('vc-' + c).value = v && v[c] != null ? v[c] : '';
+    $('vc-ativo').checked = v ? v.ativo : true;
+    $('vc-apagar').hidden = !v; $('vc-mensagem').textContent = '';
+    $('d-veiculo').showModal();
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    $('f-veiculo').addEventListener('submit', async (ev) => {
+      if (!ev.submitter || ev.submitter.value !== 'ok') return;
+      ev.preventDefault();
+      const v = (c) => { const x = $('vc-' + c).value.trim(); return x === '' ? null : x; };
+      const r = { nome: v('nome'), matricula: v('matricula'), marca: v('marca'), modelo: v('modelo'),
+        ano: v('ano') && parseInt(v('ano'), 10), km: v('km') && parseInt(v('km'), 10),
+        cartao_pontos_fim: v('cartao_pontos_fim'), cartao_bp_fim: v('cartao_bp_fim'), notas: v('notas'),
+        revisao: v('revisao'), inspecao: v('inspecao'), seguro: v('seguro'), iuc: v('iuc'), ativo: $('vc-ativo').checked };
+      if (!r.nome) { $('vc-mensagem').textContent = 'Indique o nome do veículo.'; return; }
+      for (const c of ['cartao_pontos_fim', 'cartao_bp_fim']) if (r[c] && !/^\d{4}$/.test(r[c])) { $('vc-mensagem').textContent = 'Dos cartões guarda-se só os últimos 4 dígitos.'; return; }
+      try {
+        await ok(veiculoAtual ? sb.from('veiculos').update(r).eq('id', veiculoAtual.id) : sb.from('veiculos').insert(r));
+        $('d-veiculo').close(); await mostrarVeiculos(eu);
+      } catch (e) { $('vc-mensagem').textContent = e.message; }
+    });
+    $('vc-apagar').addEventListener('click', async () => {
+      if (!confirm(`Apagar o veículo ${veiculoAtual.nome}?\n\nOs registos de GPS ficam, mas sem o veículo associado.`)) return;
+      try { await ok(sb.from('veiculos').delete().eq('id', veiculoAtual.id), 'Não foi possível apagar.'); $('d-veiculo').close(); await mostrarVeiculos(eu); }
+      catch (e) { $('vc-mensagem').textContent = e.message; }
+    });
+  });
+
+  // ---------- alertas para o Início (documentos da equipa e validades dos veículos) ----------
+  async function alertas() {
+    const [c, v] = await Promise.all([
+      sb.from('colaboradores').select('id, nome, carta_validade, cc_validade, aptidao_validade'),
+      sb.from('veiculos').select('id, nome, matricula, revisao, inspecao, seguro, iuc, ativo')
+    ]);
+    const pessoas = (c.data || []).flatMap((f) => alertasDe(f).map((a) => ({ id: f.id, nome: f.nome, documento: a.nome, estado: a.estado, data: a.data, ligacao: '/colaboradores/' + f.id })));
+    const carros = (v.data || []).filter((x) => x.ativo).flatMap((x) => alertasVeiculo(x).map((a) => ({ id: x.id, nome: `🚐 ${x.nome}${x.matricula && x.matricula !== x.nome ? ' · ' + x.matricula : ''}`, documento: a.nome, estado: a.estado, data: a.data, ligacao: '/colaboradores/veiculos' })));
+    return [...pessoas, ...carros].sort((a, b) => (a.data || '').localeCompare(b.data || ''));
+  }
+
+  window.ColaboradoresHub = { mostrar, mostrarVeiculos, alertas, AREAS };
 })();

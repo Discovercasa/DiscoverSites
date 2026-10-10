@@ -253,6 +253,20 @@ teste('D20', 'capas das obras: privadas, só gestores mudam; memória do dia', (
   exigir(/mem\.dia !== HOJE/.test(hub), 'a memória de onde se estava tem de recomeçar noutro dia');
 });
 
+teste('D21', 'controlo e veículos só para gestores; cartões só 4 dígitos; contactos sem Cliente', () => {
+  const sql = fs.readdirSync(path.join(RAIZ, 'supabase/migrations')).filter(f => f.endsWith('.sql'))
+    .map(f => ler('supabase/migrations/' + f)).join('\n');
+  for (const t of ['veiculos', 'gps_registos', 'horas_extra']) {
+    exigir(new RegExp(`alter table public\\.${t} enable row level security`).test(sql), `${t} sem RLS`);
+    const pol = sql.match(new RegExp(`create policy [^;]*on public\\.${t}[^;]*;`, 'g')) || [];
+    exigir(pol.length >= 4 && pol.every((p) => /eh_gestor\(\)/.test(p) && !/\btrue\b|auth\.uid\(\)/.test(p)), `${t} não está limitada a ADMIN/Administrador`);
+  }
+  exigir(/cartao_pontos_fim ~ '\^\[0-9\]\{4\}\$'/.test(sql) && /cartao_bp_fim ~ '\^\[0-9\]\{4\}\$'/.test(sql), 'os cartões podem guardar mais do que 4 dígitos');
+  exigir(/case when eu\.papel <> 'cliente' then o\.contactos end/.test(sql), 'o Cliente pode ver os contactos de emergência e alojamento');
+  const grant = (sql.match(/grant select \(([^)]*)\)\s*on public\.obras to authenticated/) || [])[1] || '';
+  exigir(!/\bcontactos\b/.test(grant), 'os contactos podem ser lidos diretamente da tabela obras');
+});
+
 teste('—', 'ROADMAP marca a versão atual', () => {
   if (/[a-z]$/.test(versaoNotas || '')) return; // letras entre versões não vão ao roadmap
   exigir(new RegExp(`✅\\s*${versaoNotas?.replace('.', '\\.')}\\b`).test(ler('ROADMAP.md')),

@@ -4,9 +4,12 @@
   const PAPEIS_RESTRINGIVEIS = ['obra', 'subempreiteiro', 'cliente'];
 
   let eu = null, gestor = false, editar = false, pedida = null, iniciado = false;
-  const FILTROS_VAZIOS = { texto: '', estado: '', resp: '', escondidos: false, restritos: false };
+  const FILTROS_VAZIOS = { texto: '', estado: '', resp: '', restritos: false };
+  let verEscondidos = Hub.recordar('checklist.verEscondidos', false);
+  let fechados = new Set(Hub.recordar('checklist.fechados', []));
+  const lembrarFechados = () => Hub.lembrar('checklist.fechados', [...fechados]);
   let filtros = Object.assign({}, FILTROS_VAZIOS, Hub.recordar('checklist.filtros', {}));
-  const filtroAtivo = () => !!(filtros.texto.trim() || filtros.estado || filtros.resp || filtros.escondidos || filtros.restritos);
+  const filtroAtivo = () => !!(filtros.texto.trim() || filtros.estado || filtros.resp || filtros.restritos);
   const normal = (t) => (t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   let pessoas = [];                 // gestores: todas as contas ativas
   const nomes = new Map();          // id -> nome
@@ -55,10 +58,12 @@
   }
   // O que esta pessoa vê nesta obra (a base de dados já filtrou a visibilidade por tipo/colaborador)
   function mostrarNo(it) {
+    if (escondidoNaObra(it) && !(gestor && verEscondidos)) return false;
     if (gestor) return true;
-    if (escondidoNaObra(it)) return false;
     return membro || temPartilhaAbaixo(it);
   }
+  // Itens escondidos diretamente nesta obra (que ainda existem)
+  const nEscondidos = () => itens.filter((i) => escondidos.has(i.id)).length;
   function contar(paiId, fase) {
     let total = 0, feitos = 0;
     for (const it of filhosDe(paiId, fase)) {
@@ -178,6 +183,10 @@
       el('div', { class: 'progresso', role: 'progressbar', 'aria-valuenow': pct, 'aria-valuemin': 0, 'aria-valuemax': 100 },
         el('div', { style: `width:${pct}%` })),
       el('span', { class: 'contagem', text: `${n.feitos} de ${n.total} · ${pct}%` }),
+      el('div', { class: 'ferramentas abrir-fechar' }, [
+        el('button', { type: 'button', text: 'Abrir tudo', onclick: () => { itens.filter((i) => i.fase_id === fase.id).forEach((i) => fechados.delete(i.id)); lembrarFechados(); desenhar(); } }),
+        el('button', { type: 'button', text: 'Fechar tudo', onclick: () => { itens.filter((i) => i.fase_id === fase.id && itens.some((x) => x.parent_id === i.id)).forEach((i) => fechados.add(i.id)); lembrarFechados(); desenhar(); } })
+      ]),
       gestor && restricao(fase),
       gestor && editar && el('div', { class: 'ferramentas' }, [
         el('button', { type: 'button', title: 'Mover para a esquerda', text: '←', onclick: () => mover(fase, -1, 'fases') }),
@@ -208,8 +217,12 @@
     const pessoasResp = gestor ? pessoas : [...new Set([...responsaveis.values()].map((r) => r.user_id).filter(Boolean))].map((id) => ({ id, nome: nomes.get(id) }));
     const opcoes = [['', 'Todos os responsáveis'], ['meus', 'Os meus'], ['sem', 'Sem responsável'], ...pessoasResp.filter((p) => p.id !== eu.id).map((p) => [p.id, p.nome || p.utilizador || '—'])];
     $('ck-f-resp').replaceChildren(...opcoes.map(([v, t]) => el('option', { value: v, text: t, selected: v === filtros.resp })));
-    $('ck-f-esc-l').hidden = $('ck-f-res-l').hidden = !gestor;
-    $('ck-f-esc').checked = filtros.escondidos; $('ck-f-res').checked = filtros.restritos;
+    $('ck-f-esc').hidden = $('ck-f-res-l').hidden = !gestor;
+    $('ck-f-res').checked = filtros.restritos;
+    const ne = nEscondidos();
+    $('ck-f-esc').textContent = `${verEscondidos ? 'Ocultar' : 'Mostrar'} escondidos nesta obra (${ne})`;
+    $('ck-f-esc').setAttribute('aria-pressed', verEscondidos);
+    $('ck-f-esc').disabled = !ne && !verEscondidos;
     $('ck-f-limpar').hidden = !filtroAtivo();
   }
   function mudarFiltro(campo, valor) { filtros[campo] = valor; Hub.lembrar('checklist.filtros', filtros); desenhar(); }
@@ -222,8 +235,7 @@
     const grupos = visiveis.map((f) => {
       const lista = itens.filter((it) => {
         if (it.fase_id !== f.id || it.tipo !== 'item' || !mostrarNo(it)) return false;
-        const esc = escondidoNaObra(it);
-        if (gestor && filtros.escondidos ? !esc : esc) return false;
+
         if (filtros.estado === 'feitos' && !estado.has(it.id)) return false;
         if (filtros.estado === 'por_fazer' && estado.has(it.id)) return false;
         const r = responsaveis.get(it.id);
@@ -244,7 +256,7 @@
         el('h2', { class: 'titulo-grupo' }, [f.titulo, el('small', { text: ` · ${lista.length}` })]),
         el('ul', { class: 'arvore' }, lista.map((it) => {
           const li = desenharNo(it, [], true);
-          const caminho = acima(it).map((p) => p.titulo).join(' › ');
+          const caminho = [f.titulo, ...acima(it).map((p) => p.titulo)].join(' › ');
           if (caminho) li.querySelector('.corpo').prepend(el('div', { class: 'caminho', text: caminho }));
           return li;
         }))
@@ -317,6 +329,12 @@
       if (np) meta.push(el('span', { class: 'etiqueta', text: `Partilhado com ${np}` }));
     }
 
+    const temFilhos = !plano && filhos.length > 0;
+    const fechado = temFilhos && fechados.has(it.id);
+    const alternar = temFilhos ? el('button', { type: 'button', class: 'alternar', 'aria-expanded': String(!fechado),
+      title: fechado ? 'Abrir' : 'Fechar', text: fechado ? '▸' : '▾',
+      onclick: () => { fechado ? fechados.delete(it.id) : fechados.add(it.id); lembrarFechados(); desenhar(); } })
+      : (!plano && titulo ? el('span', { class: 'alternar vazio-alt' }) : null);
     const caixa = titulo ? null : el('input', {
       type: 'checkbox', checked: !!feito, 'aria-label': it.titulo,
       onchange: (ev) => marcar(it, ev.target)
@@ -333,11 +351,13 @@
     const arrastar = gestor && editar && !plano;
     const linha = el('div', { class: 'linha' }, [
       arrastar ? el('span', { class: 'pega', title: 'Arrastar', 'aria-hidden': 'true', text: '⠿' }) : null,
+      alternar,
       caixa,
       el('div', { class: 'corpo' }, [el('div', { class: 'texto', text: it.titulo }), meta.length ? el('div', { class: 'meta' }, meta) : null]),
       ferramentas
     ]);
-    const listaFilhos = plano ? null : (filhos.length || arrastar) ? el('ul', { class: 'filhos', 'data-pai': it.id }, filhos.map((f) => desenharNo(f, filhos))) : null;
+    const listaFilhos = plano ? null : (filhos.length || arrastar) ? el('ul', { class: 'filhos' + (fechado ? ' recolhido' : ''), 'data-pai': it.id }, filhos.map((f) => desenharNo(f, filhos))) : null;
+    if (fechado) classes.push('fechado');
     return el('li', { class: classes.join(' '), 'data-id': it.id, 'data-tipo': it.tipo }, [linha, listaFilhos]);
   }
 
@@ -501,7 +521,7 @@
     $('ck-procurar').addEventListener('input', (e) => { clearTimeout(tPesquisa); tPesquisa = setTimeout(() => mudarFiltro('texto', e.target.value), 200); });
     $('ck-f-estado').addEventListener('change', (e) => mudarFiltro('estado', e.target.value));
     $('ck-f-resp').addEventListener('change', (e) => mudarFiltro('resp', e.target.value));
-    $('ck-f-esc').addEventListener('change', (e) => mudarFiltro('escondidos', e.target.checked));
+    $('ck-f-esc').addEventListener('click', () => { verEscondidos = !verEscondidos; Hub.lembrar('checklist.verEscondidos', verEscondidos); desenhar(); });
     $('ck-f-res').addEventListener('change', (e) => mudarFiltro('restritos', e.target.checked));
     $('ck-f-limpar').addEventListener('click', () => { filtros = { ...FILTROS_VAZIOS }; $('ck-procurar').value = ''; Hub.lembrar('checklist.filtros', filtros); desenhar(); });
   });

@@ -65,22 +65,18 @@ Ordem dos blocos: **Base → Equipa (fichas, férias) → Obras (abas, Drive, ma
 - Ver, carregar e descarregar ficheiros (e vídeos) a partir do Hub.
 - *Passou para depois:* foto da guia de remessa nas entregas.
 
-### 🔜 v0.8 — Mapa da obra
+### ✅ v0.8 — Controlo e veículos
+- Separador Controlo: GPS e horas extra (só ADMIN/Administrador). Veículos em Colaboradores, com alertas de validade.
+- Dados do Excel importados (veículos sem PINs; cartões só com os últimos 4 dígitos).
+
+### 🔜 v0.9 — Mapa da obra
 - *A definir.*
 
-### 📝 v0.9 — Mapa de obras
+### 📝 v0.10 — Mapa de obras
 - Todas as obras num mapa (coordenadas da ficha).
 
----
-
-## Bloco 2b — Equipa (continuação)
-
-### 📝 v0.10 — Horas extra
-- Registo por obra e colaborador; estado pago / não pago; totais.
-
-### 📝 v0.11 — Veículos e deslocações
-- Veículos com alertas (revisão, inspeção, seguro, IUC); registo de deslocações; gasóleo.
-- PINs de cartões **não** são guardados.
+### 📝 v0.11 — Gasóleo
+- Registo de gasóleo (folha "Gasoleo" do Excel). *A confirmar.*
 
 ---
 

@@ -23,6 +23,8 @@
 | Mapa de obras | Todas | Todas | Atribuídas | Atribuídas | — |
 | Dados pessoais da equipa | Ver e editar | Ver e editar | — | — | — |
 | Férias e ausências | Todos, aprovar | Todos, aprovar | As suas, pedir | As suas, pedir (se tiver ficha) | — |
+| Controlo (GPS, horas extra) e veículos | Ver e editar | Ver e editar | — | — | — |
+| Emergência e alojamento da obra | Ver e editar | Ver e editar | Ver | Ver | — |
 
 ## Contas
 
@@ -48,6 +50,11 @@
 - Só ADMIN e Administrador criam, editam e apagam obras e escolhem os membros.
 - O cliente é uma conta do tipo Cliente; ao ser escolhido passa a membro da obra.
 - Campos por tipo: Subempreiteiro não vê cliente, notas nem membros; Cliente vê a obra e os seus dados, sem notas.
+
+## Controlo e veículos
+
+- Separador **Controlo** (só ADMIN e Administrador): **GPS** das deslocações e **Horas extra** (pago / não pago, totais).
+- **Colaboradores → Veículos:** ficha de cada veículo e validades (revisão, inspeção, seguro, IUC) com alertas no Início. Dos cartões guardam-se só os últimos 4 dígitos; nunca PINs.
 
 ## Google Drive
 
@@ -140,7 +147,8 @@ O subdomínio aponta para o Pages com um registo CNAME:
 │   ├── js/drive.js    abas Documentos e Fotos (Google Drive)
 │   ├── js/checklist.js separador Checklist
 │   ├── js/colaboradores.js separador Colaboradores → Equipa
-│   ├── js/ferias.js   separador Férias
+│   ├── js/ferias.js   separador Férias (mapa, Visão Pedro, saldos, feriados)
+│   ├── js/controlo.js separador Controlo (GPS e horas extra)
 │   ├── _redirects     /checklist.html → /checklist
 │   ├── js/plataforma-core.js
 │   └── img/           logótipos e favicon

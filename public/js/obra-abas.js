@@ -154,7 +154,8 @@
       }, alvo, () => pedidos(o, alvo, eu)));
       quem = new Map(nomesLista);
     } catch (e) { alvo.replaceChildren(mensagem(e.message)); return; }
-    const recarregar = () => { memo.delete('pedidos:' + o.id); return pedidos(o, alvo, eu); };
+    const hoje = new Date().toLocaleDateString('sv');
+    const recarregar = () => { memo.delete('pedidos:' + o.id); ObrasHub.atualizarAvisoPedidos(o.id); return pedidos(o, alvo, eu); };
 
     const cartao = (p) => {
       const podeFechar = ehGestor(eu) || p.criado_por === eu.id;
@@ -167,16 +168,18 @@
       });
       return el('article', { class: 'cartao-registo pedido ' + (p.prioridade === 'urgente' && p.estado === 'aberto' ? 'urgente' : '') }, [
         el('div', { class: 'cabeca-registo' }, [
-          el('span', { class: 'estado ' + (p.estado === 'aberto' ? 'aviso' : 'sim'), text: p.estado === 'aberto' ? 'Aberto' : 'Fechado' }),
+          el('span', { class: 'estado ' + (p.estado === 'aberto' ? 'aviso' : 'sim'), text: p.estado === 'aberto' ? 'Por concluir' : 'Concluído' }),
           p.prioridade !== 'normal' ? el('span', { class: 'estado ' + (p.prioridade === 'urgente' ? 'nao' : ''), text: PRIORIDADES[p.prioridade] }) : null,
-          el('span', { class: 'etiqueta', text: TIPOS_PEDIDO[p.tipo] })
+          el('span', { class: 'etiqueta', text: TIPOS_PEDIDO[p.tipo] }),
+          p.necessario_ate ? el('span', { class: 'necessario' + (p.estado === 'aberto' && p.necessario_ate < hoje ? ' atrasado' : ''),
+            text: (p.estado === 'aberto' && p.necessario_ate < hoje ? '⚠ Era para ' : 'Necessário até ') + dataPT(p.necessario_ate) }) : null
         ]),
         el('div', { class: 'corpo-pedido' }, [foto, el('p', { class: 'descricao', text: p.descricao })]),
-        el('p', { class: 'ajuda', text: `${quem.get(p.criado_por) || '—'} · ${horaPT(p.created_at)}${p.estado === 'fechado' && p.fechado_em ? ` · fechado por ${quem.get(p.fechado_por) || '—'} em ${dataPT(p.fechado_em)}` : ''}` }),
+        el('p', { class: 'ajuda', text: `${quem.get(p.criado_por) || '—'} · ${horaPT(p.created_at)}${p.estado === 'fechado' && p.fechado_em ? ` · concluído por ${quem.get(p.fechado_por) || '—'} em ${dataPT(p.fechado_em)}` : ''}` }),
         rs.length ? el('ul', { class: 'respostas' }, rs.map((r) => el('li', {}, [el('strong', { text: quem.get(r.autor) || '—' }), ` · ${horaPT(r.created_at)}`, el('p', { text: r.texto })]))) : null,
         el('div', { class: 'acoes-form' }, [
           p.estado === 'aberto' ? el('button', { class: 'botao secundario pequeno', type: 'button', text: 'Responder', onclick: () => abrirResposta(p, recarregar) }) : null,
-          podeFechar ? el('button', { class: 'botao secundario pequeno', type: 'button', text: p.estado === 'aberto' ? 'Fechar' : 'Reabrir', onclick: async () => {
+          podeFechar ? el('button', { class: 'botao secundario pequeno', type: 'button', text: p.estado === 'aberto' ? 'Concluir' : 'Reabrir', onclick: async () => {
             try { await ok(sb.from('pedidos').update({ estado: p.estado === 'aberto' ? 'fechado' : 'aberto' }).eq('id', p.id)); await recarregar(); }
             catch (e) { alert(e.message); }
           } }) : null
@@ -184,14 +187,16 @@
       ]);
     };
 
-    const abertos = lista.filter((p) => p.estado === 'aberto').sort((a, b) => (b.prioridade === 'urgente') - (a.prioridade === 'urgente'));
+    // por data de necessidade (mais próxima primeiro; sem data no fim), depois urgentes, depois os mais antigos
+    const abertos = lista.filter((p) => p.estado === 'aberto').sort((a, b) =>
+      (a.necessario_ate || '9999').localeCompare(b.necessario_ate || '9999') || (b.prioridade === 'urgente') - (a.prioridade === 'urgente') || a.created_at.localeCompare(b.created_at));
     const fechados = lista.filter((p) => p.estado === 'fechado');
     alvo.replaceChildren(
       el('button', { class: 'botao largo-topo', type: 'button', text: '+ Novo pedido ou falha', onclick: () => abrirPedido(o, recarregar, eu) }),
       el('h2', { class: 'titulo-grupo', text: `Em aberto (${abertos.length})` }),
       ...(abertos.length ? abertos.map(cartao) : [el('p', { class: 'ajuda', text: 'Nenhum pedido em aberto.' })]),
-      el('details', { class: 'fechados' }, [el('summary', {}, el('span', { class: 'titulo-grupo', text: `Fechados (${fechados.length})` })),
-        ...(fechados.length ? fechados.map(cartao) : [el('p', { class: 'ajuda', text: 'Nenhum pedido fechado.' })])])
+      el('details', { class: 'fechados' }, [el('summary', {}, el('span', { class: 'titulo-grupo', text: `Concluídos (${fechados.length})` })),
+        ...(fechados.length ? fechados.map(cartao) : [el('p', { class: 'ajuda', text: 'Nenhum pedido concluído.' })])])
     );
   }
 
@@ -200,7 +205,7 @@
     pedidoNovo = { o, aoGuardar, eu };
     $('dpd-tipo').replaceChildren(...Object.entries(TIPOS_PEDIDO).map(([k, t]) => el('option', { value: k, text: t })));
     $('dpd-prioridade').replaceChildren(...Object.entries(PRIORIDADES).map(([k, t]) => el('option', { value: k, text: t, selected: k === 'normal' })));
-    $('dpd-descricao').value = ''; $('dpd-foto').value = ''; $('dpd-mensagem').textContent = '';
+    $('dpd-descricao').value = ''; $('dpd-foto').value = ''; $('dpd-necessario').value = ''; $('dpd-mensagem').textContent = '';
     $('d-pedido-obra').showModal();
   }
   function abrirResposta(p, aoGuardar) {
@@ -271,7 +276,7 @@
           const { error } = await sb.storage.from('pedidos').upload(foto_path, r.blob, { contentType: r.tipo });
           if (error) { console.error(error); throw new Error('Não foi possível enviar a fotografia.'); }
         }
-        await ok(sb.from('pedidos').insert({ id, obra_id: o.id, tipo: $('dpd-tipo').value, prioridade: $('dpd-prioridade').value, descricao, foto_path, criado_por: eu.id }));
+        await ok(sb.from('pedidos').insert({ id, obra_id: o.id, tipo: $('dpd-tipo').value, prioridade: $('dpd-prioridade').value, descricao, foto_path, criado_por: eu.id, necessario_ate: $('dpd-necessario').value || null }));
         $('d-pedido-obra').close(); await aoGuardar();
       } catch (err) { $('dpd-mensagem').textContent = err.message; }
       finally { botao.disabled = false; botao.textContent = 'Guardar'; }

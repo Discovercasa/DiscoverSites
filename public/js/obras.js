@@ -124,6 +124,7 @@
         campo('Responsável da obra', o.responsavel_nome || '—'),
         o.ve_cliente ? campo('Cliente', o.cliente_nome ? `${o.cliente_nome}${o.cliente_email ? ' · ' + o.cliente_email : ''}` : '—') : null])
     ];
+    if (o.contactos) blocos.push(painelContactos(o));
     if (o.ve_notas) blocos.push(el('section', { class: 'painel' }, [el('h2', { class: 'titulo', text: 'Notas internas' }),
       el('p', { class: 'notas', text: o.notas || 'Sem notas.' })]));
     const membros = o.ve_membros ? el('section', { class: 'painel' }, [el('h2', { class: 'titulo', text: 'Membros' }), el('p', { class: 'ajuda', text: 'A carregar…' })]) : null;
@@ -182,11 +183,33 @@
     if (c && c.expira > Date.now() + 60_000) img.src = c.url; else urlCapa(caminho).then((u) => { if (u) img.src = u; });
     return img;
   }
-  function capaObra(o) {
-    return el('div', { class: 'capa-obra' + (o.capa_path ? '' : ' sem-capa') }, [
-      o.capa_path ? imagemCapa(o.capa_path, o.nome) : null,
-      gestor ? el('button', { class: 'botao secundario pequeno mudar-capa', type: 'button', text: o.capa_path ? 'Mudar capa' : '+ Foto de capa', onclick: () => abrirCapa(o) }) : null
+  function cabecalhoObra(o) {
+    const fundo = o.capa_path ? imagemCapa(o.capa_path, o.nome) : null;
+    if (fundo) fundo.classList.add('fundo');
+    return el('header', { class: 'cabeca-obra' + (o.capa_path ? ' com-capa' : '') }, [
+      fundo, o.capa_path ? el('div', { class: 'sombra' }) : null,
+      el('div', { class: 'conteudo-cabeca' }, [
+        el('a', { class: 'voltar', href: '/obras', text: '← Obras' }),
+        el('div', { class: 'barra' }, [
+          el('div', {}, [o.codigo ? el('div', { class: 'codigo', text: o.codigo }) : null, el('h1', { class: 'titulo', text: o.nome }), etiquetaEstado(o.estado)]),
+          el('div', { class: 'acoes-form' }, [
+            gestor ? el('button', { class: 'botao secundario', type: 'button', text: o.capa_path ? 'Mudar capa' : '+ Foto de capa', onclick: () => abrirCapa(o) }) : null,
+            el('a', { class: 'botao', href: '/checklist/' + o.id, text: 'Abrir checklist' }),
+            gestor ? el('a', { class: 'botao secundario', href: `/obras/${o.id}/editar`, text: 'Editar' }) : null
+          ].filter(Boolean))
+        ])
+      ])
     ].filter(Boolean));
+  }
+
+  // Número de pedidos por concluir no título da aba "Pedidos" (vermelho se houver urgentes)
+  async function atualizarAvisoPedidos(obraId) {
+    const { data } = await sb.from('pedidos').select('prioridade, necessario_ate').eq('obra_id', obraId).eq('estado', 'aberto');
+    const a = document.querySelector('.abas-obra .aviso-aba'); if (!a) return;
+    const n = (data || []).length, hoje = new Date().toLocaleDateString('sv');
+    const urgente = (data || []).some((p) => p.prioridade === 'urgente' || (p.necessario_ate && p.necessario_ate < hoje));
+    a.hidden = !n; a.textContent = n; a.classList.toggle('urgente', urgente);
+    a.title = `${n} pedido${n === 1 ? '' : 's'} por concluir`;
   }
   let obraCapa = null;
   function abrirCapa(o) {
@@ -230,6 +253,30 @@
     });
   });
 
+  // ---------- emergência e alojamento ----------
+  const CONTACTOS = [['hospital', 'Hospital'], ['policia', 'Polícia / GNR'], ['bombeiros', 'Bombeiros']];
+  const mapa = (morada) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(morada)}`;
+  function painelContactos(o) {
+    const c = o.contactos || {};
+    // número de telefone dentro de um texto (ex.: "Sr. Carlos · 912 000 000")
+    const telefone = (t) => { const m = (t || '').match(/(\+?\d[\d\s]{7,}\d)/); return m ? m[1].replace(/\s/g, '') : null; };
+    const linha = (rotulo, x) => el('div', { class: 'contacto' }, [
+      el('div', { class: 'rotulo', text: rotulo }),
+      el('div', { class: 'info' }, [x.nome ? el('strong', { text: x.nome }) : null, x.morada ? el('div', { class: 'ajuda', style: 'margin:0', text: x.morada }) : null,
+        x.tel ? el('div', { class: 'ajuda', style: 'margin:0', text: x.tel }) : null,
+        !x.nome && !x.morada && !x.tel ? el('span', { class: 'ajuda', style: 'margin:0', text: '—' }) : null].filter(Boolean)),
+      el('div', { class: 'acoes' }, [
+        telefone(x.tel) ? el('a', { class: 'botao secundario pequeno', href: 'tel:' + telefone(x.tel), text: '📞 Ligar' }) : null,
+        x.morada ? el('a', { class: 'botao secundario pequeno', href: mapa(x.morada), target: '_blank', rel: 'noopener', text: 'Mapa ↗' }) : null
+      ].filter(Boolean))
+    ]);
+    return el('section', { class: 'painel painel-contactos' }, [
+      el('h2', { class: 'titulo', text: 'Emergência e alojamento' }),
+      ...CONTACTOS.map(([k, r]) => linha(r, c[k] || {})),
+      linha('Alojamento', { morada: (c.alojamento || {}).morada, tel: (c.alojamento || {}).contacto })
+    ]);
+  }
+
   // ---------- página da obra com abas ----------
   const ABAS = [
     ['inicio', 'Início'], ['projeto', 'Projeto'], ['mapa', 'Mapa'], ['documentos', 'Documentos'],
@@ -245,20 +292,14 @@
     } else {
     alvo = el('div', { class: 'conteudo-aba' }, el('p', { class: 'carregar', text: 'A carregar…' }));
     $('obras-conteudo').replaceChildren(
-      capaObra(o),
-      el('a', { class: 'voltar', href: '/obras', text: '← Obras' }),
-      el('div', { class: 'barra' }, [
-        el('div', {}, [o.codigo ? el('div', { class: 'codigo', text: o.codigo }) : null, el('h1', { class: 'titulo', text: o.nome }), etiquetaEstado(o.estado)]),
-        el('div', { class: 'acoes-form' }, [
-          el('a', { class: 'botao', href: '/checklist/' + o.id, text: 'Abrir checklist' }),
-          gestor ? el('a', { class: 'botao secundario', href: `/obras/${o.id}/editar`, text: 'Editar' }) : null
-        ])
-      ]),
+      cabecalhoObra(o),
       el('nav', { class: 'sub-abas abas-obra', 'aria-label': 'Abas da obra' }, abas.map(([id, nome]) =>
-        el('a', { href: `/obras/${o.id}${id === 'inicio' ? '' : '/' + id}`, 'data-aba': id, 'aria-current': id === aba ? 'page' : false, text: nome }))),
+        el('a', { href: `/obras/${o.id}${id === 'inicio' ? '' : '/' + id}`, 'data-aba': id, 'aria-current': id === aba ? 'page' : false },
+          id === 'pedidos' ? [nome, el('span', { class: 'aviso-aba', hidden: true })] : nome))),
       alvo
     );
     paginaAtual = { obraId: o.id, no: $('obras-conteudo'), alvo };
+    atualizarAvisoPedidos(o.id);
     }
     const vazio = (texto) => alvo.replaceChildren(el('div', { class: 'vazio' }, [el('span', { class: 'etiqueta', text: 'Em breve' }), ' ', texto]));
     if (aba !== 'documentos' && aba !== 'fotos') ObraDrive.preparar(o);
@@ -297,6 +338,17 @@
       ]),
       el('p', { class: 'ajuda', style: 'margin:-.6rem 0 1rem', text: clientes.length ? 'O cliente passa a ser membro da obra e só vê esta obra.' : 'Para escolher um cliente, crie primeiro uma conta do tipo Cliente em Colaboradores.' }),
       el('div', { class: 'campo' }, [el('label', { for: 'ob-notas', text: 'Notas internas' }), el('textarea', { id: 'ob-notas', rows: 4 }, o.notas || '')]),
+      el('h3', { class: 'titulo-grupo', text: 'Emergência e alojamento' }),
+      el('p', { class: 'ajuda', style: 'margin-top:-.4rem', text: 'Visível para todos os membros da obra, exceto o Cliente.' }),
+      ...CONTACTOS.map(([k, r]) => el('div', { class: 'form-grelha' }, [
+        entrada(`ob-${k}-nome`, r, ((o.contactos || {})[k] || {}).nome, { placeholder: 'Nome' }),
+        entrada(`ob-${k}-morada`, 'Morada', ((o.contactos || {})[k] || {}).morada),
+        entrada(`ob-${k}-tel`, 'Telefone', ((o.contactos || {})[k] || {}).tel, { type: 'tel' })
+      ])),
+      el('div', { class: 'form-grelha' }, [
+        entrada('ob-alojamento-morada', 'Alojamento — morada', ((o.contactos || {}).alojamento || {}).morada),
+        entrada('ob-alojamento-contacto', 'Alojamento — contacto', ((o.contactos || {}).alojamento || {}).contacto, { placeholder: 'Nome e/ou telefone' })
+      ]),
       el('div', { class: 'acoes-form' }, [
         el('button', { class: 'botao', type: 'submit', text: novo ? 'Criar obra' : 'Guardar' }),
         el('a', { class: 'botao secundario', href: novo ? '/obras' : '/obras/' + o.id, text: 'Cancelar' }),
@@ -320,7 +372,11 @@
       const registo = {
         codigo: v('ob-codigo'), nome: v('ob-nome'), estado: $('ob-estado').value, morada: v('ob-morada'), localidade: v('ob-localidade'),
         latitude, longitude, data_inicio: v('ob-inicio'), data_fim_prevista: v('ob-fim-prev'), data_fim_real: v('ob-fim-real'),
-        responsavel_id: v('ob-responsavel'), cliente_id: v('ob-cliente'), notas: $('ob-notas').value.trim() || null
+        responsavel_id: v('ob-responsavel'), cliente_id: v('ob-cliente'), notas: $('ob-notas').value.trim() || null,
+        contactos: Object.fromEntries([
+          ...CONTACTOS.map(([k]) => [k, { nome: v(`ob-${k}-nome`), morada: v(`ob-${k}-morada`), tel: v(`ob-${k}-tel`) }]),
+          ['alojamento', { morada: v('ob-alojamento-morada'), contacto: v('ob-alojamento-contacto') }]
+        ])
       };
       try {
         if (novo) {
@@ -375,5 +431,5 @@
     });
   });
 
-  window.ObrasHub = { mostrar, ESTADOS, nomeObra };
+  window.ObrasHub = { mostrar, ESTADOS, nomeObra, atualizarAvisoPedidos };
 })();
