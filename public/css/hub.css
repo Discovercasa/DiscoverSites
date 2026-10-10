@@ -24,7 +24,7 @@ body {
 [hidden] { display: none !important; }
 button, input, select { font: inherit; color: inherit; }
 .titulo { font-family: var(--titulos); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
-.contentor { width: 100%; padding: 0 var(--margem); }
+.contentor { width: 100%; padding-left: var(--margem); padding-right: var(--margem); }
 .carregar { padding: 4rem 1rem; text-align: center; color: var(--suave); }
 
 /* ---------- Cabeçalho com separadores ---------- */
@@ -64,7 +64,7 @@ footer { color: var(--suave); font-size: .85rem; padding-bottom: 2rem; }
 .botao {
   border: 0; border-radius: 4px; background: var(--amarelo); color: var(--escuro); cursor: pointer;
   font-family: var(--titulos); font-weight: 700; text-transform: uppercase; letter-spacing: .08em;
-  padding: .75rem 1.2rem;
+  padding: .75rem 1.2rem; display: inline-block; text-decoration: none; text-align: center;
 }
 .botao:hover { filter: brightness(.96); }
 .botao:disabled { background: var(--amarelo-claro); color: #8a8a8a; cursor: default; filter: none; }
@@ -92,3 +92,9 @@ dialog h2 { margin: 0 0 1rem; font-size: 1.3rem; }
 }
 .painel { background: var(--branco); border-radius: 6px; padding: 1.3rem; margin-bottom: 1.5rem; border-top: 4px solid var(--amarelo); }
 .painel h2 { margin: 0 0 1rem; font-size: 1.3rem; }
+.vazio { background: var(--branco); border-radius: 6px; padding: 1.5rem; color: var(--suave); }
+.opcoes-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: .2rem .8rem; max-height: 14rem; overflow-y: auto; }
+.opcoes-lista label { display: flex; gap: .45rem; align-items: center; font-weight: 400; }
+.opcoes-lista input { width: auto; flex: none; margin: 0; accent-color: var(--escuro); }
+.rodape-dialogo { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.2rem; }
+.rodape-dialogo .espaco { flex: 1; }

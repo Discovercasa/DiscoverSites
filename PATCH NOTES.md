@@ -15,12 +15,24 @@ Regras que não se alteram sem confirmação do Sebastião. Cada uma tem, sempre
 9. **5 papéis com a matriz de permissões do README.** O Cliente nunca vê custos nem preços; Obra também não. (D9)
 10. **Dados pessoais da equipa** (NIF, CC, IBAN, saúde) só visíveis para ADMIN e Administrador. (teste quando as tabelas existirem)
 11. **PINs de cartões não são guardados** na plataforma. (D11)
-12. **Ordem do roadmap: Base (com a checklist) → Equipa → Obras → Custos.** (alterada na v0.2 a pedido do Sebastião)
+12. **Ordem do roadmap: Base (com checklist e obras) → Equipa → Obras (fotos, mapa) → Custos.** (alterada na v0.2 e na v0.3 a pedido do Sebastião)
 13. **O tipo de utilizador só muda pelo servidor.** Um trigger em `profiles` bloqueia alterações diretas a `papel`, `role`, `utilizador` e `ativo`; um Administrador não cria nem altera contas ADMIN; ninguém muda o próprio tipo. (D13)
 14. **A visibilidade da checklist é aplicada na base de dados** (RLS em `fases` e `items`), não só no ecrã. O que está dentro de um item escondido também fica escondido. (D14)
+16. **Campos da obra por tipo de utilizador**, filtrados na base de dados: cliente e notas internas não se leem diretamente da tabela, só por `obras_visiveis()`. Subempreiteiro não vê cliente, notas nem membros; Cliente vê a sua obra e os seus dados, sem notas. (D15)
+17. **O cliente de uma obra é sempre uma conta Cliente** criada por ADMIN/Administrador, e só vê as obras a que é associado. (D15)
+18. **Largura:** a checklist fica centrada; as outras páginas ocupam a largura toda.
 15. **Todas as páginas** em `public/` são em português de Portugal e ligam-se ao Supabase só pelo `plataforma-core`. (D6)
 
 ## Histórico
+
+### v0.3 — 2026-10-10
+- Novo separador **Obras** em `index.html` (`public/js/obras.js`): lista com pesquisa e filtro, ficha, criar/editar/apagar, membros.
+- Base de dados (migração `0003_obras_ficha`): novos campos em `obras`; leitura de `cliente_id` e `notas` só pela função `obras_visiveis()`; o cliente tem de ser conta Cliente e passa a membro da obra; função `listar_membros_obra`.
+- Testado por tipo: Obra vê notas e cliente; Subempreiteiro nenhum dos dois; Cliente vê o próprio, sem notas; leitura direta das notas bloqueada.
+- Checklist: centrada; sem "Nova obra"/"Membros" (passaram para Obras); abre a obra pedida em `?obra=`; botão "Ficha da obra".
+- Correção: faltava espaço entre o cabeçalho e o conteúdo; botões-ligação deixaram de aparecer sublinhados.
+- Roadmap: Obras passam a v0.3; Equipa começa na v0.4 (Decisão 12 atualizada).
+- Novas Decisões 16–18; teste D15.
 
 ### v0.2 — 2026-10-10
 - Nova página `public/checklist.html` (`hub.discovercasa.pt/checklist`).

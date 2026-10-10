@@ -30,6 +30,13 @@
 - Entra-se com o utilizador **ou** com o email.
 - O registo público tem de estar desligado no Supabase (Authentication → "Allow new users to sign up").
 
+## Obras
+
+- Separador **Obras** no Hub: lista de todas as obras (cada pessoa vê as suas) e ficha de cada uma.
+- Só ADMIN e Administrador criam, editam e apagam obras e escolhem os membros.
+- O cliente é uma conta do tipo Cliente; ao ser escolhido passa a membro da obra.
+- Campos por tipo: Subempreiteiro não vê cliente, notas nem membros; Cliente vê a obra e os seus dados, sem notas.
+
 ## Checklist
 
 - **Estrutura comum:** fases → títulos → checks → subchecks. O que se acrescenta aparece em todas as obras.
@@ -102,6 +109,7 @@ O subdomínio aponta para o Pages com um registo CNAME:
 │   ├── checklist.html checklist das obras
 │   ├── css/hub.css    estilos comuns
 │   ├── js/hub.js      cabeçalho, sessão e utilitários comuns
+│   ├── js/obras.js    separador Obras
 │   ├── js/plataforma-core.js
 │   └── img/           logótipos e favicon
 ├── supabase/

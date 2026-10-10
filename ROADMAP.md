@@ -3,7 +3,7 @@
 Estado: ✅ feita · 🔜 próxima · 📝 planeada
 
 Cada versão nova do roadmap é registada em `PATCH NOTES.md` e marcada aqui como ✅.
-Ordem dos blocos: **Base (com a checklist) → Equipa → Obras → Custos**.
+Ordem dos blocos: **Base (com checklist e obras) → Equipa → Obras (fotos, mapa) → Custos**.
 
 ## ✅ v0.0 — Estrutura inicial
 - Documentos base, `public/index.html` com `APP_VERSAO` e `NOVIDADES`, testes, Cloudflare Pages.
@@ -28,30 +28,33 @@ Ordem dos blocos: **Base (com a checklist) → Equipa → Obras → Custos**.
 - Por obra: esconder, responsável, partilhar com pessoas; membros da obra; criar obras.
 - A checklist antiga passou para aqui (3 fases, 19 itens).
 
+### ✅ v0.3 — Obras
+- Separador **Obras** no Hub: lista geral (pesquisa e filtro por estado) e ficha de cada obra.
+- Campos: código, nome, estado, morada, localidade, coordenadas, datas, responsável, cliente (conta Cliente), notas internas, membros.
+- Cada tipo de utilizador vê só os campos permitidos, filtrados na base de dados.
+- Criar, editar, apagar e gerir membros passam da checklist para aqui. A checklist volta a ficar centrada.
+
 ---
 
 ## Bloco 2 — Equipa
 
-### 🔜 v0.3 — Ficha de colaborador
+### 🔜 v0.4 — Ficha de colaborador
 - Acrescentar à conta a ficha do colaborador; dados pessoais (NIF, CC, IBAN, aptidão médica) só para ADMIN e Administrador.
 - Alertas de documentos a expirar (carta, CC, aptidão médica).
 
-### 📝 v0.4 — Férias e ausências
+### 📝 v0.5 — Férias e ausências
 - Mapa anual (férias, faltas, teletrabalho, feriados…).
 
-### 📝 v0.5 — Horas extra
+### 📝 v0.6 — Horas extra
 - Registo por obra e colaborador; estado pago / não pago; totais.
 
-### 📝 v0.6 — Veículos e deslocações
+### 📝 v0.7 — Veículos e deslocações
 - Veículos com alertas (revisão, inspeção, seguro, IUC); registo de deslocações; gasóleo.
 - PINs de cartões **não** são guardados.
 
 ---
 
 ## Bloco 3 — Obras
-
-### 📝 v0.7 — Obras
-- Obra com código, local e cliente; membros por obra (`obra_membros`).
 
 ### 📝 v0.8 — Fase, fotos e vídeos
 - Fase atual da obra; fotos e vídeos (decidir armazenamento: Supabase ou R2).

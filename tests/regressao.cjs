@@ -158,6 +158,21 @@ teste('D14', 'visibilidade da checklist aplicada na base de dados', () => {
   exigir(/item_ancestros\(p_item\)[\s\S]*?cumpre_visibilidade/.test(sql), 'a visibilidade não é herdada dos pais');
 });
 
+teste('D15', 'cliente e notas da obra só pela função obras_visiveis', () => {
+  const sql = fs.readdirSync(path.join(RAIZ, 'supabase/migrations')).filter(f => f.endsWith('.sql'))
+    .map(f => ler('supabase/migrations/' + f)).join('\n');
+  exigir(/revoke select on public\.obras from authenticated/.test(sql), 'a leitura direta de obras não está limitada');
+  const grant = (sql.match(/grant select \(([^)]*)\)\s*on public\.obras to authenticated/) || [])[1];
+  exigir(grant, 'falta a lista de colunas que se podem ler em obras');
+  for (const proibida of ['notas', 'cliente_id'])
+    exigir(!new RegExp(`\\b${proibida}\\b`).test(grant), `a coluna ${proibida} pode ser lida diretamente`);
+  exigir(/raise exception 'O cliente tem de ser uma conta do tipo Cliente\.'/.test(sql), 'falta a validação do cliente');
+  for (const f of fs.readdirSync(path.join(RAIZ, 'public'), { recursive: true }).filter(f => /\.(html|js)$/.test(f))) {
+    const txt = ler('public/' + f);
+    exigir(!/from\(['"]obras['"]\)\.select\([^)]*\b(notas|cliente_id)\b/.test(txt), `${f} lê campos sensíveis diretamente de obras`);
+  }
+});
+
 teste('—', 'ROADMAP marca a versão atual', () => {
   if (/[a-z]$/.test(versaoNotas || '')) return; // letras entre versões não vão ao roadmap
   exigir(new RegExp(`✅\\s*${versaoNotas?.replace('.', '\\.')}\\b`).test(ler('ROADMAP.md')),
