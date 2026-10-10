@@ -100,5 +100,6 @@ Ordem dos blocos: **Base → Equipa (fichas, férias) → Obras (abas, Drive, ma
 ---
 
 ## Próximos passos (sem versão atribuída)
+- **Lembrar o Sebastião:** criar a página pública `hub.discovercasa.pt/privacidade` (pedida pelo Google para a app da Drive) — ficou adiada a pedido dele na v0.7.
 - Preencher o objetivo no README.
 - Avaliar passar o DNS do `discovercasa.pt` do cPanel para a Cloudflare (copiar antes os registos de email).

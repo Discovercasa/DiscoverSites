@@ -172,6 +172,7 @@
       alvo
     );
     const vazio = (texto) => alvo.replaceChildren(el('div', { class: 'vazio' }, [el('span', { class: 'etiqueta', text: 'Em breve' }), ' ', texto]));
+    if (aba !== 'documentos' && aba !== 'fotos') ObraDrive.preparar(o);
     if (aba === 'inicio') return abaInicio(o, alvo);
     if (aba === 'projeto') return ObraAbas.projeto(o, alvo, eu);
     if (aba === 'entregas') return ObraAbas.entregas(o, alvo, eu);

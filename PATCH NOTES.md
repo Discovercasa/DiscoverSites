@@ -36,6 +36,14 @@ Regras que não se alteram sem confirmação do Sebastião. Cada uma tem, sempre
 
 ## Histórico
 
+### v0.7a — 2026-10-11
+- **Documentos e Fotos mais rápidos:** a barra (pasta, "+ Carregar", "+ Pasta", "Quem vê") aparece logo; a lista mostra o que foi guardado da última vez e atualiza em segundo plano (só redesenha se mudou).
+- Um só pedido para abrir a área (`listar` aceita obra + área); caminho das pastas numa consulta (`caminho_pasta`, migração `0008`).
+- Miniaturas em lotes de 12 (`miniaturas`), guardadas no browser (Cache Storage); ao abrir uma obra, as listas de Documentos e Fotos são preparadas em segundo plano.
+- Medido com 1,5 s de atraso por pedido: botões em 0,1 s; fotos em 2,5 s na 1.ª vez e 0,1–0,2 s nas seguintes.
+- Nota: ficheiros acrescentados diretamente na Drive aparecem depois da atualização em segundo plano.
+- A função `drive` estava na versão 3 no Supabase (alterada fora desta conversa); foi substituída por esta (versão 4).
+
 ### v0.7 — 2026-10-10
 - **Documentos e Fotos** de cada obra ligados ao Google Drive (`public/js/drive.js`; Edge Functions `drive` e `drive-ligar`).
 - Página Obras: estado da ligação e botão "Ligar Google Drive" (só ADMIN); ao criar uma obra, as pastas são criadas na Drive; ao mudar o código/nome, a pasta é renomeada.

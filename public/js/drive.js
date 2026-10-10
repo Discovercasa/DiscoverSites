@@ -30,17 +30,60 @@
     return t.length ? el('span', { class: 'etiqueta', title: 'Visível só para', text: '👁 ' + t.join(', ') }) : null;
   };
 
-  // Miniaturas: carregadas aos poucos (no máximo 4 de cada vez)
-  let fila = [], ativos = 0;
-  function pedirMiniatura(ficheiroId, img) {
-    fila.push({ ficheiroId, img }); proxima();
+  // ---------- memória das listas (mostra logo o que já se viu; atualiza em segundo plano) ----------
+  const chaveLista = (obraId, area, pastaId) => `hub.drive.${obraId}.${pastaId || area}`;
+  function lerLista(chave) { try { const v = localStorage.getItem(chave); return v ? JSON.parse(v) : null; } catch (_) { return null; } }
+  function guardarLista(chave, d) { try { localStorage.setItem(chave, JSON.stringify(d)); } catch (_) {} }
+  const emCurso = new Map(); // pedidos de lista em curso (evita repetir o mesmo pedido)
+  function pedirLista(obraId, area, pastaId) {
+    const chave = chaveLista(obraId, area, pastaId);
+    if (!emCurso.has(chave)) {
+      emCurso.set(chave, chamar(pastaId ? { acao: 'listar', pasta_id: pastaId } : { acao: 'listar', obra_id: obraId, area })
+        .then((d) => { guardarLista(chave, d); guardarLista(chaveLista(obraId, area, d.pasta.id), d); return d; })
+        .finally(() => emCurso.delete(chave)));
+    }
+    return emCurso.get(chave);
   }
-  async function proxima() {
-    if (ativos >= 4 || !fila.length) return;
-    const { ficheiroId, img } = fila.shift(); ativos++;
-    try { const r = await binario({ acao: 'miniatura', ficheiro_id: ficheiroId }); img.src = URL.createObjectURL(await r.blob()); }
-    catch (_) { img.closest('.miniatura')?.classList.add('sem-miniatura'); }
-    finally { ativos--; proxima(); }
+
+  // ---------- miniaturas: memória → Cache do browser → servidor (12 de cada vez) ----------
+  const miniaturas = new Map(); // id@data → URL do blob
+  const CACHE = 'hub-miniaturas-v1';
+  const chaveMini = (f) => `/miniatura/${f.id}?v=${encodeURIComponent(f.modifiedTime || '')}`;
+  let pendentes = [], aPedir = false;
+  async function pedirMiniatura(f, pastaId, img) {
+    const k = chaveMini(f);
+    if (miniaturas.has(k)) { img.src = miniaturas.get(k); return; }
+    try {
+      const c = await caches.open(CACHE); const r = await c.match(k);
+      if (r) { const url = URL.createObjectURL(await r.blob()); miniaturas.set(k, url); img.src = url; return; }
+    } catch (_) {}
+    pendentes.push({ f, pastaId, img, k });
+    if (!aPedir) { aPedir = true; setTimeout(esvaziar, 0); }
+  }
+  async function esvaziar() {
+    while (pendentes.length) {
+      const pasta = pendentes[0].pastaId;
+      const lote = pendentes.filter((p) => p.pastaId === pasta).slice(0, 12);
+      pendentes = pendentes.filter((p) => !lote.includes(p));
+      const lotes = [lote];
+      // até 2 lotes em paralelo
+      if (pendentes.length) { const p2 = pendentes[0].pastaId; const l2 = pendentes.filter((p) => p.pastaId === p2).slice(0, 12); pendentes = pendentes.filter((p) => !l2.includes(p)); lotes.push(l2); }
+      await Promise.all(lotes.map(async (l) => {
+        try {
+          const { miniaturas: m } = await chamar({ acao: 'miniaturas', pasta_id: l[0].pastaId, ids: l.map((p) => p.f.id) });
+          let c = null; try { c = await caches.open(CACHE); } catch (_) {}
+          for (const p of l) {
+            const dados = m[p.f.id];
+            if (!dados) { p.img.closest('.miniatura')?.classList.add('sem-miniatura'); continue; }
+            const blob = await (await fetch(dados)).blob();
+            const url = URL.createObjectURL(blob); miniaturas.set(p.k, url);
+            document.querySelectorAll(`img[data-mini="${CSS.escape(p.k)}"]`).forEach((i) => { i.src = url; });
+            if (c) c.put(p.k, new Response(blob, { headers: { 'Content-Type': blob.type } })).catch(() => {});
+          }
+        } catch (_) { l.forEach((p) => p.img.closest('.miniatura')?.classList.add('sem-miniatura')); }
+      }));
+    }
+    aPedir = false;
   }
 
   async function descarregar(f, botao) {
@@ -69,30 +112,47 @@
   }
 
   // ---------- mostrar uma pasta ----------
+  let vistaAtual = 0;
   async function mostrar(o, alvo, eu, area, pastaId) {
     const gestor = Hub.ehGestor(eu);
     const base = `/obras/${o.id}/${AREAS[area].aba}`;
-    alvo.replaceChildren(el('p', { class: 'carregar', text: 'A carregar…' }));
-    fila = [];
+    const vista = ++vistaAtual;
+    const chave = chaveLista(o.id, area, pastaId);
+    const guardada = lerLista(chave);
+
+    // 1) Desenha já: com a lista guardada, ou só a barra (as permissões sabem-se sem perguntar ao servidor)
+    const provisoria = guardada || {
+      pasta: { id: pastaId, nome: AREAS[area].nome, area, vis_papeis: [], vis_utilizadores: [] },
+      caminho: [{ id: pastaId, nome: AREAS[area].nome }], subpastas: [], ficheiros: [], aCarregar: true,
+      pode_carregar: area === 'fotografias' || gestor || eu.papel === 'obra', pode_gerir: gestor
+    };
+    desenhar(o, alvo, eu, area, provisoria, base);
+    if (gestor && pessoas === null) sb.rpc('listar_pessoas').then(({ data }) => { pessoas = data || []; });
+
+    // 2) Atualiza em segundo plano e só redesenha se algo mudou
     try {
-      if (gestor && pessoas === null) pessoas = (await sb.rpc('listar_pessoas')).data || [];
-      if (!pastaId) {
-        let { id } = await chamar({ acao: 'raiz_area', obra_id: o.id, area });
-        if (!id && gestor) id = (await chamar({ acao: 'preparar_obra', obra_id: o.id }))[area];
-        if (!id) { alvo.replaceChildren(el('div', { class: 'vazio', text: 'As pastas desta obra ainda não foram criadas na Google Drive. Peça a um ADMIN ou Administrador para abrir esta aba.' })); return; }
-        pastaId = id;
-      }
-      const d = await chamar({ acao: 'listar', pasta_id: pastaId });
-      desenhar(o, alvo, eu, area, d, base);
+      const d = await pedirLista(o.id, area, pastaId);
+      if (vista !== vistaAtual) return;
+      if (!guardada || JSON.stringify(guardada) !== JSON.stringify(d)) desenhar(o, alvo, eu, area, d, base);
     } catch (e) {
-      alvo.replaceChildren(el('div', { class: 'vazio' }, [e.message, gestor && /não está ligado/.test(e.message) ? el('p', {}, el('a', { href: '/obras', text: 'Ligar o Google Drive na página Obras' })) : null]));
+      if (vista !== vistaAtual) return;
+      if (guardada) return; // fica a lista guardada; o erro não impede de ver
+      alvo.replaceChildren(el('div', { class: 'vazio' }, [e.message, gestor && /não está ligado/.test(e.message) ? el('p', {}, el('a', { href: '/obras', text: 'Ligar o Google Drive na página Obras' })) : null].filter(Boolean)));
     }
+  }
+
+  // Ao abrir uma obra, prepara as listas de Documentos e Fotos (e "acorda" o servidor)
+  function preparar(o) {
+    for (const area of ['documentos', 'fotografias']) pedirLista(o.id, area, null).catch(() => {});
   }
 
   function desenhar(o, alvo, eu, area, d, base) {
     const fotos = area === 'fotografias';
-    const recarregar = () => mostrar(o, alvo, eu, area, d.pasta.id);
     const nivelTopo = d.caminho.length <= 1;
+    const recarregar = () => {
+      try { localStorage.removeItem(chaveLista(o.id, area, d.pasta.id)); if (nivelTopo) localStorage.removeItem(chaveLista(o.id, area, null)); } catch (_) {}
+      return mostrar(o, alvo, eu, area, d.pasta.id);
+    };
 
     const migalhas = el('nav', { class: 'migalhas', 'aria-label': 'Pastas' }, d.caminho.flatMap((p, i) => [
       i ? el('span', { text: ' / ' }) : null,
@@ -106,10 +166,10 @@
     const barra = el('div', { class: 'barra-drive' }, [
       migalhas, el('span', { class: 'espaco' }),
       restricao(d.pasta),
-      d.pode_carregar ? el('button', { class: 'botao pequeno', type: 'button', text: fotos ? '+ Fotos ou vídeos' : '+ Carregar ficheiros', onclick: () => entrada.click() }) : null,
-      d.pode_gerir ? el('button', { class: 'botao secundario pequeno', type: 'button', text: '+ Pasta', onclick: () => novaPasta(d.pasta.id, recarregar) }) : null,
-      d.pode_gerir ? el('button', { class: 'botao secundario pequeno', type: 'button', text: 'Quem vê', onclick: () => abrirVisibilidade(d.pasta, recarregar) }) : null,
-      d.pode_gerir && !nivelTopo ? el('button', { class: 'botao perigo pequeno', type: 'button', text: 'Apagar pasta', onclick: async () => {
+      d.pode_carregar ? el('button', { class: 'botao pequeno', type: 'button', text: fotos ? '+ Fotos ou vídeos' : '+ Carregar ficheiros', disabled: !!d.aCarregar, onclick: () => entrada.click() }) : null,
+      d.pode_gerir ? el('button', { class: 'botao secundario pequeno', type: 'button', text: '+ Pasta', disabled: !!d.aCarregar, onclick: () => novaPasta(d.pasta.id, recarregar) }) : null,
+      d.pode_gerir && !d.aCarregar ? el('button', { class: 'botao secundario pequeno', type: 'button', text: 'Quem vê', onclick: () => abrirVisibilidade(d.pasta, recarregar) }) : null,
+      d.pode_gerir && !nivelTopo && !d.aCarregar ? el('button', { class: 'botao perigo pequeno', type: 'button', text: 'Apagar pasta', onclick: async () => {
         if (!confirm(`Apagar a pasta "${d.pasta.nome}" e tudo o que está dentro?\n\nVai para o lixo da Google Drive (pode ser recuperada lá durante 30 dias).`)) return;
         const nivelPai = d.caminho.length - 2, pai = d.caminho[nivelPai];
         try { await chamar({ acao: 'apagar_pasta', pasta_id: d.pasta.id }); Hub.ir((nivelPai === 0 ? base : `${base}/${pai.id}`).slice(1)); }
@@ -127,11 +187,12 @@
     };
 
     let ficheiros;
-    if (!d.ficheiros.length) ficheiros = el('p', { class: 'ajuda', text: d.subpastas.length ? 'Sem ficheiros nesta pasta.' : (fotos ? 'Ainda sem fotos nem vídeos.' : 'Ainda sem documentos.') });
+    if (d.aCarregar) ficheiros = el('p', { class: 'ajuda a-carregar', text: fotos ? 'A carregar fotos…' : 'A carregar documentos…' });
+    else if (!d.ficheiros.length) ficheiros = el('p', { class: 'ajuda', text: d.subpastas.length ? 'Sem ficheiros nesta pasta.' : (fotos ? 'Ainda sem fotos nem vídeos.' : 'Ainda sem documentos.') });
     else if (fotos) {
       ficheiros = el('div', { class: 'grelha-fotos' }, d.ficheiros.map((f) => {
-        const img = el('img', { alt: f.name, loading: 'lazy' });
-        if (f.hasThumbnail) pedirMiniatura(f.id, img);
+        const img = el('img', { alt: f.name, 'data-mini': chaveMini(f) });
+        if (f.hasThumbnail) pedirMiniatura(f, d.pasta.id, img);
         return el('figure', { class: 'miniatura' + (f.hasThumbnail ? '' : ' sem-miniatura') }, [
           el('button', { type: 'button', class: 'abrir', title: f.name, onclick: () => ver(f) }, [img, ehVideo(f) ? el('span', { class: 'play', text: '▶' }) : null]),
           el('figcaption', {}, [el('span', { text: dataPT(f.modifiedTime) }),
@@ -211,5 +272,5 @@
     });
   });
 
-  window.ObraDrive = { mostrar, estado, ligar, prepararObra };
+  window.ObraDrive = { mostrar, estado, ligar, prepararObra, preparar };
 })();

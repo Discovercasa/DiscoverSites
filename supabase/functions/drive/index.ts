@@ -52,6 +52,40 @@ Deno.serve(async (req) => {
       return { f, pasta: p[0] };
     };
 
+    // Garante as pastas da obra: <código · nome>/Documentos e Fotografias
+    const preparar = async (obraId: string) => {
+      const token = await tokenAcesso(adm);
+      const { data: cfg } = await adm.from("drive_config").select("obras_id").eq("id", 1).single();
+      const { data: o } = await adm.from("obras").select("id, codigo, nome").eq("id", obraId).single();
+      if (!o) throw new Erro(404, "Obra não encontrada.");
+      const nomePasta = (o.codigo ? `${o.codigo} · ${o.nome}` : o.nome).replace(/[\/\\]/g, "-");
+      let { data: raiz } = await adm.from("drive_pastas").select("*").eq("obra_id", o.id).eq("area", "raiz").maybeSingle();
+      if (!raiz) {
+        const id = await pastaFilha(token, cfg!.obras_id, nomePasta);
+        raiz = (await adm.from("drive_pastas").insert({ obra_id: o.id, drive_id: id, nome: nomePasta, area: "raiz" }).select("*").single()).data;
+      } else if (raiz.nome !== nomePasta) {
+        await g(token, `files/${raiz.drive_id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: nomePasta }) });
+        await adm.from("drive_pastas").update({ nome: nomePasta }).eq("id", raiz.id);
+      }
+      const res: Record<string, string> = {};
+      for (const [area, nome] of [["documentos", "Documentos"], ["fotografias", "Fotografias"]]) {
+        let { data: p } = await adm.from("drive_pastas").select("id").eq("parent_id", raiz!.id).eq("area", area).maybeSingle();
+        if (!p) {
+          const id = await pastaFilha(token, raiz!.drive_id, nome);
+          p = (await adm.from("drive_pastas").insert({ obra_id: o.id, parent_id: raiz!.id, drive_id: id, nome, area }).select("id").single()).data;
+        }
+        res[area] = p!.id;
+      }
+      return res;
+    };
+    // Pasta de topo de uma área (documentos/fotografias) visível para a pessoa
+    const raizArea = async (obraId: string, area: string) => {
+      const { data: raiz } = await quem.from("drive_pastas").select("id").eq("obra_id", obraId).eq("area", "raiz").maybeSingle();
+      if (!raiz) return null;
+      const { data: p } = await quem.from("drive_pastas").select("id").eq("parent_id", raiz.id).eq("area", area).maybeSingle();
+      return p?.id ?? null;
+    };
+
     switch (b.acao) {
       case "estado": {
         const { data } = await adm.from("drive_config").select("refresh_token, email, ligado_em").eq("id", 1).maybeSingle();
@@ -71,45 +105,27 @@ Deno.serve(async (req) => {
         return json(200, { url: u.toString() });
       }
 
-      // Garante as pastas da obra: <código · nome>/Documentos e Fotografias
       case "preparar_obra": {
         if (!gestor) throw new Erro(403, "Só ADMIN e Administrador.");
-        const token = await tokenAcesso(adm);
-        const { data: cfg } = await adm.from("drive_config").select("obras_id").eq("id", 1).single();
-        const { data: o } = await adm.from("obras").select("id, codigo, nome").eq("id", b.obra_id).single();
-        if (!o) throw new Erro(404, "Obra não encontrada.");
-        const nomePasta = (o.codigo ? `${o.codigo} · ${o.nome}` : o.nome).replace(/[\/\\]/g, "-");
-        let { data: raiz } = await adm.from("drive_pastas").select("*").eq("obra_id", o.id).eq("area", "raiz").maybeSingle();
-        if (!raiz) {
-          const id = await pastaFilha(token, cfg!.obras_id, nomePasta);
-          raiz = (await adm.from("drive_pastas").insert({ obra_id: o.id, drive_id: id, nome: nomePasta, area: "raiz" }).select("*").single()).data;
-        } else if (raiz.nome !== nomePasta) {
-          await g(token, `files/${raiz.drive_id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: nomePasta }) });
-          await adm.from("drive_pastas").update({ nome: nomePasta }).eq("id", raiz.id);
-        }
-        const res: Record<string, string> = {};
-        for (const [area, nome] of [["documentos", "Documentos"], ["fotografias", "Fotografias"]]) {
-          let { data: p } = await adm.from("drive_pastas").select("id").eq("parent_id", raiz!.id).eq("area", area).maybeSingle();
-          if (!p) {
-            const id = await pastaFilha(token, raiz!.drive_id, nome);
-            p = (await adm.from("drive_pastas").insert({ obra_id: o.id, parent_id: raiz!.id, drive_id: id, nome, area }).select("id").single()).data;
-          }
-          res[area] = p!.id;
-        }
-        return json(200, res);
+        return json(200, await preparar(b.obra_id));
       }
 
       // Pasta de topo de uma área (documentos/fotografias) de uma obra
       case "raiz_area": {
-        const { data: raiz } = await quem.from("drive_pastas").select("id").eq("obra_id", b.obra_id).eq("area", "raiz").maybeSingle();
-        const { data: p } = raiz ? await quem.from("drive_pastas").select("id").eq("parent_id", raiz.id).eq("area", b.area).maybeSingle() : { data: null };
-        return json(200, { id: p?.id ?? null });
+        return json(200, { id: await raizArea(b.obra_id, b.area) });
       }
 
       // Conteúdo de uma pasta: subpastas visíveis (Hub) + ficheiros (Drive)
       case "listar": {
-        const pasta = await pastaVisivel(b.pasta_id);
-        const token = await tokenAcesso(adm);
+        let pastaId = b.pasta_id;
+        if (!pastaId) {
+          if (!["documentos", "fotografias"].includes(b.area)) throw new Erro(400, "Área inválida.");
+          pastaId = await raizArea(b.obra_id, b.area);
+          if (!pastaId && gestor) pastaId = (await preparar(b.obra_id))[b.area];
+          if (!pastaId) throw new Erro(404, "As pastas desta obra ainda não foram criadas na Google Drive. Peça a um ADMIN ou Administrador para abrir esta aba.");
+        }
+        const pasta = await pastaVisivel(pastaId);
+        const [token, caminhoR] = await Promise.all([tokenAcesso(adm), quem.rpc("caminho_pasta", { p_pasta: pasta.id })]);
         const q = `'${pasta.drive_id}' in parents and trashed=false`;
         const itens: any[] = [];
         let pagina = "";
@@ -127,14 +143,7 @@ Deno.serve(async (req) => {
             vis_papeis: pasta.vis_papeis, vis_utilizadores: pasta.vis_utilizadores })));
         }
         const { data: subpastas } = await quem.from("drive_pastas").select("id, nome, vis_papeis, vis_utilizadores").eq("parent_id", pasta.id).order("nome");
-        // caminho (migalhas) até à pasta de topo da área
-        const caminho: any[] = [];
-        for (let p: any = pasta; p && p.area !== "raiz"; ) {
-          caminho.unshift({ id: p.id, nome: p.nome });
-          if (!p.parent_id) break;
-          const { data } = await quem.from("drive_pastas").select("id, parent_id, nome, area").eq("id", p.parent_id).maybeSingle();
-          p = data;
-        }
+        const caminho = (caminhoR.data ?? []).map((c: any) => ({ id: c.id, nome: c.nome }));
         return json(200, {
           pasta: { id: pasta.id, nome: pasta.nome, area: pasta.area, vis_papeis: pasta.vis_papeis, vis_utilizadores: pasta.vis_utilizadores },
           caminho, subpastas: subpastas ?? [],
@@ -150,6 +159,27 @@ Deno.serve(async (req) => {
         const r = await g(token, f.thumbnailLink.replace(/=s\d+$/, "=s400"));
         if (!r.ok) throw new Erro(404, "Sem miniatura.");
         return new Response(r.body, { headers: { ...h, "Content-Type": r.headers.get("Content-Type") ?? "image/jpeg", "Cache-Control": "private, max-age=3600" } });
+      }
+
+      // Até 12 miniaturas de uma vez (da mesma pasta), devolvidas como data URI
+      case "miniaturas": {
+        const pasta = await pastaVisivel(b.pasta_id);
+        const ids: string[] = (Array.isArray(b.ids) ? b.ids : []).slice(0, 12).map(String);
+        const token = await tokenAcesso(adm);
+        const res: Record<string, string | null> = {};
+        await Promise.all(ids.map(async (id) => {
+          try {
+            const f = await gj(token, `files/${encodeURIComponent(id)}?fields=parents,thumbnailLink,trashed`);
+            if (f.trashed || !f.parents?.includes(pasta.drive_id) || !f.thumbnailLink) { res[id] = null; return; }
+            const r = await g(token, f.thumbnailLink.replace(/=s\d+$/, "=s400"));
+            if (!r.ok) { res[id] = null; return; }
+            const bytes = new Uint8Array(await r.arrayBuffer());
+            let bin = "";
+            for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+            res[id] = `data:${r.headers.get("Content-Type") ?? "image/jpeg"};base64,${btoa(bin)}`;
+          } catch (_) { res[id] = null; }
+        }));
+        return json(200, { miniaturas: res });
       }
 
       case "descarregar": {
