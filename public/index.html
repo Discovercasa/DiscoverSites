@@ -130,6 +130,41 @@
   .alertas li:last-child { border-bottom: 0; }
   .alertas a { color: var(--escuro); font-weight: 600; }
 
+  /* Férias */
+  .navega { display: flex; align-items: center; gap: .6rem; margin-bottom: .8rem; }
+  .navega strong { min-width: 9rem; text-align: center; font-size: 1.15rem; }
+  .tipo-aus { display: inline-block; font-size: .78rem; font-weight: 600; padding: .12rem .5rem; border-radius: 3px; background: color-mix(in srgb, var(--cor) 35%, white); border-left: 4px solid var(--cor); }
+  .pedidos { border-top-color: #e0a800; }
+  .pedidos ul { list-style: none; margin: 0; padding: 0; }
+  .pedidos li { display: flex; flex-wrap: wrap; gap: .4rem .8rem; align-items: center; padding: .55rem 0; border-bottom: 1px solid var(--fundo); }
+  .pedidos li:last-child { border-bottom: 0; }
+  .pedidos .espaco { flex: 1; }
+  .mapa-envolvente table.mapa { min-width: 0; width: auto; border-collapse: separate; border-spacing: 0; }
+  table.mapa th, table.mapa td { padding: 0; text-align: center; border-bottom: 1px solid #eee; border-right: 1px solid #f3f3f1; }
+  table.mapa thead th { font-size: .8rem; width: 1.9rem; min-width: 1.9rem; padding: .3rem 0; line-height: 1.1; color: var(--escuro); }
+  table.mapa thead th small { display: block; color: var(--suave); font-weight: 400; }
+  table.mapa th.nome { position: sticky; left: 0; z-index: 1; background: var(--branco); text-align: left; padding: .35rem .7rem; min-width: 10rem; font-family: Barlow, sans-serif; text-transform: none; letter-spacing: 0; font-size: .92rem; white-space: nowrap; }
+  table.mapa thead th.nome { background: #fafaf8; }
+  table.mapa td { height: 2rem; cursor: pointer; font-size: .72rem; font-weight: 700; }
+  table.mapa td:hover { outline: 2px solid var(--escuro); outline-offset: -2px; }
+  table.mapa .fds { background: #ececea; }
+  table.mapa .feriado { background: #dcdcd8; }
+  table.mapa td.marcado { background: var(--cor); }
+  table.mapa td.pendente, .legenda i.pendente { background: repeating-linear-gradient(45deg, var(--cor) 0 4px, #fff 4px 8px); }
+  .legenda { display: flex; flex-wrap: wrap; gap: .4rem 1rem; margin-top: .8rem; font-size: .88rem; }
+  .legenda span { display: flex; align-items: center; gap: .35rem; }
+  .legenda i { display: inline-grid; place-items: center; width: 1.6rem; height: 1.3rem; font-style: normal; font-size: .7rem; font-weight: 700; background: var(--cor, #fff); border-radius: 2px; border: 1px solid #ddd; }
+  .legenda i.fds { background: #ececea; } .legenda i.feriado { background: #dcdcd8; }
+  table.saldos input { width: 5.5rem; padding: .35rem .5rem; border: 1px solid var(--linha); border-radius: 4px; }
+  .negativo { color: var(--erro); }
+  .saldos-cartoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: .8rem; margin-bottom: 1.2rem; }
+  .saldo { background: var(--branco); border-radius: 6px; padding: .9rem 1rem; display: flex; flex-direction: column; }
+  .saldo span { color: var(--suave); font-size: .9rem; }
+  .saldo strong { font-family: var(--titulos); font-size: 2rem; line-height: 1.1; }
+  .saldo.destaque { background: var(--amarelo); }
+  .saldo.destaque span { color: var(--escuro); }
+  .contagem-dias { font-weight: 600; margin: -.4rem 0 1rem; }
+
   /* Obras */
   .filtros { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: 1rem; }
   .filtros input, .filtros select { padding: .6rem .8rem; border: 1px solid var(--linha); border-radius: 4px; background: var(--branco); }
@@ -215,6 +250,11 @@
       </div>
       <p class="mensagem" id="ck-aviso" role="status"></p>
       <div id="ck-conteudo"><p class="carregar">A carregar…</p></div>
+    </section>
+
+    <section id="aba-ferias" hidden>
+      <p class="mensagem" id="fe-aviso" role="status"></p>
+      <div id="fe-conteudo"></div>
     </section>
 
     <section id="aba-colaboradores" hidden>
@@ -348,6 +388,69 @@
   </form>
 </dialog>
 
+<!-- Férias: registar / editar ausência (gestores) -->
+<dialog id="d-ausencia">
+  <form method="dialog" id="f-ausencia" novalidate>
+    <h2 class="titulo" id="da-titulo">Registar ausência</h2>
+    <div class="campo"><label for="da-colaborador">Colaborador</label><select id="da-colaborador"></select></div>
+    <div class="campo"><label for="da-tipo">Tipo</label><select id="da-tipo"></select></div>
+    <div class="form-grelha" style="grid-template-columns:1fr 1fr">
+      <div class="campo"><label for="da-inicio">De</label><input id="da-inicio" type="date"></div>
+      <div class="campo"><label for="da-fim">Até</label><input id="da-fim" type="date"></div>
+    </div>
+    <label class="interruptor" style="padding-top:0"><input type="checkbox" id="da-meio"> Meio dia</label>
+    <p class="contagem-dias" id="da-contagem"></p>
+    <div class="campo"><label for="da-estado">Estado</label><select id="da-estado"></select></div>
+    <div class="campo"><label for="da-notas">Notas</label><input id="da-notas" autocomplete="off"></div>
+    <div class="rodape-dialogo">
+      <button class="botao" type="submit" value="ok">Guardar</button>
+      <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Cancelar</button>
+      <span class="espaco"></span>
+      <button class="botao perigo" type="button" id="da-apagar">Apagar</button>
+    </div>
+    <p class="mensagem erro" id="da-mensagem" role="alert"></p>
+  </form>
+</dialog>
+
+<!-- Férias Discovercasa para todos -->
+<dialog id="d-ferias-empresa">
+  <form method="dialog" id="f-ferias-empresa" novalidate>
+    <h2 class="titulo">Férias Discovercasa</h2>
+    <p class="ajuda" style="margin-top:0">Fecho da empresa: regista as mesmas férias para todos os colaboradores.</p>
+    <div class="form-grelha" style="grid-template-columns:1fr 1fr">
+      <div class="campo"><label for="dfe-inicio">De</label><input id="dfe-inicio" type="date"></div>
+      <div class="campo"><label for="dfe-fim">Até</label><input id="dfe-fim" type="date"></div>
+    </div>
+    <p class="contagem-dias" id="dfe-contagem"></p>
+    <div class="campo"><label for="dfe-notas">Notas</label><input id="dfe-notas" autocomplete="off" placeholder="ex.: Fecho de agosto"></div>
+    <div class="rodape-dialogo">
+      <button class="botao" type="submit" value="ok">Registar para todos</button>
+      <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Cancelar</button>
+    </div>
+    <p class="mensagem erro" id="dfe-mensagem" role="alert"></p>
+  </form>
+</dialog>
+
+<!-- Pedido de férias / ausência (o próprio) -->
+<dialog id="d-pedido">
+  <form method="dialog" id="f-pedido" novalidate>
+    <h2 class="titulo">Pedir férias ou ausência</h2>
+    <div class="campo"><label for="dp-tipo">Tipo</label><select id="dp-tipo"></select></div>
+    <div class="form-grelha" style="grid-template-columns:1fr 1fr">
+      <div class="campo"><label for="dp-inicio">De</label><input id="dp-inicio" type="date"></div>
+      <div class="campo"><label for="dp-fim">Até</label><input id="dp-fim" type="date"></div>
+    </div>
+    <label class="interruptor" style="padding-top:0"><input type="checkbox" id="dp-meio"> Meio dia</label>
+    <p class="contagem-dias" id="dp-contagem"></p>
+    <div class="campo"><label for="dp-notas">Notas (opcional)</label><input id="dp-notas" autocomplete="off"></div>
+    <div class="rodape-dialogo">
+      <button class="botao" type="submit" value="ok">Enviar pedido</button>
+      <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Cancelar</button>
+    </div>
+    <p class="mensagem erro" id="dp-mensagem" role="alert"></p>
+  </form>
+</dialog>
+
 <dialog id="d-membros">
   <form method="dialog" id="f-membros" novalidate>
     <h2 class="titulo">Membros da obra</h2>
@@ -386,11 +489,27 @@
 <script src="/js/obras.js"></script>
 <script src="/js/checklist.js"></script>
 <script src="/js/colaboradores.js"></script>
+<script src="/js/ferias.js"></script>
 <script>
-  const APP_VERSAO = 'v0.4';
+  const APP_VERSAO = 'v0.5';
 
   // Mais recente primeiro. A primeira entrada tem de ser igual a APP_VERSAO.
   const NOVIDADES = [
+    {
+      versao: 'v0.5',
+      data: '2026-10-10',
+      novas: [
+        'Novo separador Férias, com o mapa mensal da equipa.',
+        'Saldo de férias de cada pessoa: dias do ano, transitados, gozados e disponíveis.',
+        'Cada colaborador vê as suas férias e pode pedir dias.',
+        'Pedidos pendentes aprovados ou recusados por ADMIN e Administrador.',
+        'Férias Discovercasa registadas para todos de uma vez.',
+        'Feriados nacionais de 2026 e 2027, e feriados municipais.'
+      ],
+      alteracoes: [
+        'As férias de 2026 do Excel já estão na plataforma.'
+      ]
+    },
     {
       versao: 'v0.4',
       data: '2026-10-10',
@@ -555,12 +674,13 @@
   function irPara(aba) {
     const rota = aba;
     aba = aba.split('/')[0];
-    const permitidas = ['inicio', 'obras', 'checklist', 'novidades', ehGestor() && 'colaboradores'].filter(Boolean);
+    const permitidas = ['inicio', 'obras', 'checklist', 'novidades', ehGestor() && 'colaboradores', (ehGestor() || eu.ficha) && 'ferias'].filter(Boolean);
     if (!permitidas.includes(aba)) aba = 'inicio';
     for (const s of document.querySelectorAll('main > section')) s.hidden = s.id !== 'aba-' + aba;
     Hub.marcarAba(aba);
     if (aba === 'obras') ObrasHub.mostrar(rota, eu);
     if (aba === 'checklist') ChecklistHub.mostrar(rota, eu);
+    if (aba === 'ferias') FeriasHub.mostrar(rota, eu);
     if (aba === 'colaboradores') {
       const contasAberto = rota === 'colaboradores/contas';
       $('colab-contas').hidden = !contasAberto; $('colab-equipa').hidden = contasAberto;
@@ -579,7 +699,8 @@
       { titulo: 'Obras', texto: 'Lista de obras e ficha de cada uma.', href: '#obras' },
       { titulo: 'Checklist', texto: 'Fases e checks de cada obra.', href: '#checklist' },
       ehGestor() && { titulo: 'Colaboradores', texto: 'Fichas da equipa e contas de acesso.', href: '#colaboradores' },
-      ehGestor() && { titulo: 'Férias e horas extra', texto: 'Mapa de férias, ausências e horas extra.', futuro: 'v0.5' },
+      (ehGestor() || eu.ficha) && { titulo: 'Férias', texto: ehGestor() ? 'Mapa da equipa, pedidos, saldos e feriados.' : 'O meu saldo e pedidos de férias.', href: '#ferias' },
+      ehGestor() && { titulo: 'Horas extra', texto: 'Horas extra por obra e colaborador.', futuro: 'v0.6' },
       { titulo: 'Fotos e vídeos', texto: 'Fase atual, fotos e vídeos de cada obra.', futuro: 'v0.8' },
       eu.papel !== 'cliente' && { titulo: 'Mapa de obras', texto: 'Todas as obras num mapa.', futuro: 'v0.9' },
       ehGestor() && { titulo: 'Materiais e custos', texto: 'Fornecedores, preços e orçamentação.', futuro: 'v0.10' },
@@ -599,8 +720,12 @@
   async function mostrarAlertas() {
     const c = $('inicio-alertas');
     if (!ehGestor()) { c.replaceChildren(); return; }
-    const lista = await ColaboradoresHub.alertas();
-    c.replaceChildren(...(lista.length ? [el('section', { class: 'painel alertas' }, [
+    const [lista, nPedidos] = await Promise.all([ColaboradoresHub.alertas(), FeriasHub.pendentes()]);
+    const pedidos = nPedidos ? el('section', { class: 'painel alertas' }, [
+      el('h2', { class: 'titulo', text: `Pedidos de férias · ${nPedidos}` }),
+      el('p', { style: 'margin:0' }, [`Há ${nPedidos} pedido${nPedidos === 1 ? '' : 's'} à espera de decisão. `, el('a', { href: '#ferias', text: 'Ver pedidos' })])
+    ]) : null;
+    c.replaceChildren(...[pedidos].filter(Boolean), ...(lista.length ? [el('section', { class: 'painel alertas' }, [
       el('h2', { class: 'titulo', text: `Alertas · ${lista.length}` }),
       el('ul', {}, lista.map((a) => el('li', {}, [
         el('a', { href: '#colaboradores/' + a.id, text: a.nome }), el('span', { text: a.documento }),

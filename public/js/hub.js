@@ -26,7 +26,8 @@
     if (!user) return null;
     const { data, error } = await sb.from('profiles').select('nome, utilizador, papel, ativo').eq('id', user.id).single();
     if (error || !data || !data.ativo) return null;
-    return { id: user.id, ...data };
+    const { data: ficha } = await sb.rpc('minha_ficha_id');
+    return { id: user.id, ...data, ficha: ficha || null };
   }
 
   function separadores(eu) {
@@ -34,6 +35,7 @@
       { id: 'inicio', nome: 'Início', href: '/#inicio' },
       { id: 'obras', nome: 'Obras', href: '/#obras' },
       { id: 'checklist', nome: 'Checklist', href: '/#checklist' },
+      (ehGestor(eu) || (eu && eu.ficha)) && { id: 'ferias', nome: 'Férias', href: '/#ferias' },
       ehGestor(eu) && { id: 'colaboradores', nome: 'Colaboradores', href: '/#colaboradores' },
       { id: 'novidades', nome: 'Novidades', href: '/#novidades' }
     ].filter(Boolean);

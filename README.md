@@ -22,6 +22,7 @@
 | Orçamento final | Ver e editar | Ver e editar | — | — | Ver |
 | Mapa de obras | Todas | Todas | Atribuídas | Atribuídas | — |
 | Dados pessoais da equipa | Ver e editar | Ver e editar | — | — | — |
+| Férias e ausências | Todos, aprovar | Todos, aprovar | As suas, pedir | As suas, pedir (se tiver ficha) | — |
 
 ## Contas
 
@@ -35,6 +36,11 @@
 - Em **Colaboradores → Equipa**: ficha de cada colaborador (identificação, contactos, trabalho, documentos). Só ADMIN e Administrador.
 - Cada colaborador tem conta; cria-se a partir da ficha ("Criar conta"). Sem email próprio, usa-se `<utilizador>@equipa.discovercasa.pt`.
 - Documentos a expirar nos próximos 31 dias aparecem como alertas no Início.
+
+## Férias
+
+- Separador **Férias**. ADMIN e Administrador: mapa mensal, pedidos, saldos e feriados. Cada colaborador com ficha: "As minhas férias" (saldo e pedidos).
+- Saldo: 22 dias por ano (ajustável) + transitados; descontam férias pessoais e Férias Discovercasa aprovadas, em dias úteis.
 
 ## Obras
 
@@ -117,6 +123,7 @@ O subdomínio aponta para o Pages com um registo CNAME:
 │   ├── js/obras.js    separador Obras
 │   ├── js/checklist.js separador Checklist
 │   ├── js/colaboradores.js separador Colaboradores → Equipa
+│   ├── js/ferias.js   separador Férias
 │   ├── _redirects     /checklist → /#checklist
 │   ├── js/plataforma-core.js
 │   └── img/           logótipos e favicon

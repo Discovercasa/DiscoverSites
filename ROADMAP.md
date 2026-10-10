@@ -44,10 +44,11 @@ Ordem dos blocos: **Base (com checklist e obras) → Equipa → Obras (fotos, ma
 - Alertas de documentos a expirar (carta, CC, aptidão médica) no Início.
 - *Fora desta versão:* registo de EPIs.
 
-### 🔜 v0.5 — Férias e ausências
-- Mapa anual (férias, faltas, teletrabalho, feriados…).
+### ✅ v0.5 — Férias e ausências
+- Mapa mensal da equipa, pedidos com aprovação, saldo por pessoa, feriados nacionais e municipais.
+- Férias de 2026 importadas do Excel.
 
-### 📝 v0.6 — Horas extra
+### 🔜 v0.6 — Horas extra
 - Registo por obra e colaborador; estado pago / não pago; totais.
 
 ### 📝 v0.7 — Veículos e deslocações

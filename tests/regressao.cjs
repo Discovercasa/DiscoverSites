@@ -183,8 +183,23 @@ teste('D10', 'dados pessoais da equipa só para ADMIN e Administrador', () => {
     const regras = (p.match(/(using|with check)\s*\(([^;]*)\)/g) || []).join(' ');
     exigir(/eh_gestor\(\)/.test(regras) && !/\btrue\b|auth\.uid\(\)/.test(regras), `política demasiado aberta: ${p.slice(0, 60)}…`);
   }
-  for (const f of fs.readdirSync(path.join(RAIZ, 'public'), { recursive: true }).filter(f => /\.js$/.test(f) && !/colaboradores\.js$/.test(f)))
-    exigir(!/from\(['"]colaboradores['"]\)/.test(ler('public/' + f)) || /index\.html/.test(f), `${f} lê colaboradores fora do módulo da equipa`);
+  // Fora do módulo da equipa só se pode ler o id, o nome e as validades (nunca NIF, CC, IBAN, contactos…)
+  for (const f of fs.readdirSync(path.join(RAIZ, 'public'), { recursive: true }).filter(f => /\.(js|html)$/.test(f) && !/colaboradores\.js$/.test(f)))
+    for (const m of ler('public/' + f).matchAll(/from\(['"]colaboradores['"]\)\.select\(['"]([^'"]*)['"]/g)) {
+      const cols = m[1].split(',').map(c => c.trim());
+      exigir(cols.every(c => /^(id|nome|user_id|carta_validade|cc_validade|aptidao_validade)$/.test(c)), `${f} lê dados pessoais da equipa (${m[1]})`);
+    }
+});
+
+teste('D16', 'férias: cada um vê as suas e só pede (não aprova)', () => {
+  const sql = fs.readdirSync(path.join(RAIZ, 'supabase/migrations')).filter(f => f.endsWith('.sql'))
+    .map(f => ler('supabase/migrations/' + f)).join('\n');
+  const pol = (cmd) => (sql.match(new RegExp(`create policy [^;]*on public\\.ausencias for ${cmd}[^;]*;`)) || [''])[0];
+  exigir(/eh_gestor\(\) or colaborador_id = public\.minha_ficha_id\(\)/.test(pol('select')), 'leitura de ausências demasiado aberta');
+  exigir(/estado = 'pendente'/.test(pol('insert')) && /pedido_por = auth\.uid\(\)/.test(pol('insert')), 'um colaborador pode registar ausências já aprovadas');
+  exigir(/using \(public\.eh_gestor\(\)\) with check \(public\.eh_gestor\(\)\)/.test(pol('update')), 'só gestores podem aprovar/alterar ausências');
+  exigir(/estado = 'pendente'/.test(pol('delete')), 'um colaborador pode apagar ausências já aprovadas');
+  exigir(/create policy "Gestores veem saldos" on public\.ferias_saldos for select to authenticated using \(public\.eh_gestor\(\)\)/.test(sql), 'saldos legíveis por todos');
 });
 
 teste('—', 'ROADMAP marca a versão atual', () => {

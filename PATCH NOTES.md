@@ -24,9 +24,21 @@ Regras que não se alteram sem confirmação do Sebastião. Cada uma tem, sempre
 19. **Tudo numa só página:** as áreas são separadores de `index.html` (sem mudar de página); `/checklist` redireciona para `/#checklist`. O código de cada área fica em `public/js/<área>.js`.
 20. **Todos os colaboradores têm conta.** Quem não tem email usa um endereço interno `<utilizador>@equipa.discovercasa.pt`; entra com o nome de utilizador.
 21. **Alertas de documentos** (carta, CC, aptidão médica) 31 dias antes de expirarem, no Início, para ADMIN e Administrador.
+22. **Férias:** ADMIN e Administrador registam e aprovam; cada colaborador vê só as suas e pode pedir (fica pendente). Saldo de 22 dias/ano por omissão, mais transitados; descontam férias pessoais e Férias Discovercasa aprovadas, em dias úteis. (D16)
+23. **"f" no Excel de férias = Falta**; o "x" não se importa.
 15. **Todas as páginas** em `public/` são em português de Portugal e ligam-se ao Supabase só pelo `plataforma-core`. (D6)
 
 ## Histórico
+
+### v0.5 — 2026-10-10
+- Novo separador **Férias** (`public/js/ferias.js`):
+  - ADMIN/Administrador: mapa mensal da equipa (clicar para registar/alterar), pedidos pendentes (aprovar/recusar), saldos por ano (dias e transitados editáveis), feriados (nacionais e municipais), "Férias Discovercasa" para todos.
+  - Colaborador com ficha: "As minhas férias" (saldo, registo, pedir, cancelar pedido pendente).
+- Início: aviso de pedidos pendentes para ADMIN/Administrador; cartão Férias.
+- Base de dados (migração `0005_ferias_ausencias`): `feriados` (2026 e 2027), `ferias_saldos`, `ausencias`; funções `minha_ficha_id`, `dias_uteis`, `saldos_ferias`.
+- Testado: um colaborador vê só as suas ausências e nenhuma ficha; pode pedir, mas não aprovar nem pedir por outro.
+- Importadas 91 ausências de 2026 do Excel (9 pessoas). Ficaram de fora 3 nomes sem ficha: "Mª João Santos", "Luís Henrique Nogueira", "Paulo Beça".
+- Novo teste D16.
 
 ### v0.4 — 2026-10-10
 - **Ficha do colaborador** (`public/js/colaboradores.js`): identificação, contactos, trabalho, documentos com validade; criar, editar, apagar.
