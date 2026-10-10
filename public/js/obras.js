@@ -4,7 +4,8 @@
   const { sb, PAPEIS, $, el } = Hub;
   const ESTADOS = { preparacao: 'Em preparação', em_curso: 'Em curso', concluida: 'Concluída', suspensa: 'Suspensa' };
 
-  let eu = null, gestor = false, obras = [], pessoas = [], filtro = { texto: '', estado: '' };
+  let eu = null, gestor = false, obras = [], pessoas = [], carregado = false, paginaAtual = null;
+  let filtro = Hub.recordar('obras.filtro', { texto: '', estado: '' });
 
   const data = (d) => (d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-PT') : '—');
   const nomeObra = (o) => (o.codigo ? `${o.codigo} · ${o.nome}` : o.nome);
@@ -17,22 +18,35 @@
     if (gestor && !pessoas.length) pessoas = (await sb.rpc('listar_pessoas')).data || [];
   }
 
-  // ---------- rota: "obras", "obras/nova", "obras/<id>", "obras/<id>/editar" ----------
+  // ---------- rota: "obras", "obras/nova", "obras/<id>", "obras/<id>/<aba>[/<pasta>]", "obras/<id>/editar" ----------
   async function mostrar(rota, utilizador) {
     eu = utilizador; gestor = Hub.ehGestor(eu);
+    aviso('');
+    if (!carregado) {
+      $('obras-conteudo').replaceChildren(el('p', { class: 'carregar', text: 'A carregar…' }));
+      try { await carregar(); carregado = true; } catch (e) { $('obras-conteudo').replaceChildren(); return aviso(e.message); }
+    } else {
+      // Mostra já o que se sabe; atualiza em segundo plano e redesenha a lista/início se algo mudou
+      const antes = JSON.stringify(obras);
+      carregar().then(() => {
+        const [, id, acao] = rota.split('/');
+        if (JSON.stringify(obras) !== antes && Hub.rota() === rota && (!id || (!acao && id !== 'nova'))) { paginaAtual = null; desenharRota(rota); }
+      }).catch(() => {});
+    }
+    return desenharRota(rota);
+  }
+
+  function desenharRota(rota) {
     const [, id, acao, extra] = rota.split('/');
     const c = $('obras-conteudo');
-    c.replaceChildren(el('p', { class: 'carregar', text: 'A carregar…' }));
-    aviso('');
-    try { await carregar(); } catch (e) { c.replaceChildren(); return aviso(e.message); }
-
-    if (id === 'nova' && gestor) return formulario(null);
+    if (id === 'nova' && gestor) { paginaAtual = null; return formulario(null); }
     if (id) {
       const o = obras.find((x) => x.id === id);
-      if (!o) { c.replaceChildren(el('div', { class: 'vazio', text: 'Obra não encontrada.' })); return; }
-      if (acao === 'editar' && gestor) return formulario(o);
+      if (!o) { paginaAtual = null; c.replaceChildren(el('div', { class: 'vazio', text: 'Obra não encontrada.' })); return; }
+      if (acao === 'editar' && gestor) { paginaAtual = null; return formulario(o); }
       return paginaObra(o, acao || 'inicio', extra);
     }
+    paginaAtual = null;
     lista();
   }
 
@@ -49,7 +63,8 @@
       const t = filtro.texto.toLowerCase();
       const vis = obras.filter((o) => (!filtro.estado || o.estado === filtro.estado) &&
         (!t || [o.codigo, o.nome, o.localidade].some((v) => (v || '').toLowerCase().includes(t))));
-      grelha.replaceChildren(...(vis.length ? vis.map((o) => el('a', { class: 'cartao', href: '/obras/' + o.id }, [
+      grelha.replaceChildren(...(vis.length ? vis.map((o) => el('a', { class: 'cartao cartao-obra', href: '/obras/' + o.id }, [
+        el('div', { class: 'capa-mini' + (o.capa_path ? '' : ' sem-capa') }, o.capa_path ? imagemCapa(o.capa_path, o.nome) : null),
         o.codigo ? el('div', { class: 'codigo', text: o.codigo }) : null,
         el('h2', { class: 'titulo', text: o.nome }),
         el('p', { text: o.localidade || o.morada || 'Sem localidade' }),
@@ -57,8 +72,8 @@
           o.data_fim_prevista ? el('span', { class: 'ajuda', text: 'Fim previsto ' + data(o.data_fim_prevista) }) : null])
       ])) : [el('div', { class: 'vazio', text: obras.length ? 'Nenhuma obra corresponde à pesquisa.' : (gestor ? 'Ainda não há obras. Crie a primeira.' : 'Ainda não tem obras atribuídas.') })]));
     }
-    pesquisa.addEventListener('input', () => { filtro.texto = pesquisa.value; desenharCartoes(); });
-    estado.addEventListener('change', () => { filtro.estado = estado.value; desenharCartoes(); });
+    pesquisa.addEventListener('input', () => { filtro.texto = pesquisa.value; Hub.lembrar('obras.filtro', filtro); desenharCartoes(); });
+    estado.addEventListener('change', () => { filtro.estado = estado.value; Hub.lembrar('obras.filtro', filtro); desenharCartoes(); });
 
     $('obras-conteudo').replaceChildren(...[
       el('div', { class: 'barra' }, [
@@ -141,13 +156,79 @@
     if (membros) {
       try {
         const lista = await ok(sb.rpc('listar_membros_obra', { p_obra: o.id }), 'Não foi possível carregar os membros.');
-        membros.replaceChildren(el('h2', { class: 'titulo', text: 'Membros' }),
+        membros.replaceChildren(...[el('h2', { class: 'titulo', text: 'Membros' }),
           lista.length ? el('ul', { class: 'membros' }, lista.map((m) => el('li', {}, [m.nome || '—', ' ', el('span', { class: 'etiqueta', text: PAPEIS[m.papel] || m.papel })])))
             : el('p', { class: 'ajuda', text: 'Ainda sem membros. ADMIN e Administrador veem todas as obras.' }),
-          gestor ? el('button', { class: 'botao secundario pequeno', type: 'button', text: 'Gerir membros', onclick: () => abrirMembros(o, lista.map((m) => m.user_id)) }) : null);
+          gestor ? el('button', { class: 'botao secundario pequeno', type: 'button', text: 'Gerir membros', onclick: () => abrirMembros(o, lista.map((m) => m.user_id)) }) : null].filter(Boolean));
       } catch (e) { membros.lastChild.textContent = e.message; }
     }
   }
+
+  // ---------- foto de capa ----------
+  let urlsCapa = {};
+  try { urlsCapa = JSON.parse(localStorage.getItem('hub.capas') || '{}'); } catch (_) {}
+  async function urlCapa(caminho) {
+    const c = urlsCapa[caminho];
+    if (c && c.expira > Date.now() + 60_000) return c.url;
+    const { data } = await sb.storage.from('capas').createSignedUrl(caminho, 6 * 3600);
+    if (!data) return null;
+    urlsCapa[caminho] = { url: data.signedUrl, expira: Date.now() + 6 * 3600 * 1000 };
+    try { localStorage.setItem('hub.capas', JSON.stringify(urlsCapa)); } catch (_) {}
+    return data.signedUrl;
+  }
+  function imagemCapa(caminho, alt) {
+    const img = el('img', { alt: 'Capa de ' + alt });
+    const c = urlsCapa[caminho];
+    if (c && c.expira > Date.now() + 60_000) img.src = c.url; else urlCapa(caminho).then((u) => { if (u) img.src = u; });
+    return img;
+  }
+  function capaObra(o) {
+    return el('div', { class: 'capa-obra' + (o.capa_path ? '' : ' sem-capa') }, [
+      o.capa_path ? imagemCapa(o.capa_path, o.nome) : null,
+      gestor ? el('button', { class: 'botao secundario pequeno mudar-capa', type: 'button', text: o.capa_path ? 'Mudar capa' : '+ Foto de capa', onclick: () => abrirCapa(o) }) : null
+    ].filter(Boolean));
+  }
+  let obraCapa = null;
+  function abrirCapa(o) {
+    obraCapa = o;
+    $('dc-mensagem').textContent = ''; $('dc-ficheiro').value = '';
+    $('dc-remover').hidden = !o.capa_path;
+    $('dc-fotos').replaceChildren(el('p', { class: 'ajuda', text: 'A carregar as fotos da obra…' }));
+    $('d-capa').showModal();
+    ObraDrive.escolherFoto(o, $('dc-fotos'), async (f) => {
+      $('dc-mensagem').className = 'mensagem'; $('dc-mensagem').textContent = 'A guardar…';
+      try { await ObraDrive.capaDaDrive(o.id, f.id); await capaGuardada(); }
+      catch (e) { $('dc-mensagem').className = 'mensagem erro'; $('dc-mensagem').textContent = e.message; }
+    });
+  }
+  async function capaGuardada() {
+    $('d-capa').close(); paginaAtual = null; carregado = false;
+    await mostrar(Hub.rota(), eu);
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    $('dc-ficheiro').addEventListener('change', async (ev) => {
+      const f = ev.target.files[0]; if (!f) return;
+      $('dc-mensagem').className = 'mensagem'; $('dc-mensagem').textContent = 'A guardar…';
+      try {
+        const r = (await ObraAbas.reduzirFoto(f)) || { blob: f, ext: 'jpg', tipo: f.type };
+        if (r.blob.size > 5 * 1024 * 1024) throw new Error('A fotografia é demasiado grande (máx. 5 MB).');
+        const caminho = `${obraCapa.id}/capa-${Date.now()}.${r.ext}`;
+        const { error } = await sb.storage.from('capas').upload(caminho, r.blob, { contentType: r.tipo });
+        if (error) throw new Error('Não foi possível enviar a fotografia.');
+        await ok(sb.from('obras').update({ capa_path: caminho }).eq('id', obraCapa.id));
+        if (obraCapa.capa_path) sb.storage.from('capas').remove([obraCapa.capa_path]);
+        await capaGuardada();
+      } catch (e) { $('dc-mensagem').className = 'mensagem erro'; $('dc-mensagem').textContent = e.message; }
+    });
+    $('dc-remover').addEventListener('click', async () => {
+      if (!confirm('Remover a foto de capa?')) return;
+      try {
+        await ok(sb.from('obras').update({ capa_path: null }).eq('id', obraCapa.id));
+        if (obraCapa.capa_path) sb.storage.from('capas').remove([obraCapa.capa_path]);
+        await capaGuardada();
+      } catch (e) { $('dc-mensagem').className = 'mensagem erro'; $('dc-mensagem').textContent = e.message; }
+    });
+  });
 
   // ---------- página da obra com abas ----------
   const ABAS = [
@@ -157,8 +238,14 @@
   function paginaObra(o, aba, extra) {
     const abas = ABAS.filter(([id]) => !(id === 'entregas' && eu.papel === 'cliente'));
     if (!abas.some(([id]) => id === aba)) aba = 'inicio';
-    const alvo = el('div', { class: 'conteudo-aba' }, el('p', { class: 'carregar', text: 'A carregar…' }));
+    let alvo;
+    if (paginaAtual && paginaAtual.obraId === o.id && paginaAtual.no.isConnected) {
+      alvo = paginaAtual.alvo;
+      paginaAtual.no.querySelectorAll('.abas-obra a').forEach((a) => a.dataset.aba === aba ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
+    } else {
+    alvo = el('div', { class: 'conteudo-aba' }, el('p', { class: 'carregar', text: 'A carregar…' }));
     $('obras-conteudo').replaceChildren(
+      capaObra(o),
       el('a', { class: 'voltar', href: '/obras', text: '← Obras' }),
       el('div', { class: 'barra' }, [
         el('div', {}, [o.codigo ? el('div', { class: 'codigo', text: o.codigo }) : null, el('h1', { class: 'titulo', text: o.nome }), etiquetaEstado(o.estado)]),
@@ -168,9 +255,11 @@
         ])
       ]),
       el('nav', { class: 'sub-abas abas-obra', 'aria-label': 'Abas da obra' }, abas.map(([id, nome]) =>
-        el('a', { href: `/obras/${o.id}${id === 'inicio' ? '' : '/' + id}`, 'aria-current': id === aba ? 'page' : false, text: nome }))),
+        el('a', { href: `/obras/${o.id}${id === 'inicio' ? '' : '/' + id}`, 'data-aba': id, 'aria-current': id === aba ? 'page' : false, text: nome }))),
       alvo
     );
+    paginaAtual = { obraId: o.id, no: $('obras-conteudo'), alvo };
+    }
     const vazio = (texto) => alvo.replaceChildren(el('div', { class: 'vazio' }, [el('span', { class: 'etiqueta', text: 'Em breve' }), ' ', texto]));
     if (aba !== 'documentos' && aba !== 'fotos') ObraDrive.preparar(o);
     if (aba === 'inicio') return abaInicio(o, alvo);
@@ -237,11 +326,11 @@
         if (novo) {
           const criada = await ok(sb.from('obras').insert(registo).select('id').single(), 'Não foi possível criar a obra (o código já existe?).');
           try { await ObraDrive.prepararObra(criada.id); } catch (_) { /* Drive ainda não ligada: as pastas criam-se mais tarde */ }
-          Hub.ir('obras/' + criada.id);
+          carregado = false; Hub.ir('obras/' + criada.id);
         } else {
           await ok(sb.from('obras').update(registo).eq('id', o.id), 'Não foi possível guardar (o código já existe?).');
           if (registo.codigo !== o.codigo || registo.nome !== o.nome) ObraDrive.prepararObra(o.id).catch(() => {}); // renomeia a pasta na Drive
-          Hub.ir('obras/' + o.id);
+          carregado = false; paginaAtual = null; Hub.ir('obras/' + o.id);
         }
       } catch (e) { msg(e.message); }
     });
@@ -254,7 +343,7 @@
     if (!confirm(`Apagar a obra "${nomeObra(o)}"?\n\nApaga também os checks marcados, responsáveis e membros desta obra. Não pode ser desfeito.`)) return;
     try {
       await ok(sb.from('obras').delete().eq('id', o.id), 'Não foi possível apagar a obra.');
-      Hub.ir('obras');
+      carregado = false; Hub.ir('obras');
     } catch (e) { $('ob-mensagem').textContent = e.message; }
   }
 
@@ -280,7 +369,7 @@
         if (novos.length) await ok(sb.from('obra_membros').insert(novos.map((user_id) => ({ obra_id: obraMembros.id, user_id }))));
         if (saem.length) await ok(sb.from('obra_membros').delete().eq('obra_id', obraMembros.id).in('user_id', saem));
         $('d-membros').close();
-        await mostrar('obras/' + obraMembros.id, eu);
+        paginaAtual = null; await mostrar('obras/' + obraMembros.id, eu);
         aviso('Membros guardados.', 'ok');
       } catch (e) { $('dm-mensagem').textContent = e.message; }
     });

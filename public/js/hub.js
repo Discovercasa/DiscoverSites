@@ -70,12 +70,29 @@
     return Array.from(crypto.getRandomValues(new Uint32Array(10)), (x) => letras[x % letras.length]).join('');
   }
 
+  // ---------- Memória do dia: onde se estava em cada separador, filtros, posição na página ----------
+  // No mesmo dia volta-se exatamente ao mesmo sítio; noutro dia tudo recomeça do início.
+  const HOJE = new Date().toLocaleDateString('sv'); // AAAA-MM-DD (hora local)
+  let mem = null;
+  try { mem = JSON.parse(localStorage.getItem('hub.memoria') || 'null'); } catch (_) {}
+  const diaNovo = !mem || mem.dia !== HOJE;
+  if (diaNovo) {
+    mem = { dia: HOJE, seccoes: {}, scroll: {}, estado: {} };
+    try { for (const k of Object.keys(localStorage)) if (/^hub\.(obra|fase)$/.test(k)) localStorage.removeItem(k); } catch (_) {}
+  }
+  let tGuardar = 0;
+  function guardarMem() { clearTimeout(tGuardar); tGuardar = setTimeout(() => { try { localStorage.setItem('hub.memoria', JSON.stringify(mem)); } catch (_) {} }, 150); }
+  // estado de cada área (filtros, pesquisa, vista…)
+  function lembrar(chave, valor) { mem.estado[chave] = valor; guardarMem(); }
+  function recordar(chave, padrao) { return chave in mem.estado ? mem.estado[chave] : padrao; }
+
   function guardar(chave, valor) { try { localStorage.setItem('hub.' + chave, valor); } catch (_) {} }
   function ler(chave) { try { return localStorage.getItem('hub.' + chave); } catch (_) { return null; } }
 
   // ---------- Endereços sem "#": /obras/<id>/pedidos ----------
   // Ligações antigas com "#" (ex.: /#obras/...) passam para o formato novo.
   if (/^#[a-z]/.test(location.hash)) history.replaceState(null, '', '/' + location.hash.slice(1));
+  if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 
   function rota() {
     const p = decodeURIComponent(location.pathname.replace(/^\/+|\/+$/g, ''));
@@ -86,6 +103,24 @@
     if (url !== location.pathname) history[substituir ? 'replaceState' : 'pushState'](null, '', url);
     window.dispatchEvent(new Event('rota'));
   }
+  const seccaoDe = (r) => r.split('/')[0];
+  // Regista a rota atual da secção (para voltar lá ao carregar no separador)
+  function registarRota(r) { mem.seccoes[seccaoDe(r)] = r; mem.ultima = r; guardarMem(); }
+  // Posição na página por rota
+  window.addEventListener('scroll', () => { mem.scroll[rota()] = Math.round(window.scrollY); guardarMem(); }, { passive: true });
+  // Repõe a posição guardada quando a página já tem altura suficiente (o conteúdo chega aos poucos)
+  function reporScroll(r) {
+    const alvo = mem.scroll[r] || 0;
+    if (!alvo) { window.scrollTo(0, 0); return; }
+    const inicio = Date.now();
+    (function tentar() {
+      if (rota() !== r) return;
+      if (document.documentElement.scrollHeight - window.innerHeight >= alvo || Date.now() - inicio > 2500) window.scrollTo(0, alvo);
+      else requestAnimationFrame(tentar);
+    })();
+  }
+  // Ao abrir no mesmo dia sem rota (só "/"), volta à última página em que se estava
+  if (!diaNovo && rota() === 'inicio' && mem.ultima && mem.ultima !== 'inicio') history.replaceState(null, '', '/' + mem.ultima);
   // Ligações internas (href="/...") mudam de separador sem recarregar a página
   document.addEventListener('click', (ev) => {
     const a = ev.target.closest && ev.target.closest('a[href]');
@@ -93,9 +128,12 @@
     const href = a.getAttribute('href');
     if (!href.startsWith('/') || href.startsWith('//')) return;
     ev.preventDefault();
-    ir(href.slice(1) || 'inicio');
+    let destino = href.slice(1) || 'inicio';
+    // Separador do topo de outra secção → volta onde se estava nessa secção
+    if (a.closest('nav.abas') && seccaoDe(destino) !== seccaoDe(rota()) && mem.seccoes[seccaoDe(destino)]) destino = mem.seccoes[seccaoDe(destino)];
+    ir(destino);
   });
   window.addEventListener('popstate', () => window.dispatchEvent(new Event('rota')));
 
-  window.Hub = { sb, PAPEIS, $, el, ehGestor, perfilAtual, separadores, desenharTopo, marcarAba, sair, gerarSenha, guardar, ler, rota, ir };
+  window.Hub = { sb, PAPEIS, $, el, ehGestor, perfilAtual, separadores, desenharTopo, marcarAba, sair, gerarSenha, guardar, ler, rota, ir, lembrar, recordar, registarRota, reporScroll };
 })();

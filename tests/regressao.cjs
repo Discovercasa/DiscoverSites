@@ -242,6 +242,17 @@ teste('D19', 'Google Drive: ligação privada e pastas com visibilidade', () => 
   exigir(/Deno\.env\.get\("GOOGLE_CLIENT_SECRET"\)/.test(fn), 'o segredo do Google tem de vir dos Secrets do Supabase');
 });
 
+teste('D20', 'capas das obras: privadas, só gestores mudam; memória do dia', () => {
+  const sql = fs.readdirSync(path.join(RAIZ, 'supabase/migrations')).filter(f => f.endsWith('.sql'))
+    .map(f => ler('supabase/migrations/' + f)).join('\n');
+  exigir(/'capas', 'capas', false/.test(sql), 'as capas não estão num armazenamento privado');
+  exigir(/"Membros veem capas"[^;]*membro_obra/.test(sql), 'as capas não estão limitadas aos membros da obra');
+  for (const p of ['Gestores carregam capas', 'Gestores substituem capas', 'Gestores apagam capas'])
+    exigir(new RegExp(`"${p}"[^;]*eh_gestor\\(\\)`).test(sql), `"${p}" não está limitado a ADMIN/Administrador`);
+  const hub = ler('public/js/hub.js');
+  exigir(/mem\.dia !== HOJE/.test(hub), 'a memória de onde se estava tem de recomeçar noutro dia');
+});
+
 teste('—', 'ROADMAP marca a versão atual', () => {
   if (/[a-z]$/.test(versaoNotas || '')) return; // letras entre versões não vão ao roadmap
   exigir(new RegExp(`✅\\s*${versaoNotas?.replace('.', '\\.')}\\b`).test(ler('ROADMAP.md')),

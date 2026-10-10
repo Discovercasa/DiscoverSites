@@ -6,7 +6,8 @@
   const DIAS_ALERTA = 31;
   const DOMINIO_INTERNO = 'equipa.discovercasa.pt';
 
-  let eu = null, fichas = [], contas = new Map(), filtro = '';
+  let eu = null, fichas = [], contas = new Map(), carregado = false;
+  let filtro = Hub.recordar('equipa.filtro', '');
 
   async function ok(p, msg = 'Não foi possível guardar.') { const { data, error } = await p; if (error) { console.error(error); throw new Error(msg); } return data; }
   const data = (d) => (d ? new Date(d + 'T00:00:00').toLocaleDateString('pt-PT') : '—');
@@ -40,8 +41,16 @@
     eu = utilizador;
     const id = rota.split('/')[1];
     const c = $('colab-equipa');
-    c.replaceChildren(el('p', { class: 'carregar', text: 'A carregar…' }));
-    try { await carregar(); } catch (e) { c.replaceChildren(el('p', { class: 'mensagem erro', text: e.message })); return; }
+    if (!carregado) {
+      c.replaceChildren(el('p', { class: 'carregar', text: 'A carregar…' }));
+      try { await carregar(); carregado = true; } catch (e) { c.replaceChildren(el('p', { class: 'mensagem erro', text: e.message })); return; }
+    } else if (!id) {
+      // lista: mostra já e atualiza em segundo plano
+      const antes = JSON.stringify([fichas, [...contas]]);
+      carregar().then(() => { if (JSON.stringify([fichas, [...contas]]) !== antes && Hub.rota() === rota) lista(); }).catch(() => {});
+    } else {
+      try { await carregar(); } catch (_) {} // ficha: dados frescos antes de editar
+    }
     if (id === 'novo') return ficha(null);
     if (id) {
       const f = fichas.find((x) => x.id === id);
@@ -70,7 +79,7 @@
         ]);
       }) : [el('tr', {}, el('td', { colspan: 5, text: fichas.length ? 'Nenhum colaborador encontrado.' : 'Ainda não há colaboradores.' }))]));
     }
-    pesquisa.addEventListener('input', () => { filtro = pesquisa.value; desenhar(); });
+    pesquisa.addEventListener('input', () => { filtro = pesquisa.value; Hub.lembrar('equipa.filtro', filtro); desenhar(); });
 
     $('colab-equipa').replaceChildren(
       el('div', { class: 'barra' }, [

@@ -4,6 +4,10 @@
   const PAPEIS_RESTRINGIVEIS = ['obra', 'subempreiteiro', 'cliente'];
 
   let eu = null, gestor = false, editar = false, pedida = null, iniciado = false;
+  const FILTROS_VAZIOS = { texto: '', estado: '', resp: '', escondidos: false, restritos: false };
+  let filtros = Object.assign({}, FILTROS_VAZIOS, Hub.recordar('checklist.filtros', {}));
+  const filtroAtivo = () => !!(filtros.texto.trim() || filtros.estado || filtros.resp || filtros.escondidos || filtros.restritos);
+  const normal = (t) => (t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   let pessoas = [];                 // gestores: todas as contas ativas
   const nomes = new Map();          // id -> nome
   let obras = [], obraId = null, membro = false;
@@ -144,7 +148,7 @@
     const abas = el('div', { class: 'fases', role: 'tablist' }, visiveis.map((f) => {
       const n = contar(null, f.id);
       return el('button', {
-        class: 'fase-aba', type: 'button', role: 'tab', 'aria-selected': String(f.id === faseId),
+        class: 'fase-aba', type: 'button', role: 'tab', 'aria-selected': String(f.id === faseId), 'data-id': f.id,
         onclick: () => { faseId = f.id; Hub.guardar('fase', f.id); desenhar(); }
       }, [f.titulo, el('small', { text: `${n.feitos}/${n.total}` })]);
     }));
@@ -160,6 +164,9 @@
         el('div', { style: `width:${pctTot}%` })),
       el('strong', { text: `${tot.feitos} de ${tot.total} · ${pctTot}%` })
     ]);
+
+    desenharFiltros();
+    if (filtroAtivo()) { c.replaceChildren(total, resultados(visiveis)); return; }
 
     const fase = fases.find((f) => f.id === faseId);
     if (!fase) { c.replaceChildren(total, abas, el('div', { class: 'vazio', text: 'Não há fases visíveis.' })); return; }
@@ -180,7 +187,7 @@
     ]);
 
     const raiz = filhosDe(null, fase.id).filter(mostrarNo);
-    const arvore = el('ul', { class: 'arvore' }, raiz.map((it) => desenharNo(it, raiz)));
+    const arvore = el('ul', { class: 'arvore', 'data-pai': '' }, raiz.map((it) => desenharNo(it, raiz)));
     const conteudo = [total, abas, cabeca];
     if (!raiz.length) conteudo.push(el('div', { class: 'vazio', text: gestor ? 'Esta fase ainda está vazia.' : 'Não há checks visíveis nesta fase.' }));
     conteudo.push(arvore);
@@ -189,6 +196,96 @@
       el('button', { type: 'button', text: '+ Check', onclick: () => novoItem(fase.id, null, 'item') })
     ]));
     c.replaceChildren(...conteudo);
+    c.classList.toggle('editando', gestor && editar);
+    if (gestor && editar) ativarArrastar(abas, c);
+  }
+
+  // ---------- pesquisa e filtros ----------
+  function desenharFiltros() {
+    $('ck-procurar').value !== filtros.texto && document.activeElement !== $('ck-procurar') && ($('ck-procurar').value = filtros.texto);
+    $('ck-f-estado').value = filtros.estado;
+    // responsáveis: "os meus", "sem responsável" e as pessoas conhecidas
+    const pessoasResp = gestor ? pessoas : [...new Set([...responsaveis.values()].map((r) => r.user_id).filter(Boolean))].map((id) => ({ id, nome: nomes.get(id) }));
+    const opcoes = [['', 'Todos os responsáveis'], ['meus', 'Os meus'], ['sem', 'Sem responsável'], ...pessoasResp.filter((p) => p.id !== eu.id).map((p) => [p.id, p.nome || p.utilizador || '—'])];
+    $('ck-f-resp').replaceChildren(...opcoes.map(([v, t]) => el('option', { value: v, text: t, selected: v === filtros.resp })));
+    $('ck-f-esc-l').hidden = $('ck-f-res-l').hidden = !gestor;
+    $('ck-f-esc').checked = filtros.escondidos; $('ck-f-res').checked = filtros.restritos;
+    $('ck-f-limpar').hidden = !filtroAtivo();
+  }
+  function mudarFiltro(campo, valor) { filtros[campo] = valor; Hub.lembrar('checklist.filtros', filtros); desenhar(); }
+
+  function acima(it) { const out = []; for (let x = itens.find((i) => i.id === it.parent_id); x; x = itens.find((i) => i.id === x.parent_id)) out.unshift(x); return out; }
+  const restrito = (x) => (x.vis_papeis || []).length || (x.vis_utilizadores || []).length;
+
+  function resultados(visiveis) {
+    const t = normal(filtros.texto.trim());
+    const grupos = visiveis.map((f) => {
+      const lista = itens.filter((it) => {
+        if (it.fase_id !== f.id || it.tipo !== 'item' || !mostrarNo(it)) return false;
+        const esc = escondidoNaObra(it);
+        if (gestor && filtros.escondidos ? !esc : esc) return false;
+        if (filtros.estado === 'feitos' && !estado.has(it.id)) return false;
+        if (filtros.estado === 'por_fazer' && estado.has(it.id)) return false;
+        const r = responsaveis.get(it.id);
+        if (filtros.resp === 'meus' && !(r && r.user_id === eu.id)) return false;
+        if (filtros.resp === 'sem' && r) return false;
+        if (filtros.resp && !['meus', 'sem'].includes(filtros.resp) && !(r && r.user_id === filtros.resp)) return false;
+        const pais = acima(it);
+        if (filtros.restritos && !(restrito(it) || pais.some(restrito) || restrito(f))) return false;
+        if (t && !normal([f.titulo, ...pais.map((p) => p.titulo), it.titulo].join(' ')).includes(t)) return false;
+        return true;
+      }).sort((a, b) => (acima(a).map((p) => p.ordem).join('.') + '.' + a.ordem).localeCompare(acima(b).map((p) => p.ordem).join('.') + '.' + b.ordem, undefined, { numeric: true }));
+      return { f, lista };
+    }).filter((g) => g.lista.length);
+    const n = grupos.reduce((a, g) => a + g.lista.length, 0);
+    return el('div', { class: 'resultados' }, [
+      el('p', { class: 'contagem-resultados', text: n ? `${n} resultado${n === 1 ? '' : 's'}${gestor && editar ? ' · para arrastar, limpe a pesquisa e os filtros' : ''}` : 'Nenhum check corresponde à pesquisa e aos filtros.' }),
+      ...grupos.map(({ f, lista }) => el('section', {}, [
+        el('h2', { class: 'titulo-grupo' }, [f.titulo, el('small', { text: ` · ${lista.length}` })]),
+        el('ul', { class: 'arvore' }, lista.map((it) => {
+          const li = desenharNo(it, [], true);
+          const caminho = acima(it).map((p) => p.titulo).join(' › ');
+          if (caminho) li.querySelector('.corpo').prepend(el('div', { class: 'caminho', text: caminho }));
+          return li;
+        }))
+      ]))
+    ]);
+  }
+
+  // ---------- arrastar (modo "Editar estrutura") ----------
+  function ativarArrastar(abas, c) {
+    if (!window.Sortable) return;
+    Sortable.create(abas, {
+      animation: 150, draggable: '.fase-aba', forceFallback: true,
+      onEnd: () => reordenarFases([...abas.querySelectorAll('.fase-aba')].map((b) => b.dataset.id))
+    });
+    c.querySelectorAll('ul.arvore, ul.filhos').forEach((ul) => Sortable.create(ul, {
+      group: { name: 'checklist', put: (para, de, arrastado) => arrastado.dataset.tipo !== 'titulo' || para.el.dataset.pai === '' },
+      handle: '.pega', animation: 150, forceFallback: true, fallbackOnBody: true, swapThreshold: 0.65, emptyInsertThreshold: 12,
+      onEnd: soltar
+    }));
+  }
+  async function soltar(ev) {
+    if (ev.from === ev.to && ev.oldIndex === ev.newIndex) return;
+    const pedidos = [];
+    for (const ul of new Set([ev.from, ev.to])) {
+      const pai = ul.dataset.pai || null;
+      [...ul.children].filter((li) => li.dataset.id).forEach((li, n) => {
+        const it = itens.find((x) => x.id === li.dataset.id);
+        if (it && (it.ordem !== n || (it.parent_id || null) !== pai)) {
+          it.ordem = n; it.parent_id = pai;
+          pedidos.push(ok(sb.from('items').update({ ordem: n, parent_id: pai }).eq('id', it.id), 'Não foi possível guardar a nova ordem.'));
+        }
+      });
+    }
+    try { await Promise.all(pedidos); aviso(''); } catch (e) { aviso(e.message); }
+    await recarregar();
+  }
+  async function reordenarFases(ids) {
+    try {
+      await Promise.all(ids.map((id, n) => { const f = fases.find((x) => x.id === id); return f && f.ordem !== n ? ok(sb.from('fases').update({ ordem: n }).eq('id', id), 'Não foi possível guardar a ordem das fases.') : null; }));
+    } catch (e) { aviso(e.message); }
+    await recarregar();
   }
 
   function restricao(obj) {
@@ -198,7 +295,7 @@
     return el('span', { class: 'etiqueta', title: 'Visibilidade restrita', text: '👁 ' + p.concat(u).join(', ') });
   }
 
-  function desenharNo(it, irmaos) {
+  function desenharNo(it, irmaos, plano = false) {
     const titulo = it.tipo === 'titulo';
     const feito = estado.get(it.id);
     const esc = escondidoNaObra(it);
@@ -233,12 +330,15 @@
       el('button', { type: 'button', title: 'Opções', text: '⋯', onclick: () => abrirOpcoes('item', it) })
     ]) : null;
 
+    const arrastar = gestor && editar && !plano;
     const linha = el('div', { class: 'linha' }, [
+      arrastar ? el('span', { class: 'pega', title: 'Arrastar', 'aria-hidden': 'true', text: '⠿' }) : null,
       caixa,
       el('div', { class: 'corpo' }, [el('div', { class: 'texto', text: it.titulo }), meta.length ? el('div', { class: 'meta' }, meta) : null]),
       ferramentas
     ]);
-    return el('li', { class: classes.join(' ') }, [linha, filhos.length ? el('ul', {}, filhos.map((f) => desenharNo(f, filhos))) : null]);
+    const listaFilhos = plano ? null : (filhos.length || arrastar) ? el('ul', { class: 'filhos', 'data-pai': it.id }, filhos.map((f) => desenharNo(f, filhos))) : null;
+    return el('li', { class: classes.join(' '), 'data-id': it.id, 'data-tipo': it.tipo }, [linha, listaFilhos]);
   }
 
   // ---------- ações ----------
@@ -396,9 +496,21 @@
 
   $('ck-editar').addEventListener('click', () => { editar = !editar; desenhar(); });
 
+  let tPesquisa = 0;
+  document.addEventListener('DOMContentLoaded', () => {
+    $('ck-procurar').addEventListener('input', (e) => { clearTimeout(tPesquisa); tPesquisa = setTimeout(() => mudarFiltro('texto', e.target.value), 200); });
+    $('ck-f-estado').addEventListener('change', (e) => mudarFiltro('estado', e.target.value));
+    $('ck-f-resp').addEventListener('change', (e) => mudarFiltro('resp', e.target.value));
+    $('ck-f-esc').addEventListener('change', (e) => mudarFiltro('escondidos', e.target.checked));
+    $('ck-f-res').addEventListener('change', (e) => mudarFiltro('restritos', e.target.checked));
+    $('ck-f-limpar').addEventListener('click', () => { filtros = { ...FILTROS_VAZIOS }; $('ck-procurar').value = ''; Hub.lembrar('checklist.filtros', filtros); desenhar(); });
+  });
+
   // ---------- mostrar (chamado pelo index ao abrir o separador) ----------
   async function mostrar(rota, utilizador) {
     pedida = rota.split('/')[1] || null;
+    // ao voltar à mesma obra, mostra já o que se tinha e atualiza depois
+    if (iniciado && (!pedida || pedida === obraId)) desenhar();
     try {
       if (!iniciado) {
         eu = utilizador; gestor = Hub.ehGestor(eu);

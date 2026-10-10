@@ -16,7 +16,9 @@
   const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
   const SEMANA = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
-  let eu = null, gestor = false, ano = new Date().getFullYear(), mes = new Date().getMonth(), vista = 'mapa';
+  let eu = null, gestor = false, carregado = false, anoCarregado = null;
+  let { ano, mes, vista } = Hub.recordar('ferias.vista', { ano: new Date().getFullYear(), mes: new Date().getMonth(), vista: 'mapa' });
+  const lembrarVista = () => Hub.lembrar('ferias.vista', { ano, mes, vista });
   let fichas = [], ausencias = [], feriados = new Map(), saldos = [];
 
   async function ok(p, msg = 'Não foi possível guardar.') { const { data, error } = await p; if (error) { console.error(error); throw new Error(msg); } return data; }
@@ -50,12 +52,20 @@
     eu = utilizador; gestor = Hub.ehGestor(eu);
     const sub = rota.split('/')[1];
     if (['mapa', 'saldos', 'feriados'].includes(sub)) vista = sub;
-    $('fe-conteudo').replaceChildren(el('p', { class: 'carregar', text: 'A carregar…' }));
+    lembrarVista();
     aviso('');
-    try { await carregar(); } catch (e) { $('fe-conteudo').replaceChildren(); return aviso(e.message); }
+    if (carregado && anoCarregado === ano) {
+      // mostra já o que se viu; atualiza em segundo plano
+      desenhar();
+      const antes = JSON.stringify([ausencias, saldos, [...feriados]]);
+      carregar().then(() => { if (JSON.stringify([ausencias, saldos, [...feriados]]) !== antes && Hub.rota().startsWith('ferias')) desenhar(); }).catch(() => {});
+      return;
+    }
+    $('fe-conteudo').replaceChildren(el('p', { class: 'carregar', text: 'A carregar…' }));
+    try { await carregar(); carregado = true; anoCarregado = ano; } catch (e) { $('fe-conteudo').replaceChildren(); return aviso(e.message); }
     desenhar();
   }
-  async function recarregar() { try { await carregar(); desenhar(); } catch (e) { aviso(e.message); } }
+  async function recarregar() { lembrarVista(); try { await carregar(); anoCarregado = ano; desenhar(); } catch (e) { aviso(e.message); } }
 
   function seletorAno() {
     return el('div', { class: 'navega' }, [
@@ -129,9 +139,9 @@
     })]));
     return el('div', {}, [
       el('div', { class: 'navega' }, [
-        el('button', { class: 'botao secundario pequeno', type: 'button', text: '‹', 'aria-label': 'Mês anterior', onclick: () => { if (mes === 0) { mes = 11; ano--; recarregar(); } else { mes--; desenhar(); } } }),
+        el('button', { class: 'botao secundario pequeno', type: 'button', text: '‹', 'aria-label': 'Mês anterior', onclick: () => { if (mes === 0) { mes = 11; ano--; recarregar(); } else { mes--; lembrarVista(); desenhar(); } } }),
         el('strong', { class: 'titulo', text: `${MESES[mes]} ${ano}` }),
-        el('button', { class: 'botao secundario pequeno', type: 'button', text: '›', 'aria-label': 'Mês seguinte', onclick: () => { if (mes === 11) { mes = 0; ano++; recarregar(); } else { mes++; desenhar(); } } })
+        el('button', { class: 'botao secundario pequeno', type: 'button', text: '›', 'aria-label': 'Mês seguinte', onclick: () => { if (mes === 11) { mes = 0; ano++; recarregar(); } else { mes++; lembrarVista(); desenhar(); } } })
       ]),
       el('div', { class: 'tabela-envolvente mapa-envolvente' }, el('table', { class: 'mapa' }, [el('thead', {}, cabeca), el('tbody', {}, linhas)])),
       el('div', { class: 'legenda' }, [...Object.values(TIPOS).map((t) => el('span', {}, [el('i', { style: `--cor:${t.cor}`, text: t.sigla }), t.nome])),

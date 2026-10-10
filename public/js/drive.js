@@ -272,5 +272,25 @@
     });
   });
 
-  window.ObraDrive = { mostrar, estado, ligar, prepararObra, preparar };
+  // ---------- escolher uma fotografia da obra (para a capa) ----------
+  async function escolherFoto(o, contentor, aoEscolher, pastaId = null) {
+    try {
+      const d = await pedirLista(o.id, 'fotografias', pastaId);
+      const imagens = d.ficheiros.filter((f) => f.mimeType.startsWith('image/'));
+      contentor.replaceChildren(...[
+        d.caminho.length > 1 ? el('button', { class: 'botao secundario pequeno', type: 'button', text: '← ' + d.caminho[d.caminho.length - 2].nome,
+          onclick: () => escolherFoto(o, contentor, aoEscolher, d.caminho.length > 2 ? d.caminho[d.caminho.length - 2].id : null) }) : null,
+        d.subpastas.length ? el('div', { class: 'grelha-pastas' }, d.subpastas.map((p) => el('button', { class: 'pasta', type: 'button', onclick: () => escolherFoto(o, contentor, aoEscolher, p.id) },
+          [el('span', { class: 'icone', text: '📁' }), el('span', { class: 'nome', text: p.nome })]))) : null,
+        imagens.length ? el('div', { class: 'grelha-fotos' }, imagens.map((f) => {
+          const img = el('img', { alt: f.name, 'data-mini': chaveMini(f) });
+          if (f.hasThumbnail) pedirMiniatura(f, d.pasta.id, img);
+          return el('figure', { class: 'miniatura' }, el('button', { type: 'button', class: 'abrir', title: 'Usar como capa', onclick: () => aoEscolher(f) }, img));
+        })) : el('p', { class: 'ajuda', text: 'Não há fotografias nesta pasta.' })
+      ].filter(Boolean));
+    } catch (e) { contentor.replaceChildren(el('p', { class: 'ajuda', text: e.message })); }
+  }
+  const capaDaDrive = (obraId, ficheiroId) => chamar({ acao: 'capa_da_drive', obra_id: obraId, ficheiro_id: ficheiroId });
+
+  window.ObraDrive = { mostrar, estado, ligar, prepararObra, preparar, escolherFoto, capaDaDrive };
 })();

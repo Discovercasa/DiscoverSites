@@ -17,6 +17,19 @@
     return new Map((data || []).map((p) => [p.id, p.nome || p.utilizador]));
   }
 
+  // ---------- memória das abas: mostra já o que se viu e atualiza em segundo plano ----------
+  const memo = new Map();
+  // buscar(): devolve os dados; redesenhar(): volta a chamar a aba (que lê a memória)
+  async function comMemoria(chave, buscar, alvo, redesenhar) {
+    if (memo.has(chave)) {
+      const antes = JSON.stringify(memo.get(chave));
+      buscar().then((d) => { if (JSON.stringify(d) !== antes) { memo.set(chave, d); if (alvo.isConnected) redesenhar(); } }).catch(() => {});
+      return memo.get(chave);
+    }
+    alvo.replaceChildren(el('p', { class: 'carregar', text: 'A carregar…' }));
+    const d = await buscar(); memo.set(chave, d); return d;
+  }
+
   // ======================= PROJETO =======================
   const CAMPOS_PROJETO = [
     ['tipologia', 'Tipologia', { placeholder: 'ex.: T3' }], ['area_m2', 'Área (m²)', { type: 'number', min: 0, step: '0.01' }],
@@ -26,7 +39,8 @@
 
   async function projeto(o, alvo, eu, editar = false) {
     let p;
-    try { p = await ok(sb.from('obra_projeto').select('*').eq('obra_id', o.id).maybeSingle(), 'Não foi possível carregar o projeto.') || {}; }
+    const buscar = async () => (await ok(sb.from('obra_projeto').select('*').eq('obra_id', o.id).maybeSingle(), 'Não foi possível carregar o projeto.')) || {};
+    try { p = editar ? await buscar() : await comMemoria('projeto:' + o.id, buscar, alvo, () => projeto(o, alvo, eu)); }
     catch (e) { alvo.replaceChildren(mensagem(e.message)); return; }
 
     if (!editar) {
@@ -57,7 +71,7 @@
       const v = (c) => { const x = $('pj-' + c).value.trim(); return x === '' ? null : x; };
       const r = { obra_id: o.id, tipologia: v('tipologia'), area_m2: v('area_m2') == null ? null : +v('area_m2'), pisos: v('pisos') == null ? null : parseInt(v('pisos'), 10),
         modelo: v('modelo'), arquiteto: v('arquiteto'), licenca: v('licenca'), notas: v('notas'), updated_at: new Date().toISOString() };
-      try { await ok(sb.from('obra_projeto').upsert(r)); await projeto(o, alvo, eu); }
+      try { await ok(sb.from('obra_projeto').upsert(r)); memo.delete('projeto:' + o.id); await projeto(o, alvo, eu); }
       catch (e) { $('pj-mensagem').textContent = e.message; }
     });
     alvo.replaceChildren(form);
@@ -69,11 +83,14 @@
   async function entregas(o, alvo, eu) {
     let lista, itens;
     try {
-      lista = await ok(sb.from('entregas').select('*').eq('obra_id', o.id).order('data', { ascending: false }), 'Não foi possível carregar as entregas.');
-      itens = lista.length ? await ok(sb.from('entrega_itens').select('*').in('entrega_id', lista.map((e) => e.id)).order('ordem'), 'Não foi possível carregar os materiais.') : [];
+      ({ lista, itens } = await comMemoria('entregas:' + o.id, async () => {
+        const l = await ok(sb.from('entregas').select('*').eq('obra_id', o.id).order('data', { ascending: false }), 'Não foi possível carregar as entregas.');
+        const i = l.length ? await ok(sb.from('entrega_itens').select('*').in('entrega_id', l.map((e) => e.id)).order('ordem'), 'Não foi possível carregar os materiais.') : [];
+        return { lista: l, itens: i };
+      }, alvo, () => entregas(o, alvo, eu)));
     } catch (e) { alvo.replaceChildren(mensagem(e.message)); return; }
     const editar = podeEditarEntregas(eu);
-    const recarregar = () => entregas(o, alvo, eu);
+    const recarregar = () => { memo.delete('entregas:' + o.id); return entregas(o, alvo, eu); };
 
     const cartao = (e) => {
       const linhas = itens.filter((i) => i.entrega_id === e.id);
@@ -128,11 +145,16 @@
   async function pedidos(o, alvo, eu) {
     let lista, respostas, quem;
     try {
-      lista = await ok(sb.from('pedidos').select('*').eq('obra_id', o.id).order('created_at', { ascending: false }), 'Não foi possível carregar os pedidos.');
-      respostas = lista.length ? await ok(sb.from('pedido_respostas').select('*').in('pedido_id', lista.map((p) => p.id)).order('created_at'), 'Não foi possível carregar as respostas.') : [];
-      quem = await nomes([...lista.map((p) => p.criado_por), ...lista.map((p) => p.fechado_por), ...respostas.map((r) => r.autor)]);
+      let nomesLista;
+      ({ lista, respostas, nomesLista } = await comMemoria('pedidos:' + o.id, async () => {
+        const l = await ok(sb.from('pedidos').select('*').eq('obra_id', o.id).order('created_at', { ascending: false }), 'Não foi possível carregar os pedidos.');
+        const r = l.length ? await ok(sb.from('pedido_respostas').select('*').in('pedido_id', l.map((p) => p.id)).order('created_at'), 'Não foi possível carregar as respostas.') : [];
+        const n = await nomes([...l.map((p) => p.criado_por), ...l.map((p) => p.fechado_por), ...r.map((x) => x.autor)]);
+        return { lista: l, respostas: r, nomesLista: [...n] };
+      }, alvo, () => pedidos(o, alvo, eu)));
+      quem = new Map(nomesLista);
     } catch (e) { alvo.replaceChildren(mensagem(e.message)); return; }
-    const recarregar = () => pedidos(o, alvo, eu);
+    const recarregar = () => { memo.delete('pedidos:' + o.id); return pedidos(o, alvo, eu); };
 
     const cartao = (p) => {
       const podeFechar = ehGestor(eu) || p.criado_por === eu.id;
@@ -267,5 +289,5 @@
     });
   });
 
-  window.ObraAbas = { projeto, entregas, pedidos };
+  window.ObraAbas = { projeto, entregas, pedidos, reduzirFoto };
 })();

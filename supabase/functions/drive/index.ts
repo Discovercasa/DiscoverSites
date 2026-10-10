@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     const ficheiroVisivel = async (token: string, ficheiroId: string) => {
       const f = await gj(token, `files/${encodeURIComponent(ficheiroId)}?fields=id,name,mimeType,size,parents,thumbnailLink,trashed`);
       if (f.trashed || !f.parents?.length) throw new Erro(404, "Ficheiro não encontrado.");
-      const { data: p } = await quem.from("drive_pastas").select("id, area").in("drive_id", f.parents).limit(1);
+      const { data: p } = await quem.from("drive_pastas").select("id, area, obra_id").in("drive_id", f.parents).limit(1);
       if (!p?.length) throw new Erro(403, "Sem acesso a este ficheiro.");
       return { f, pasta: p[0] };
     };
@@ -180,6 +180,25 @@ Deno.serve(async (req) => {
           } catch (_) { res[id] = null; }
         }));
         return json(200, { miniaturas: res });
+      }
+
+      // Usa uma fotografia da Drive como capa da obra (cópia reduzida guardada no Supabase)
+      case "capa_da_drive": {
+        if (!gestor) throw new Erro(403, "Só ADMIN e Administrador mudam a capa.");
+        const token = await tokenAcesso(adm);
+        const { f, pasta } = await ficheiroVisivel(token, b.ficheiro_id);
+        if (pasta.obra_id !== b.obra_id || pasta.area !== "fotografias") throw new Erro(400, "Escolha uma fotografia desta obra.");
+        if (!f.thumbnailLink) throw new Erro(400, "Esta fotografia ainda não tem pré-visualização na Drive.");
+        const r = await g(token, f.thumbnailLink.replace(/=s\d+$/, "=s1600"));
+        if (!r.ok) throw new Erro(502, "Não foi possível obter a fotografia.");
+        const tipo = r.headers.get("Content-Type") ?? "image/jpeg";
+        const caminho = `${b.obra_id}/capa-${Date.now()}.${tipo.includes("png") ? "png" : "jpg"}`;
+        const { error: e1 } = await adm.storage.from("capas").upload(caminho, await r.arrayBuffer(), { contentType: tipo });
+        if (e1) throw new Erro(500, "Não foi possível guardar a capa.");
+        const { data: antiga } = await adm.from("obras").select("capa_path").eq("id", b.obra_id).single();
+        await adm.from("obras").update({ capa_path: caminho }).eq("id", b.obra_id);
+        if (antiga?.capa_path) await adm.storage.from("capas").remove([antiga.capa_path]);
+        return json(200, { capa_path: caminho });
       }
 
       case "descarregar": {

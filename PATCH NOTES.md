@@ -32,9 +32,22 @@ Regras que não se alteram sem confirmação do Sebastião. Cada uma tem, sempre
 27. **Google Drive:** conta `discoversebastiao@gmail.com`; pastas em **A minha unidade / Discovercasa Sites / Obras / <código · nome> / Documentos e Fotografias**. Quem vê cada pasta decide-se no Hub (herda da pasta-mãe), não na Drive; ninguém precisa de conta Google.
 28. **Credenciais do Google** só nos Secrets do Supabase (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`); o refresh token fica em `drive_config`, tabela sem acesso para utilizadores. Só um ADMIN liga a Drive. (D19)
 29. **Carregar:** Documentos — ADMIN, Administrador e Obra; Fotos (fotografias e vídeos) — todos os membros. Criar/apagar pastas, apagar ficheiros e mudar "Quem vê" — só ADMIN e Administrador. Apagar envia para o lixo da Drive.
+30. **Voltar onde estava:** no mesmo dia, cada separador volta ao mesmo sítio (sub-página, filtros, pesquisa, posição); abrir o Hub volta à última página. **Noutro dia, tudo recomeça** no Início, sem filtros. (D20)
+31. **Abas já vistas abrem logo** (mostram o que se viu e atualizam em segundo plano); "A carregar" só na primeira vez.
+32. **Foto de capa da obra:** escolhida por ADMIN/Administrador (das Fotos da obra ou carregada), guardada em privado no Supabase; vista por todos os membros, incluindo o Cliente; aparece também nos cartões da lista. (D20)
+33. **Checklist:** pesquisa em todas as fases (sem distinguir acentos) e filtros (estado, responsável, escondidos, visibilidade restrita); em "Editar estrutura" arrastam-se fases, títulos, checks e subchecks (títulos só no primeiro nível).
 15. **Todas as páginas** em `public/` são em português de Portugal e ligam-se ao Supabase só pelo `plataforma-core`. (D6)
 
 ## Histórico
+
+### v0.7b — 2026-10-11
+- **Voltar onde estava:** memória do dia em `public/js/hub.js` (`lembrar`/`recordar`, rota de cada secção, posição na página); o separador do topo volta à última sub-página dessa secção; noutro dia recomeça tudo.
+- **Sem "A carregar" nas abas já vistas:** Obras, abas da obra (Projeto, Entregas, Pedidos), Equipa, Férias e Checklist mostram o que tinham e atualizam em segundo plano. Mudar de aba dentro da obra já não recarrega o cabeçalho nem a capa.
+- **Foto de capa** (migração `0009_obras_capa`, armazenamento privado `capas`; ação `capa_da_drive` na função `drive`): carregar ou escolher das Fotos da obra; aparece no topo da obra e nos cartões da lista.
+- **Checklist:** pesquisa e filtros (com memória); arrastar com SortableJS 1.15.2 (cdnjs), funciona com rato e dedo; títulos só no primeiro nível.
+- Testado: pesquisa "agua" encontra "Águas e esgotos"; arrastar grava a nova posição; voltar ao separador regressa à mesma sub-página e posição; noutro dia recomeça.
+- Esclarecido: as "versões 2 e 3" da função `drive` foram só os Secrets guardados (o código não mudou) — não houve alterações fora desta conversa.
+- Novo teste D20.
 
 ### v0.7a — 2026-10-11
 - **Documentos e Fotos mais rápidos:** a barra (pasta, "+ Carregar", "+ Pasta", "Quem vê") aparece logo; a lista mostra o que foi guardado da última vez e atualiza em segundo plano (só redesenha se mudou).

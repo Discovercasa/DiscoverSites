@@ -230,6 +230,37 @@
   #d-ver { width: min(100% - 2rem, 60rem); }
   #dv-conteudo img, #dv-conteudo video { display: block; max-width: 100%; max-height: 70vh; margin: 0 auto; border-radius: 4px; }
 
+  /* Foto de capa */
+  .capa-obra { position: relative; margin: -1.8rem calc(var(--margem) * -1) 1.2rem; height: clamp(9rem, 26vw, 17rem); background: linear-gradient(135deg, #3a3a3a, #555); overflow: hidden; }
+  .capa-obra img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .capa-obra.sem-capa { height: 5rem; background: repeating-linear-gradient(-45deg, #ecece9 0 14px, #f4f4f2 14px 28px); }
+  .capa-obra .mudar-capa { position: absolute; right: var(--margem); bottom: .8rem; background: rgba(255,255,255,.92); }
+  .cartao-obra { padding-top: 0; overflow: hidden; }
+  .capa-mini { margin: 0 -1.2rem .8rem; height: 7rem; background: #e8e8e5; }
+  .capa-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .capa-mini.sem-capa { height: .9rem; background: transparent; }
+  .escolher-fotos { max-height: 50vh; overflow-y: auto; }
+  .escolher-fotos .grelha-fotos { grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr)); }
+  .escolher-fotos .pasta { border: 1px solid var(--linha); cursor: pointer; font: inherit; text-align: left; }
+  #d-capa { width: min(100% - 2rem, 40rem); }
+
+  /* Checklist: pesquisa, filtros e arrastar */
+  .filtros-ck { align-items: center; margin-bottom: .8rem; }
+  .filtros-ck input[type="search"] { flex: 1; min-width: 12rem; }
+  .filtros-ck .interruptor { padding: 0; font-size: .92rem; white-space: nowrap; }
+  .filtros-ck .interruptor input { flex: none; min-width: 0; max-width: none; width: auto; padding: 0; margin: 0; }
+  .contagem-resultados { color: var(--suave); margin: 0 0 .4rem; }
+  .resultados .titulo-grupo small { font-family: Barlow, sans-serif; text-transform: none; letter-spacing: 0; color: var(--suave); font-weight: 400; }
+  .caminho { font-size: .78rem; color: var(--suave); margin-bottom: .1rem; }
+  .pega { cursor: grab; color: #9a9a96; font-size: 1.1rem; line-height: 1.2; padding: 0 .1rem; user-select: none; touch-action: none; }
+  .pega:active { cursor: grabbing; }
+  .sortable-ghost > .linha, .fase-aba.sortable-ghost { opacity: .35; outline: 2px dashed var(--amarelo); }
+  .sortable-chosen > .linha { box-shadow: 0 4px 14px rgba(0,0,0,.12); }
+  #ck-conteudo.editando .fase-aba { cursor: grab; }
+  #ck-conteudo.editando ul.filhos { min-height: .6rem; }
+  #ck-conteudo.editando ul.filhos:empty { border-left-color: transparent; }
+  #ck-conteudo.editando ul.arvore:empty { min-height: 3rem; border: 2px dashed var(--linha); border-radius: 6px; }
+
   /* Obras */
   .filtros { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: 1rem; }
   .filtros input, .filtros select { padding: .6rem .8rem; border: 1px solid var(--linha); border-radius: 4px; background: var(--branco); }
@@ -312,6 +343,14 @@
         <span class="espaco"></span>
         <a class="botao secundario pequeno" id="ck-ficha" href="/obras" hidden>Ficha da obra</a>
         <button class="botao escuro pequeno" type="button" id="ck-editar" hidden aria-pressed="false">Editar estrutura</button>
+      </div>
+      <div class="filtros filtros-ck" id="ck-filtros">
+        <input type="search" id="ck-procurar" placeholder="Procurar em todas as fases" aria-label="Procurar na checklist">
+        <select id="ck-f-estado" aria-label="Estado"><option value="">Todos</option><option value="por_fazer">Por fazer</option><option value="feitos">Feitos</option></select>
+        <select id="ck-f-resp" aria-label="Responsável"></select>
+        <label class="interruptor" id="ck-f-esc-l" hidden><input type="checkbox" id="ck-f-esc"> Escondidos nesta obra</label>
+        <label class="interruptor" id="ck-f-res-l" hidden><input type="checkbox" id="ck-f-res"> Visibilidade restrita</label>
+        <button class="botao secundario pequeno" type="button" id="ck-f-limpar" hidden>Limpar</button>
       </div>
       <p class="mensagem" id="ck-aviso" role="status"></p>
       <div id="ck-conteudo"><p class="carregar">A carregar…</p></div>
@@ -598,6 +637,21 @@
   </form>
 </dialog>
 
+<!-- Obra: foto de capa -->
+<dialog id="d-capa">
+  <form method="dialog">
+    <h2 class="titulo">Foto de capa</h2>
+    <div class="campo"><label for="dc-ficheiro">Carregar uma fotografia</label><input id="dc-ficheiro" type="file" accept="image/*"></div>
+    <div class="campo"><span class="rotulo">Ou escolher uma das Fotos da obra</span><div id="dc-fotos" class="escolher-fotos"></div></div>
+    <div class="rodape-dialogo">
+      <button class="botao perigo" type="button" id="dc-remover">Remover capa</button>
+      <span class="espaco"></span>
+      <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Fechar</button>
+    </div>
+    <p class="mensagem" id="dc-mensagem" role="status"></p>
+  </form>
+</dialog>
+
 <dialog id="d-membros">
   <form method="dialog" id="f-membros" novalidate>
     <h2 class="titulo">Membros da obra</h2>
@@ -631,6 +685,7 @@
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 <script src="/js/plataforma-core.js"></script>
 <script src="/js/hub.js"></script>
 <script src="/js/obras.js"></script>
@@ -640,10 +695,23 @@
 <script src="/js/colaboradores.js"></script>
 <script src="/js/ferias.js"></script>
 <script>
-  const APP_VERSAO = 'v0.7a';
+  const APP_VERSAO = 'v0.7b';
 
   // Mais recente primeiro. A primeira entrada tem de ser igual a APP_VERSAO.
   const NOVIDADES = [
+    {
+      versao: 'v0.7b',
+      data: '2026-10-11',
+      novas: [
+        'Foto de capa em cada obra, também nos cartões da lista.',
+        'Checklist: pesquisa em todas as fases e filtros.',
+        'Checklist: arrastar fases, títulos e checks ao editar.'
+      ],
+      alteracoes: [
+        'Ao voltar a uma aba, fica tudo como estava (filtros, pasta, posição).',
+        'As abas já vistas abrem logo, sem "A carregar".'
+      ]
+    },
     {
       versao: 'v0.7a',
       data: '2026-10-10',
@@ -866,25 +934,30 @@
 
   // ---------------- Separadores ----------------
   function irPara(aba) {
-    const rota = aba;
+    let rota = aba;
     aba = aba.split('/')[0];
     const permitidas = ['inicio', 'obras', 'checklist', 'novidades', ehGestor() && 'colaboradores', (ehGestor() || eu.ficha) && 'ferias'].filter(Boolean);
-    if (!permitidas.includes(aba)) aba = 'inicio';
+    if (!permitidas.includes(aba)) { aba = 'inicio'; rota = 'inicio'; }
+    Hub.registarRota(rota);
     for (const s of document.querySelectorAll('main > section')) s.hidden = s.id !== 'aba-' + aba;
     Hub.marcarAba(aba);
-    if (aba === 'obras') ObrasHub.mostrar(rota, eu);
-    if (aba === 'checklist') ChecklistHub.mostrar(rota, eu);
-    if (aba === 'ferias') FeriasHub.mostrar(rota, eu);
+    let pronto = null;
+    if (aba === 'obras') pronto = ObrasHub.mostrar(rota, eu);
+    if (aba === 'checklist') pronto = ChecklistHub.mostrar(rota, eu);
+    if (aba === 'ferias') pronto = FeriasHub.mostrar(rota, eu);
     if (aba === 'colaboradores') {
       const contasAberto = rota === 'colaboradores/contas';
       $('colab-contas').hidden = !contasAberto; $('colab-equipa').hidden = contasAberto;
       document.querySelectorAll('.sub-abas a').forEach((a) => a.dataset.sub === (contasAberto ? 'contas' : 'equipa')
         ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
-      if (contasAberto) carregarContas(); else ColaboradoresHub.mostrar(rota, eu);
+      pronto = contasAberto ? carregarContas() : ColaboradoresHub.mostrar(rota, eu);
     }
-    if (aba === 'inicio') mostrarAlertas();
-    window.scrollTo(0, 0);
+    if (aba === 'inicio') pronto = mostrarAlertas();
+    // volta à mesma posição da página (depois de o conteúdo aparecer)
+    Hub.reporScroll(rota);
+    Promise.resolve(pronto).then(() => Hub.reporScroll(rota)).catch(() => {});
   }
+
   window.addEventListener('rota', () => { if (eu) irPara(Hub.rota()); });
 
   // ---------------- Menu inicial ----------------
