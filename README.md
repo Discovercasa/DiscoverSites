@@ -49,6 +49,12 @@
 - O cliente é uma conta do tipo Cliente; ao ser escolhido passa a membro da obra.
 - Campos por tipo: Subempreiteiro não vê cliente, notas nem membros; Cliente vê a obra e os seus dados, sem notas.
 
+## Abas da obra
+
+- **Início** (ficha e resumo) · **Projeto** · **Mapa** (em breve) · **Documentos** e **Fotos** (Google Drive, v0.7) · **Entregas** · **Pedidos**.
+- Entregas: registam ADMIN, Administrador e Obra; Subempreiteiro vê; Cliente não vê.
+- Pedidos e falhas: qualquer membro cria e responde; fecham ADMIN/Administrador ou quem criou. Fotografias guardadas em privado no Supabase.
+
 ## Checklist
 
 - **Estrutura comum:** fases → títulos → checks → subchecks. O que se acrescenta aparece em todas as obras.
@@ -120,7 +126,8 @@ O subdomínio aponta para o Pages com um registo CNAME:
 │   ├── index.html     a app inteira: entrada e todos os separadores (APP_VERSAO, NOVIDADES)
 │   ├── css/hub.css    estilos comuns
 │   ├── js/hub.js      cabeçalho, sessão e utilitários comuns
-│   ├── js/obras.js    separador Obras
+│   ├── js/obras.js    separador Obras (lista, ficha, abas)
+│   ├── js/obra-abas.js abas Projeto, Entregas e Pedidos
 │   ├── js/checklist.js separador Checklist
 │   ├── js/colaboradores.js separador Colaboradores → Equipa
 │   ├── js/ferias.js   separador Férias

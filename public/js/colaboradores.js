@@ -166,7 +166,7 @@
       el('a', { class: 'voltar', href: '#colaboradores', text: '← Equipa' }),
       el('h1', { class: 'titulo', text: novo ? 'Novo colaborador' : f.nome }),
       el('p', { class: 'subtitulo', text: 'Dados pessoais visíveis só para ADMIN e Administrador.' }),
-      caixaConta, form
+      ...[caixaConta, form].filter(Boolean)
     );
   }
 

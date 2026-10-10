@@ -3,7 +3,7 @@
 Estado: ✅ feita · 🔜 próxima · 📝 planeada
 
 Cada versão nova do roadmap é registada em `PATCH NOTES.md` e marcada aqui como ✅.
-Ordem dos blocos: **Base (com checklist e obras) → Equipa → Obras (fotos, mapa) → Custos**.
+Ordem dos blocos: **Base → Equipa (fichas, férias) → Obras (abas, Drive, mapas) → Equipa (horas, veículos) → Custos**.
 
 ## ✅ v0.0 — Estrutura inicial
 - Documentos base, `public/index.html` com `APP_VERSAO` e `NOVIDADES`, testes, Cloudflare Pages.
@@ -48,33 +48,49 @@ Ordem dos blocos: **Base (com checklist e obras) → Equipa → Obras (fotos, ma
 - Mapa mensal da equipa, pedidos com aprovação, saldo por pessoa, feriados nacionais e municipais.
 - Férias de 2026 importadas do Excel.
 
-### 🔜 v0.6 — Horas extra
+---
+
+## Bloco 3 — Obras
+
+### ✅ v0.6 — Abas da obra
+- Abas: Início · Projeto · Mapa (em breve) · Documentos · Fotos · Entregas · Pedidos.
+- Projeto (tipologia, área, pisos, modelo, arquiteto, licença, notas).
+- Entregas de materiais (com linhas de material); Cliente não vê.
+- Pedidos e falhas: tipo, prioridade, fotografia, respostas, fechar/reabrir; pedidos em aberto no Início.
+
+### 🔜 v0.7 — Documentos e Fotos (Google Drive)
+- Ligação à Drive da conta Gmail da empresa (autorização guardada no Supabase, nunca no código).
+- Ao criar uma obra, cria a pasta da obra com "Documentos" e "Fotografias"; ligar as obras atuais às pastas que já existam.
+- Pastas de Documentos com visibilidade por tipo de utilizador e/ou colaborador, decidida no Hub.
+- Ver, carregar e descarregar ficheiros a partir do Hub; foto da guia de remessa nas entregas.
+
+### 📝 v0.8 — Mapa da obra
+- *A definir.*
+
+### 📝 v0.9 — Mapa de obras
+- Todas as obras num mapa (coordenadas da ficha).
+
+---
+
+## Bloco 2b — Equipa (continuação)
+
+### 📝 v0.10 — Horas extra
 - Registo por obra e colaborador; estado pago / não pago; totais.
 
-### 📝 v0.7 — Veículos e deslocações
+### 📝 v0.11 — Veículos e deslocações
 - Veículos com alertas (revisão, inspeção, seguro, IUC); registo de deslocações; gasóleo.
 - PINs de cartões **não** são guardados.
 
 ---
 
-## Bloco 3 — Obras
-
-### 📝 v0.8 — Fase, fotos e vídeos
-- Fase atual da obra; fotos e vídeos (decidir armazenamento: Supabase ou R2).
-- Cliente vê a fase e as fotos da obra dele.
-
-### 📝 v0.9 — Mapa de obras
-
----
-
 ## Bloco 4 — Custos
 
-### 📝 v0.10 — Fornecedores e catálogo
+### 📝 v0.12 — Fornecedores e catálogo
 - Fornecedores, materiais e serviços com histórico de preços. Importação dos Excels.
 
-### 📝 v0.11 — Materiais por obra
+### 📝 v0.13 — Materiais por obra
 
-### 📝 v0.12 — Custos da obra
+### 📝 v0.14 — Custos da obra
 - Por fase e categoria: material, serviços, mão de obra, alimentação, alojamento, transporte.
 
 ### 📝 v1.0 — Orçamentação

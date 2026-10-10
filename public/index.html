@@ -165,6 +165,37 @@
   .saldo.destaque span { color: var(--escuro); }
   .contagem-dias { font-weight: 600; margin: -.4rem 0 1rem; }
 
+  /* Abas da obra */
+  .abas-obra { overflow-x: auto; scrollbar-width: none; }
+  .abas-obra a { white-space: nowrap; }
+  .botao.largo-topo { width: 100%; max-width: 46rem; margin-bottom: 1.2rem; }
+  .titulo-grupo { font-family: var(--titulos); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; font-size: 1.05rem;
+    border-left: 4px solid var(--amarelo); padding-left: .6rem; margin: 1.2rem 0 .7rem; }
+  .cartao-registo { background: var(--branco); border-radius: 6px; padding: .9rem 1rem; margin-bottom: .7rem; max-width: 46rem; }
+  .cartao-registo .ajuda { margin: .4rem 0 0; }
+  .cabeca-registo { display: flex; flex-wrap: wrap; gap: .4rem .7rem; align-items: center; }
+  .cabeca-registo .espaco { flex: 1; }
+  table.itens { min-width: 0; width: 100%; margin-top: .6rem; }
+  table.itens td { padding: .35rem .2rem; border-bottom: 1px solid var(--fundo); }
+  table.itens td.num { text-align: right; width: 6rem; }
+  table.itens td:last-child { width: 4rem; color: var(--suave); }
+  .pedido.urgente { border-left: 5px solid var(--erro); }
+  .corpo-pedido { display: flex; gap: .9rem; align-items: flex-start; margin-top: .6rem; }
+  .corpo-pedido .descricao { margin: 0; white-space: pre-wrap; flex: 1; }
+  .foto-pedido { border: 0; padding: 0; background: var(--fundo); border-radius: 4px; width: 5.5rem; height: 5.5rem; flex: none; overflow: hidden; cursor: zoom-in; }
+  .foto-pedido img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  ul.respostas { list-style: none; margin: .7rem 0 0; padding: 0 0 0 .8rem; border-left: 2px solid var(--linha); font-size: .92rem; }
+  ul.respostas li { margin-bottom: .5rem; color: var(--suave); }
+  ul.respostas p { margin: .1rem 0 0; color: var(--escuro); white-space: pre-wrap; }
+  .cartao-registo .acoes-form { margin-top: .7rem; }
+  details.fechados summary { cursor: pointer; list-style: none; }
+  details.fechados summary::-webkit-details-marker { display: none; }
+  details.fechados summary .titulo-grupo { display: inline-block; }
+  details.fechados summary .titulo-grupo::after { content: ' ▾'; color: var(--suave); }
+  .linha-material { display: grid; grid-template-columns: 1fr 5rem 4rem auto; gap: .4rem; margin-bottom: .4rem; }
+  .linha-material input { padding: .5rem .6rem; border: 1px solid var(--linha); border-radius: 4px; min-width: 0; }
+  .pedidos-obras li .estado { margin-left: .2rem; }
+
   /* Obras */
   .filtros { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: 1rem; }
   .filtros input, .filtros select { padding: .6rem .8rem; border: 1px solid var(--linha); border-radius: 4px; background: var(--branco); }
@@ -451,6 +482,60 @@
   </form>
 </dialog>
 
+<!-- Obra: entrega de materiais -->
+<dialog id="d-entrega">
+  <form method="dialog" id="f-entrega" novalidate>
+    <h2 class="titulo" id="de-titulo">Nova entrega</h2>
+    <div class="form-grelha" style="grid-template-columns:1fr 1fr">
+      <div class="campo"><label for="de-data">Data</label><input id="de-data" type="date"></div>
+      <div class="campo"><label for="de-estado">Estado</label><select id="de-estado"><option value="entregue">Entregue</option><option value="prevista">Prevista</option></select></div>
+    </div>
+    <div class="campo"><label for="de-fornecedor">Fornecedor</label><input id="de-fornecedor" autocomplete="off"></div>
+    <div class="campo"><span class="rotulo">Materiais</span><div id="de-itens"></div>
+      <button class="botao secundario pequeno" type="button" id="de-mais">+ Linha</button></div>
+    <datalist id="unidades"><option value="un"><option value="m"><option value="m²"><option value="m³"><option value="kg"><option value="t"><option value="L"><option value="sacos"><option value="paletes"></datalist>
+    <div class="campo"><label for="de-recebido">Recebido por</label><input id="de-recebido" autocomplete="off"></div>
+    <div class="campo"><label for="de-notas">Notas</label><input id="de-notas" autocomplete="off"></div>
+    <div class="rodape-dialogo">
+      <button class="botao" type="submit" value="ok">Guardar</button>
+      <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Cancelar</button>
+      <span class="espaco"></span>
+      <button class="botao perigo" type="button" id="de-apagar">Apagar</button>
+    </div>
+    <p class="mensagem erro" id="de-mensagem" role="alert"></p>
+  </form>
+</dialog>
+
+<!-- Obra: novo pedido ou falha -->
+<dialog id="d-pedido-obra">
+  <form method="dialog" id="f-pedido-obra" novalidate>
+    <h2 class="titulo">Novo pedido ou falha</h2>
+    <div class="campo"><label for="dpd-tipo">Tipo</label><select id="dpd-tipo"></select></div>
+    <div class="campo"><label for="dpd-prioridade">Prioridade</label><select id="dpd-prioridade"></select></div>
+    <div class="campo"><label for="dpd-descricao">Descrição *</label><textarea id="dpd-descricao" rows="5"></textarea></div>
+    <div class="campo"><label for="dpd-foto">Fotografia (opcional)</label><input id="dpd-foto" type="file" accept="image/*" capture="environment"></div>
+    <div class="rodape-dialogo">
+      <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Cancelar</button>
+      <button class="botao" type="submit" value="ok">Guardar</button>
+    </div>
+    <p class="mensagem erro" id="dpd-mensagem" role="alert"></p>
+  </form>
+</dialog>
+
+<!-- Obra: responder a um pedido -->
+<dialog id="d-resposta">
+  <form method="dialog" id="f-resposta" novalidate>
+    <h2 class="titulo">Responder</h2>
+    <p id="dr-pedido" class="ajuda" style="margin-top:0"></p>
+    <div class="campo"><label for="dr-texto">Resposta</label><textarea id="dr-texto" rows="4"></textarea></div>
+    <div class="rodape-dialogo">
+      <button class="botao" type="submit" value="ok">Enviar</button>
+      <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Cancelar</button>
+    </div>
+    <p class="mensagem erro" id="dr-mensagem" role="alert"></p>
+  </form>
+</dialog>
+
 <dialog id="d-membros">
   <form method="dialog" id="f-membros" novalidate>
     <h2 class="titulo">Membros da obra</h2>
@@ -487,14 +572,29 @@
 <script src="/js/plataforma-core.js"></script>
 <script src="/js/hub.js"></script>
 <script src="/js/obras.js"></script>
+<script src="/js/obra-abas.js"></script>
 <script src="/js/checklist.js"></script>
 <script src="/js/colaboradores.js"></script>
 <script src="/js/ferias.js"></script>
 <script>
-  const APP_VERSAO = 'v0.5';
+  const APP_VERSAO = 'v0.6';
 
   // Mais recente primeiro. A primeira entrada tem de ser igual a APP_VERSAO.
   const NOVIDADES = [
+    {
+      versao: 'v0.6',
+      data: '2026-10-10',
+      novas: [
+        'Cada obra tem abas: Início, Projeto, Mapa, Documentos, Fotos, Entregas e Pedidos.',
+        'Projeto: tipologia, área, pisos, modelo, arquiteto, licença e notas.',
+        'Entregas de materiais, com a lista do que chegou.',
+        'Pedidos e falhas com prioridade, fotografia e respostas.',
+        'O Início mostra os pedidos em aberto nas suas obras.'
+      ],
+      alteracoes: [
+        'A ficha da obra passou a ser a aba Início.'
+      ]
+    },
     {
       versao: 'v0.5',
       data: '2026-10-10',
@@ -696,14 +796,13 @@
   // ---------------- Menu inicial ----------------
   function construirMenu() {
     const itens = [
-      { titulo: 'Obras', texto: 'Lista de obras e ficha de cada uma.', href: '#obras' },
+      { titulo: 'Obras', texto: 'Projeto, entregas, pedidos e ficha de cada obra.', href: '#obras' },
       { titulo: 'Checklist', texto: 'Fases e checks de cada obra.', href: '#checklist' },
       ehGestor() && { titulo: 'Colaboradores', texto: 'Fichas da equipa e contas de acesso.', href: '#colaboradores' },
       (ehGestor() || eu.ficha) && { titulo: 'Férias', texto: ehGestor() ? 'Mapa da equipa, pedidos, saldos e feriados.' : 'O meu saldo e pedidos de férias.', href: '#ferias' },
-      ehGestor() && { titulo: 'Horas extra', texto: 'Horas extra por obra e colaborador.', futuro: 'v0.6' },
-      { titulo: 'Fotos e vídeos', texto: 'Fase atual, fotos e vídeos de cada obra.', futuro: 'v0.8' },
       eu.papel !== 'cliente' && { titulo: 'Mapa de obras', texto: 'Todas as obras num mapa.', futuro: 'v0.9' },
-      ehGestor() && { titulo: 'Materiais e custos', texto: 'Fornecedores, preços e orçamentação.', futuro: 'v0.10' },
+      ehGestor() && { titulo: 'Horas extra', texto: 'Horas extra por obra e colaborador.', futuro: 'v0.10' },
+      ehGestor() && { titulo: 'Materiais e custos', texto: 'Fornecedores, preços e orçamentação.', futuro: 'v0.12' },
       { titulo: 'Novidades', texto: 'O que mudou em cada versão.', href: '#novidades' }
     ].filter(Boolean);
 
@@ -719,13 +818,19 @@
   // ---------------- Alertas (Início) ----------------
   async function mostrarAlertas() {
     const c = $('inicio-alertas');
-    if (!ehGestor()) { c.replaceChildren(); return; }
+    const { data: abertos } = await sb.rpc('pedidos_abertos');
+    const blocoPedidosObra = abertos && abertos.length ? el('section', { class: 'painel alertas pedidos-obras' }, [
+      el('h2', { class: 'titulo', text: 'Pedidos e falhas em aberto' }),
+      el('ul', {}, abertos.map((p) => el('li', {}, [el('a', { href: `#obras/${p.obra_id}/pedidos`, text: p.obra }),
+        el('span', { text: `${p.abertos} em aberto` }), p.urgentes ? el('span', { class: 'estado nao', text: `${p.urgentes} urgente${p.urgentes === 1 ? '' : 's'}` }) : null])))
+    ]) : null;
+    if (!ehGestor()) { c.replaceChildren(...[blocoPedidosObra].filter(Boolean)); return; }
     const [lista, nPedidos] = await Promise.all([ColaboradoresHub.alertas(), FeriasHub.pendentes()]);
     const pedidos = nPedidos ? el('section', { class: 'painel alertas' }, [
       el('h2', { class: 'titulo', text: `Pedidos de férias · ${nPedidos}` }),
       el('p', { style: 'margin:0' }, [`Há ${nPedidos} pedido${nPedidos === 1 ? '' : 's'} à espera de decisão. `, el('a', { href: '#ferias', text: 'Ver pedidos' })])
     ]) : null;
-    c.replaceChildren(...[pedidos].filter(Boolean), ...(lista.length ? [el('section', { class: 'painel alertas' }, [
+    c.replaceChildren(...[blocoPedidosObra, pedidos].filter(Boolean), ...(lista.length ? [el('section', { class: 'painel alertas' }, [
       el('h2', { class: 'titulo', text: `Alertas · ${lista.length}` }),
       el('ul', {}, lista.map((a) => el('li', {}, [
         el('a', { href: '#colaboradores/' + a.id, text: a.nome }), el('span', { text: a.documento }),

@@ -74,7 +74,7 @@ teste('D2', 'todas as tabelas com RLS', () => {
     const nome = t.split('.').pop();
     const re = new RegExp(`alter\\s+table\\s+(?:only\\s+)?(?:[\\w"]+\\.)?"?${nome}"?\\s+enable\\s+row\\s+level\\s+security`);
     exigir(re.test(sql), `tabela "${t}" sem RLS`);
-    exigir(new RegExp(`create\\s+policy[^;]*?on\\s+(?:[\\w"]+\\.)?"?${nome}"?[^;]*?(auth\\.uid\\(\\)|eh_gestor\\(\\)|eh_admin\\(\\))`).test(sql),
+    exigir(new RegExp(`create\\s+policy[^;]*?on\\s+(?:[\\w"]+\\.)?"?${nome}"?[^;]*?(auth\\.uid\\(\\)|public\\.(eh_gestor|eh_admin|membro_obra|ve_entregas|edita_entregas|minha_ficha_id|tem_acesso\\w*|pode_ver_\\w+)\\()`).test(sql),
       `tabela "${t}" sem política com auth.uid() ou função de permissão`);
   }
 });
@@ -200,6 +200,18 @@ teste('D16', 'férias: cada um vê as suas e só pede (não aprova)', () => {
   exigir(/using \(public\.eh_gestor\(\)\) with check \(public\.eh_gestor\(\)\)/.test(pol('update')), 'só gestores podem aprovar/alterar ausências');
   exigir(/estado = 'pendente'/.test(pol('delete')), 'um colaborador pode apagar ausências já aprovadas');
   exigir(/create policy "Gestores veem saldos" on public\.ferias_saldos for select to authenticated using \(public\.eh_gestor\(\)\)/.test(sql), 'saldos legíveis por todos');
+});
+
+teste('D17', 'abas da obra: só membros; Cliente sem entregas; pedidos fechados só por gestor ou autor', () => {
+  const sql = fs.readdirSync(path.join(RAIZ, 'supabase/migrations')).filter(f => f.endsWith('.sql'))
+    .map(f => ler('supabase/migrations/' + f)).join('\n');
+  for (const t of ['obra_projeto', 'entregas', 'entrega_itens', 'pedidos', 'pedido_respostas'])
+    exigir(new RegExp(`alter table public\\.${t} enable row level security`).test(sql), `${t} sem RLS`);
+  exigir(/membro_obra\(p_obra\) and public\.papel_atual\(\) <> 'cliente'/.test(sql), 'o Cliente pode ver entregas');
+  exigir(/"Gestores ou autor fecham pedidos"[^;]*eh_gestor\(\) or criado_por = auth\.uid\(\)/.test(sql), 'qualquer membro pode fechar pedidos');
+  exigir(/Só ADMIN e Administrador podem alterar o pedido/.test(sql), 'o autor pode reescrever o pedido');
+  exigir(/'pedidos', 'pedidos', false/.test(sql), 'as fotografias dos pedidos não estão num armazenamento privado');
+  exigir(/bucket_id = 'pedidos' and public\.membro_obra/.test(sql), 'as fotografias dos pedidos não estão limitadas aos membros da obra');
 });
 
 teste('—', 'ROADMAP marca a versão atual', () => {

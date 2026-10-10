@@ -30,7 +30,8 @@
     if (id) {
       const o = obras.find((x) => x.id === id);
       if (!o) { c.replaceChildren(el('div', { class: 'vazio', text: 'Obra não encontrada.' })); return; }
-      return acao === 'editar' && gestor ? formulario(o) : ficha(o);
+      if (acao === 'editar' && gestor) return formulario(o);
+      return paginaObra(o, acao || 'inicio');
     }
     lista();
   }
@@ -73,7 +74,7 @@
   // ---------- ficha ----------
   function campo(rotulo, valor) { return el('div', { class: 'dado' }, [el('span', { class: 'rotulo', text: rotulo }), el('span', {}, valor ?? '—')]); }
 
-  async function ficha(o) {
+  async function abaInicio(o, alvo) {
     const coords = o.latitude != null && o.longitude != null;
     const checklist = el('section', { class: 'painel' }, [el('h2', { class: 'titulo', text: 'Checklist' }), el('p', { class: 'ajuda', text: 'A carregar…' })]);
     const blocos = [
@@ -92,17 +93,16 @@
     const membros = o.ve_membros ? el('section', { class: 'painel' }, [el('h2', { class: 'titulo', text: 'Membros' }), el('p', { class: 'ajuda', text: 'A carregar…' })]) : null;
     if (membros) blocos.push(membros);
 
-    $('obras-conteudo').replaceChildren(
-      el('a', { class: 'voltar', href: '#obras', text: '← Obras' }),
-      el('div', { class: 'barra' }, [
-        el('div', {}, [o.codigo ? el('div', { class: 'codigo', text: o.codigo }) : null, el('h1', { class: 'titulo', text: o.nome }), etiquetaEstado(o.estado)]),
-        el('div', { class: 'acoes-form' }, [
-          el('a', { class: 'botao', href: '#checklist/' + o.id, text: 'Abrir checklist' }),
-          gestor ? el('a', { class: 'botao secundario', href: `#obras/${o.id}/editar`, text: 'Editar' }) : null
-        ])
-      ]),
-      el('div', { class: 'grelha-ficha' }, blocos)
-    );
+    const pedidos = el('section', { class: 'painel' }, [el('h2', { class: 'titulo', text: 'Pedidos e falhas' }), el('p', { class: 'ajuda', text: 'A carregar…' })]);
+    blocos.splice(1, 0, pedidos);
+    alvo.replaceChildren(el('div', { class: 'grelha-ficha' }, blocos));
+    sb.from('pedidos').select('prioridade').eq('obra_id', o.id).eq('estado', 'aberto').then(({ data: p }) => {
+      const n = (p || []).length, u = (p || []).filter((x) => x.prioridade === 'urgente').length;
+      pedidos.replaceChildren(el('h2', { class: 'titulo', text: 'Pedidos e falhas' }),
+        el('div', { class: 'total-ficha' }, [el('strong', { class: 'pct', text: String(n) }),
+          el('div', {}, [el('span', { text: n === 1 ? 'pedido em aberto' : 'pedidos em aberto' }), u ? el('div', {}, el('span', { class: 'estado nao', text: `${u} urgente${u === 1 ? '' : 's'}` })) : null])]),
+        el('a', { class: 'botao secundario pequeno', href: `#obras/${o.id}/pedidos`, text: 'Ver pedidos', style: 'margin-top:.8rem' }));
+    });
 
     sb.rpc('progresso_obra', { p_obra: o.id }).then(({ data: p, error }) => {
       const r = !error && p && p[0];
@@ -126,6 +126,38 @@
           gestor ? el('button', { class: 'botao secundario pequeno', type: 'button', text: 'Gerir membros', onclick: () => abrirMembros(o, lista.map((m) => m.user_id)) }) : null);
       } catch (e) { membros.lastChild.textContent = e.message; }
     }
+  }
+
+  // ---------- página da obra com abas ----------
+  const ABAS = [
+    ['inicio', 'Início'], ['projeto', 'Projeto'], ['mapa', 'Mapa'], ['documentos', 'Documentos'],
+    ['fotos', 'Fotos'], ['entregas', 'Entregas'], ['pedidos', 'Pedidos']
+  ];
+  function paginaObra(o, aba) {
+    const abas = ABAS.filter(([id]) => !(id === 'entregas' && eu.papel === 'cliente'));
+    if (!abas.some(([id]) => id === aba)) aba = 'inicio';
+    const alvo = el('div', { class: 'conteudo-aba' }, el('p', { class: 'carregar', text: 'A carregar…' }));
+    $('obras-conteudo').replaceChildren(
+      el('a', { class: 'voltar', href: '#obras', text: '← Obras' }),
+      el('div', { class: 'barra' }, [
+        el('div', {}, [o.codigo ? el('div', { class: 'codigo', text: o.codigo }) : null, el('h1', { class: 'titulo', text: o.nome }), etiquetaEstado(o.estado)]),
+        el('div', { class: 'acoes-form' }, [
+          el('a', { class: 'botao', href: '#checklist/' + o.id, text: 'Abrir checklist' }),
+          gestor ? el('a', { class: 'botao secundario', href: `#obras/${o.id}/editar`, text: 'Editar' }) : null
+        ])
+      ]),
+      el('nav', { class: 'sub-abas abas-obra', 'aria-label': 'Abas da obra' }, abas.map(([id, nome]) =>
+        el('a', { href: `#obras/${o.id}${id === 'inicio' ? '' : '/' + id}`, 'aria-current': id === aba ? 'page' : false, text: nome }))),
+      alvo
+    );
+    const vazio = (texto) => alvo.replaceChildren(el('div', { class: 'vazio' }, [el('span', { class: 'etiqueta', text: 'Em breve' }), ' ', texto]));
+    if (aba === 'inicio') return abaInicio(o, alvo);
+    if (aba === 'projeto') return ObraAbas.projeto(o, alvo, eu);
+    if (aba === 'entregas') return ObraAbas.entregas(o, alvo, eu);
+    if (aba === 'pedidos') return ObraAbas.pedidos(o, alvo, eu);
+    if (aba === 'mapa') return vazio('O mapa da obra será desenvolvido mais tarde.');
+    if (aba === 'documentos') return vazio('Documentos ligados à pasta da obra no Google Drive (v0.7).');
+    if (aba === 'fotos') return vazio('Fotografias ligadas à pasta "Fotografias" da obra no Google Drive (v0.7).');
   }
 
   // ---------- criar / editar ----------
