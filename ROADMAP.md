@@ -69,23 +69,28 @@ Ordem dos blocos: **Base → Equipa (fichas, férias) → Obras (abas, Drive, ma
 - Separador Controlo: GPS e horas extra (só ADMIN/Administrador). Veículos em Colaboradores, com alertas de validade.
 - Dados do Excel importados (veículos sem PINs; cartões só com os últimos 4 dígitos).
 
-### 🔜 v0.9 — Mapa da obra
+### ✅ v0.9 — Materiais e fornecedores
+- Catálogo de materiais (nomenclatura Discovercasa) com preços por fornecedor, comparação e histórico de preços.
+- Fornecedores com contactos, pagamento e transporte. 113 materiais e 9 fornecedores importados do Excel.
+
+### 🔜 v0.10 — Mapa da obra
 - *A definir.*
 
-### 📝 v0.10 — Mapa de obras
+### 📝 v0.11 — Mapa de obras
 - Todas as obras num mapa (coordenadas da ficha).
 
-### 📝 v0.11 — Gasóleo
+### 📝 v0.12 — Gasóleo
 - Registo de gasóleo (folha "Gasoleo" do Excel). *A confirmar.*
 
 ---
 
 ## Bloco 4 — Custos
 
-### 📝 v0.12 — Fornecedores e catálogo
-- Fornecedores, materiais e serviços com histórico de preços. Importação dos Excels.
+*Materiais e fornecedores: feitos na v0.9.*
 
-### 📝 v0.13 — Materiais por obra
+### 📝 v0.13 — Serviços e materiais por obra
+- Catálogo de serviços (34 no Excel, folha "Geral Serviços").
+- Lista de materiais de cada obra, com quantidades e custo a partir do catálogo.
 
 ### 📝 v0.14 — Custos da obra
 - Por fase e categoria: material, serviços, mão de obra, alimentação, alojamento, transporte.

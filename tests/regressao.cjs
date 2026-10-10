@@ -267,6 +267,18 @@ teste('D21', 'controlo e veículos só para gestores; cartões só 4 dígitos; c
   exigir(!/\bcontactos\b/.test(grant), 'os contactos podem ser lidos diretamente da tabela obras');
 });
 
+teste('D22', 'materiais e fornecedores só para gestores; histórico só pelo servidor', () => {
+  const sql = fs.readdirSync(path.join(RAIZ, 'supabase/migrations')).filter(f => f.endsWith('.sql'))
+    .map(f => ler('supabase/migrations/' + f)).join('\n');
+  for (const t of ['fornecedores', 'materiais', 'material_precos', 'material_precos_historico']) {
+    exigir(new RegExp(`alter table public\\.${t} enable row level security`).test(sql), `${t} sem RLS`);
+    const pol = sql.match(new RegExp(`create policy [^;]*on public\\.${t} [^;]*;`, 'g')) || [];
+    exigir(pol.length && pol.every((p) => /eh_gestor\(\)/.test(p) && !/\btrue\b|auth\.uid\(\)/.test(p)), `${t} não está limitada a ADMIN/Administrador`);
+  }
+  exigir(!/create policy [^;]*on public\.material_precos_historico for (insert|update|delete|all)/.test(sql), 'o histórico de preços pode ser escrito por utilizadores');
+  exigir(/create trigger material_precos_guardar_historico before update on public\.material_precos/.test(sql), 'falta o trigger do histórico de preços');
+});
+
 teste('—', 'ROADMAP marca a versão atual', () => {
   if (/[a-z]$/.test(versaoNotas || '')) return; // letras entre versões não vão ao roadmap
   exigir(new RegExp(`✅\\s*${versaoNotas?.replace('.', '\\.')}\\b`).test(ler('ROADMAP.md')),

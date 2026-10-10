@@ -24,6 +24,7 @@
 | Dados pessoais da equipa | Ver e editar | Ver e editar | — | — | — |
 | Férias e ausências | Todos, aprovar | Todos, aprovar | As suas, pedir | As suas, pedir (se tiver ficha) | — |
 | Controlo (GPS, horas extra) e veículos | Ver e editar | Ver e editar | — | — | — |
+| Materiais, preços e fornecedores | Ver e editar | Ver e editar | — | — | — |
 | Emergência e alojamento da obra | Ver e editar | Ver e editar | Ver | Ver | — |
 
 ## Contas
@@ -50,6 +51,10 @@
 - Só ADMIN e Administrador criam, editam e apagam obras e escolhem os membros.
 - O cliente é uma conta do tipo Cliente; ao ser escolhido passa a membro da obra.
 - Campos por tipo: Subempreiteiro não vê cliente, notas nem membros; Cliente vê a obra e os seus dados, sem notas.
+
+## Materiais e fornecedores
+
+- Separador **Materiais** (só ADMIN e Administrador): cada material tem o preço de cada fornecedor, ordenado do mais barato; histórico automático quando um preço muda; fichas dos fornecedores.
 
 ## Controlo e veículos
 
@@ -149,6 +154,7 @@ O subdomínio aponta para o Pages com um registo CNAME:
 │   ├── js/colaboradores.js separador Colaboradores → Equipa
 │   ├── js/ferias.js   separador Férias (mapa, Visão Pedro, saldos, feriados)
 │   ├── js/controlo.js separador Controlo (GPS e horas extra)
+│   ├── js/materiais.js separador Materiais (materiais e fornecedores)
 │   ├── _redirects     /checklist.html → /checklist
 │   ├── js/plataforma-core.js
 │   └── img/           logótipos e favicon

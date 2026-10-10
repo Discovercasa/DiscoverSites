@@ -15,7 +15,7 @@ Regras que não se alteram sem confirmação do Sebastião. Cada uma tem, sempre
 9. **5 papéis com a matriz de permissões do README.** O Cliente nunca vê custos nem preços; Obra também não. (D9)
 10. **Dados pessoais da equipa** (NIF, CC, IBAN, saúde) só visíveis para ADMIN e Administrador. (D10)
 11. **PINs de cartões não são guardados** na plataforma. (D11)
-12. **Ordem do roadmap: Base → Equipa (fichas, férias) → Obras (abas, Drive) → Controlo e veículos → Mapas → Custos.** (alterada na v0.2, v0.3, v0.6 e v0.8 a pedido do Sebastião)
+12. **Ordem do roadmap: Base → Equipa (fichas, férias) → Obras (abas, Drive) → Controlo e veículos → Materiais → Mapas → resto dos Custos.** (alterada na v0.2, v0.3, v0.6, v0.8 e v0.9 a pedido do Sebastião)
 13. **O tipo de utilizador só muda pelo servidor.** Um trigger em `profiles` bloqueia alterações diretas a `papel`, `role`, `utilizador` e `ativo`; um Administrador não cria nem altera contas ADMIN; ninguém muda o próprio tipo. (D13)
 14. **A visibilidade da checklist é aplicada na base de dados** (RLS em `fases` e `items`), não só no ecrã. O que está dentro de um item escondido também fica escondido. (D14)
 16. **Campos da obra por tipo de utilizador**, filtrados na base de dados: cliente e notas internas não se leem diretamente da tabela, só por `obras_visiveis()`. Subempreiteiro não vê cliente, notas nem membros; Cliente vê a sua obra e os seus dados, sem notas. (D15)
@@ -41,9 +41,20 @@ Regras que não se alteram sem confirmação do Sebastião. Cada uma tem, sempre
 36. **Contactos de emergência e alojamento** da obra (hospital, polícia/GNR, bombeiros, alojamento): visíveis para os membros, **exceto o Cliente**. (D21)
 37. **Controlo** (GPS e Horas extra) e **Veículos**: só ADMIN e Administrador. Dos cartões dos veículos guardam-se **só os últimos 4 dígitos**; nunca PINs nem números completos. (D21)
 38. **A foto de capa é o fundo do cabeçalho da obra** (não uma faixa por cima).
+39. **Materiais e fornecedores:** só ADMIN e Administrador. Um material (nomenclatura Discovercasa) tem preços de vários fornecedores, ordenados do mais barato (preço final sem IVA, com desconto). (D22)
+40. **Histórico de preços automático:** ao mudar o preço, o desconto, o IVA ou a unidade, o valor anterior é guardado pelo servidor; ninguém escreve diretamente no histórico. Preço com mais de 6 meses = desatualizado. (D22)
 15. **Todas as páginas** em `public/` são em português de Portugal e ligam-se ao Supabase só pelo `plataforma-core`. (D6)
 
 ## Histórico
+
+### v0.9 — 2026-10-11
+- Novo separador **Materiais** (`public/js/materiais.js`, só ADMIN/Administrador), com as abas **Materiais** e **Fornecedores**.
+- Lista de materiais com pesquisa (sem acentos), filtros por fornecedor, categoria e "preço com mais de 6 meses"; melhor preço de cada material.
+- Ficha do material: preços por fornecedor (preço, desconto, final sem/com IVA, disponibilidade, prazo, data), o mais barato em destaque; histórico de preços; criar/editar/apagar.
+- Ficha do fornecedor: empresa, pagamento, transporte, contacto (ligar/email) e os seus materiais.
+- Base de dados (migração `0011_materiais_fornecedores`): `fornecedores`, `materiais`, `material_precos`, `material_precos_historico` (escrito por trigger). Testado: só gestores veem; o histórico é criado ao mudar o preço e não ao mudar observações; ninguém escreve no histórico diretamente.
+- Importados do Excel: 9 fornecedores, 113 materiais, 113 preços; o preço repetido do "ROLO ALUMINIO 80" (março) ficou no histórico.
+- Roadmap: Materiais passam a v0.9; Mapas a v0.10 e v0.11 (Decisão 12 atualizada). Novo teste D22.
 
 ### v0.8 — 2026-10-11
 - Novo separador **Controlo** (`public/js/controlo.js`, só ADMIN/Administrador): **GPS** (condutor, veículo, partidas e chegadas de manhã/almoço/tarde, tempo de condução, observações; filtros por mês, condutor e veículo) e **Horas extra** (obra, colaborador, horas × €/hora com 8,50 € por omissão, ou valor fixo; Pago/Não pago com um clique; totais e resumo por colaborador).

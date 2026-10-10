@@ -323,7 +323,12 @@
   .resumo-colab summary { cursor: pointer; font-weight: 600; margin-bottom: .5rem; }
   .cartao-veiculo { text-align: left; border: 0; font: inherit; cursor: pointer; width: 100%; display: flex; flex-direction: column; justify-content: flex-start; align-items: stretch; }
   .cartao-veiculo.inativo { opacity: .6; }
-  #d-gps, #d-horas, #d-veiculo { width: min(100% - 2rem, 36rem); }
+  #d-gps, #d-horas, #d-veiculo, #d-preco, #d-fornecedor { width: min(100% - 2rem, 36rem); }
+
+  /* v0.9 — Materiais */
+  td.num, th.num { text-align: right; white-space: nowrap; }
+  tr.melhor td { background: #f3fbf4; }
+  .tabela-materiais td:first-child { max-width: 28rem; }
 
   /* Obras */
   .filtros { display: flex; flex-wrap: wrap; gap: .6rem; margin-bottom: 1rem; }
@@ -423,6 +428,15 @@
     <section id="aba-ferias" hidden>
       <p class="mensagem" id="fe-aviso" role="status"></p>
       <div id="fe-conteudo"></div>
+    </section>
+
+    <section id="aba-materiais" hidden>
+      <nav class="sub-abas" aria-label="Materiais">
+        <a href="/materiais" data-sub="materiais">Materiais</a>
+        <a href="/materiais/fornecedores" data-sub="fornecedores">Fornecedores</a>
+      </nav>
+      <p class="mensagem" id="mt-aviso" role="status"></p>
+      <div id="mt-conteudo"></div>
     </section>
 
     <section id="aba-controlo" hidden>
@@ -820,6 +834,87 @@
   </form>
 </dialog>
 
+<!-- Materiais: material -->
+<dialog id="d-material">
+  <form method="dialog" id="f-material" novalidate>
+    <h2 class="titulo" id="dm2-titulo">Material</h2>
+    <div class="campo"><label for="mm-nome">Nome (nomenclatura Discovercasa)</label><input id="mm-nome" autocomplete="off"></div>
+    <div class="campo"><label for="mm-categoria">Categoria</label><input id="mm-categoria" list="categorias-lista" autocomplete="off" placeholder="ex.: Aço, Betão, Agregados, Madeira…"><datalist id="categorias-lista"></datalist></div>
+    <div class="campo"><label for="mm-notas">Notas</label><input id="mm-notas" autocomplete="off"></div>
+    <div class="rodape-dialogo">
+      <button class="botao" type="submit" value="ok">Guardar</button>
+      <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Cancelar</button>
+      <span class="espaco"></span>
+      <button class="botao perigo" type="button" id="mm-apagar">Apagar</button>
+    </div>
+    <p class="mensagem erro" id="mm-mensagem" role="alert"></p>
+  </form>
+</dialog>
+
+<!-- Materiais: preço de um fornecedor -->
+<dialog id="d-preco">
+  <form method="dialog" id="f-preco" novalidate>
+    <h2 class="titulo" id="dp2-titulo">Preço</h2>
+    <div class="campo"><label for="mp-fornecedor">Fornecedor</label><select id="mp-fornecedor"></select></div>
+    <div class="campo"><label for="mp-designacao">Nome no fornecedor</label><input id="mp-designacao" autocomplete="off"></div>
+    <div class="form-grelha" style="grid-template-columns:1fr 1fr">
+      <div class="campo"><label for="mp-dimensoes">Dimensões / quantidade</label><input id="mp-dimensoes" autocomplete="off"></div>
+      <div class="campo"><label for="mp-detalhes">Detalhes</label><input id="mp-detalhes" autocomplete="off"></div>
+    </div>
+    <div class="form-grelha" style="grid-template-columns:repeat(4,1fr)">
+      <div class="campo"><label for="mp-preco">Preço s/ IVA (€)</label><input id="mp-preco" type="number" min="0" step="0.0001"></div>
+      <div class="campo"><label for="mp-unidade">Unidade</label><input id="mp-unidade" list="unidades-mat" autocomplete="off"><datalist id="unidades-mat"><option value="un"><option value="ml"><option value="m2"><option value="m3"><option value="cx"><option value="kg"><option value="t"></datalist></div>
+      <div class="campo"><label for="mp-desconto">Desconto (%)</label><input id="mp-desconto" type="number" min="0" max="99" step="0.01"></div>
+      <div class="campo"><label for="mp-iva">IVA (%)</label><input id="mp-iva" type="number" min="0" max="99" step="0.01"></div>
+    </div>
+    <p class="contagem-dias" id="mp-final"></p>
+    <div class="form-grelha" style="grid-template-columns:repeat(3,1fr)">
+      <div class="campo"><label for="mp-disponibilidade">Disponibilidade</label><select id="mp-disponibilidade"><option value="">—</option><option value="imediata">Imediata</option><option value="encomenda">Por encomenda</option></select></div>
+      <div class="campo"><label for="mp-prazo">Prazo de receção (dias)</label><input id="mp-prazo" type="number" min="0"></div>
+      <div class="campo"><label for="mp-data">Data de atualização</label><input id="mp-data" type="date"></div>
+    </div>
+    <div class="campo"><label for="mp-obs">Observações</label><input id="mp-obs" autocomplete="off"></div>
+    <p class="ajuda" style="margin-top:-.4rem">Ao mudar o preço, o desconto, o IVA ou a unidade, o valor anterior fica guardado no histórico.</p>
+    <div class="rodape-dialogo">
+      <button class="botao" type="submit" value="ok">Guardar</button>
+      <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Cancelar</button>
+      <span class="espaco"></span>
+      <button class="botao perigo" type="button" id="mp-apagar">Apagar</button>
+    </div>
+    <p class="mensagem erro" id="mp-mensagem" role="alert"></p>
+  </form>
+</dialog>
+
+<!-- Materiais: fornecedor -->
+<dialog id="d-fornecedor">
+  <form method="dialog" id="f-fornecedor" novalidate>
+    <h2 class="titulo" id="df-titulo">Fornecedor</h2>
+    <div class="campo"><label for="mf-nome">Nome</label><input id="mf-nome" autocomplete="off"></div>
+    <div class="form-grelha" style="grid-template-columns:1fr 1fr">
+      <div class="campo"><label for="mf-sede">Sede / empresa</label><input id="mf-sede" autocomplete="off"></div>
+      <div class="campo"><label for="mf-armazens">Armazéns</label><input id="mf-armazens" autocomplete="off"></div>
+    </div>
+    <div class="form-grelha" style="grid-template-columns:repeat(3,1fr)">
+      <div class="campo"><label for="mf-pagamento">Pagamento</label><select id="mf-pagamento"><option value="">—</option><option value="conta_corrente">Conta corrente</option><option value="pronto_pagamento">Pronto pagamento</option><option value="antes_levantamento">Antes do levantamento</option></select></div>
+      <div class="campo"><label for="mf-transporte">Faz transporte?</label><select id="mf-transporte"><option value="">—</option><option value="true">Sim</option><option value="false">Não</option></select></div>
+      <div class="campo"><label for="mf-transporte_pago">Transporte pago?</label><select id="mf-transporte_pago"><option value="">—</option><option value="true">Sim</option><option value="false">Não</option></select></div>
+    </div>
+    <div class="form-grelha" style="grid-template-columns:repeat(3,1fr)">
+      <div class="campo"><label for="mf-contacto_nome">Contacto</label><input id="mf-contacto_nome" autocomplete="off"></div>
+      <div class="campo"><label for="mf-contacto_telefone">Telefone</label><input id="mf-contacto_telefone" type="tel" autocomplete="off"></div>
+      <div class="campo"><label for="mf-contacto_email">Email</label><input id="mf-contacto_email" type="email" autocomplete="off"></div>
+    </div>
+    <div class="campo"><label for="mf-notas">Notas</label><input id="mf-notas" autocomplete="off"></div>
+    <div class="rodape-dialogo">
+      <button class="botao" type="submit" value="ok">Guardar</button>
+      <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Cancelar</button>
+      <span class="espaco"></span>
+      <button class="botao perigo" type="button" id="mf-apagar">Apagar</button>
+    </div>
+    <p class="mensagem erro" id="mf-mensagem" role="alert"></p>
+  </form>
+</dialog>
+
 <dialog id="d-membros">
   <form method="dialog" id="f-membros" novalidate>
     <h2 class="titulo">Membros da obra</h2>
@@ -863,11 +958,24 @@
 <script src="/js/colaboradores.js"></script>
 <script src="/js/ferias.js"></script>
 <script src="/js/controlo.js"></script>
+<script src="/js/materiais.js"></script>
 <script>
-  const APP_VERSAO = 'v0.8';
+  const APP_VERSAO = 'v0.9';
 
   // Mais recente primeiro. A primeira entrada tem de ser igual a APP_VERSAO.
   const NOVIDADES = [
+    {
+      versao: 'v0.9',
+      data: '2026-10-11',
+      novas: [
+        'Novo separador Materiais, com o preço de cada material em cada fornecedor.',
+        'Comparação de preços: o mais barato aparece primeiro.',
+        'Histórico de preços: sempre que um preço muda, o anterior fica guardado.',
+        'Fichas dos fornecedores, com contactos, pagamento e transporte.',
+        'Os 113 materiais e 9 fornecedores do Excel já estão na plataforma.'
+      ],
+      alteracoes: []
+    },
     {
       versao: 'v0.8',
       data: '2026-10-11',
@@ -1132,7 +1240,7 @@
   function irPara(aba) {
     let rota = aba;
     aba = aba.split('/')[0];
-    const permitidas = ['inicio', 'obras', 'checklist', 'novidades', ehGestor() && 'colaboradores', ehGestor() && 'controlo', (ehGestor() || eu.ficha) && 'ferias'].filter(Boolean);
+    const permitidas = ['inicio', 'obras', 'checklist', 'novidades', ehGestor() && 'colaboradores', ehGestor() && 'controlo', ehGestor() && 'materiais', (ehGestor() || eu.ficha) && 'ferias'].filter(Boolean);
     if (!permitidas.includes(aba)) { aba = 'inicio'; rota = 'inicio'; }
     Hub.registarRota(rota);
     for (const s of document.querySelectorAll('main > section')) s.hidden = s.id !== 'aba-' + aba;
@@ -1142,6 +1250,7 @@
     if (aba === 'checklist') pronto = ChecklistHub.mostrar(rota, eu);
     if (aba === 'ferias') pronto = FeriasHub.mostrar(rota, eu);
     if (aba === 'controlo') pronto = ControloHub.mostrar(rota, eu);
+    if (aba === 'materiais') pronto = MateriaisHub.mostrar(rota, eu);
     if (aba === 'colaboradores') {
       const sub = rota === 'colaboradores/contas' ? 'contas' : rota === 'colaboradores/veiculos' ? 'veiculos' : 'equipa';
       $('colab-contas').hidden = sub !== 'contas'; $('colab-veiculos').hidden = sub !== 'veiculos'; $('colab-equipa').hidden = sub !== 'equipa';
@@ -1166,7 +1275,7 @@
       (ehGestor() || eu.ficha) && { titulo: 'Férias', texto: ehGestor() ? 'Mapa da equipa, pedidos, saldos e feriados.' : 'O meu saldo e pedidos de férias.', href: '/ferias' },
       eu.papel !== 'cliente' && { titulo: 'Mapa de obras', texto: 'Todas as obras num mapa.', futuro: 'v0.9' },
       ehGestor() && { titulo: 'Controlo', texto: 'GPS das deslocações e horas extra.', href: '/controlo' },
-      ehGestor() && { titulo: 'Materiais e custos', texto: 'Fornecedores, preços e orçamentação.', futuro: 'v0.12' },
+      ehGestor() && { titulo: 'Materiais', texto: 'Preços por fornecedor e fornecedores.', href: '/materiais' },
       { titulo: 'Novidades', texto: 'O que mudou em cada versão.', href: '/novidades' }
     ].filter(Boolean);
 
