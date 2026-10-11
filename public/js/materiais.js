@@ -384,7 +384,9 @@
     const matPorNome = new Map(materiais.map((m) => [m.nome.toLowerCase(), m]));
     const precoPorChave = new Map(precos.map((p) => [`${p.fornecedor_id}|${(p.designacao || '').toLowerCase()}`, p]));
     const novosForn = lido.fornecedores.filter((f) => !fornPorNome.has(f.nome.toLowerCase()));
-    const novosMat = [...new Set(lido.precos.map((p) => p.material).filter((nm) => !matPorNome.has(nm.toLowerCase())))];
+    const vistos = new Set();
+    const novosMat = lido.precos.map((p) => p.material).filter((nm) => {
+      const k = nm.toLowerCase(); if (matPorNome.has(k) || vistos.has(k)) return false; vistos.add(k); return true; });
     const novos = [], alterados = [], iguais = [], maisRecentesHub = [];
     for (const p of lido.precos) {
       const f = fornPorNome.get(p.fornecedor.toLowerCase());

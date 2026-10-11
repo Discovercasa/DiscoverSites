@@ -85,6 +85,15 @@
       preencher('pagamento', PAGAMENTO[(texto(l[COL.pagamento]) || '').toLowerCase()] || null);
       preencher('contacto_nome', texto(l[COL.contacto])); preencher('contacto_telefone', texto(l[COL.telefone])); preencher('contacto_email', texto(l[COL.email]));
     });
+    // nomes de material que só diferem nas maiúsculas (ex.: "FITA DE REDE" e "Fita de Rede") são o mesmo material:
+    // fica a primeira forma escrita (a base de dados não aceita dois nomes iguais sem contar maiúsculas)
+    const formaDe = new Map();
+    for (const p of precos) {
+      const k = p.material.toLowerCase();
+      if (!formaDe.has(k)) formaDe.set(k, p.material); else p.material = formaDe.get(k);
+    }
+    // o mesmo para os fornecedores
+    for (const p of precos) p.fornecedor = fornecedores.get(p.fornecedor.toLowerCase()).nome;
     // a mesma linha (fornecedor + nome no fornecedor) repetida: fica a mais recente
     const unicos = new Map();
     for (const p of precos) {

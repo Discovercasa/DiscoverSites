@@ -294,6 +294,8 @@ teste('D23', 'leitura do Excel de materiais: medidas em metros, quantidades e gr
   exigir(r.precos.length === 1 && r.repetidas === 1 && r.precos[0].preco === 9.9, 'linhas repetidas: fica a mais recente');
   exigir(r.precos[0].transporte === 'sim' && r.precos[0].transporte_incluido === 'sim', 'transporte por preço');
   exigir(ler([[], ['A', 'A', null, null, 1, 'un', 0, null, 0.23, null, null, 'F', null, null, 'Sim', 'Não, com quantidade minima']]).precos[0].transporte_incluido === 'qtd_minima', 'quantidade mínima');
+  const mai = ler([[], ['X1', 'FITA DE REDE', null, null, 1, 'un', 0, null, 0.23, null, null, 'F'], ['X2', 'Fita de Rede', null, null, 2, 'un', 0, null, 0.23, null, null, 'f']]);
+  exigir(new Set(mai.precos.map((p) => p.material)).size === 1 && mai.fornecedores.length === 1, 'nomes que só diferem nas maiúsculas têm de ficar juntos');
   const js = ler.toString() + require('fs').readFileSync(path.join(RAIZ, 'public/js/materiais.js'), 'utf8').split('async function aplicar')[1].split('document.addEventListener')[0];
   exigir(!/\.delete\(/.test(js), 'a importação não pode apagar nada');
 });

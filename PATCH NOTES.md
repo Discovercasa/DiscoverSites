@@ -49,6 +49,11 @@ Regras que não se alteram sem confirmação do Sebastião. Cada uma tem, sempre
 
 ## Histórico
 
+### v0.9b — 2026-10-11
+- **Correção:** a importação do Excel parava ao criar os materiais quando o Excel tinha o mesmo nome com maiúsculas diferentes ("FOSSA 10000 ESTANQUE" / "Fossa 10000 estanque", "Fita de Rede" / "FITA DE REDE"): a base de dados não aceita nomes repetidos sem contar maiúsculas. A leitura passa a juntá-los (fica a primeira forma escrita). Os 37 fornecedores novos já tinham ficado gravados.
+- Teste D23 alargado a este caso.
+- Nota: os testes da importação passam a incluir as regras de nomes únicos da base de dados.
+
 ### v0.9a — 2026-10-11
 - **Novo material numa janela completa** (material + primeiro preço), organizada por blocos: Material, Fornecedor, Medidas e quantidade, Preço, Transporte e entrega.
 - **Medidas** em metros (comprimento, largura, altura/espessura), **quantidade por embalagem** (com unidade) e **peso por unidade**; o campo antigo de "dimensões" foi convertido (o que não deu ficou nos Detalhes).
