@@ -45,9 +45,19 @@ Regras que não se alteram sem confirmação do Sebastião. Cada uma tem, sempre
 40. **Histórico de preços automático:** ao mudar o preço, o desconto, o IVA ou a unidade, o valor anterior é guardado pelo servidor; ninguém escreve diretamente no histórico. Preço com mais de 6 meses = desatualizado. (D22)
 41. **Medidas dos materiais em metros** (comprimento, largura, altura/espessura); quantidade por embalagem e peso em campos próprios; **transporte e "incluído" em cada preço** (não só no fornecedor). (D23)
 42. **Importar Excel de materiais = juntar:** acrescenta o que é novo e atualiza o que mudou (o preço anterior vai para o histórico); nunca apaga; preços alterados no Hub depois da data do Excel ficam como estão. (D23)
+43. **Dentro do material não há botões "Editar":** carrega-se no preço e abre a **janela completa** (material + preço). As janelas compridas têm os botões **Guardar/Cancelar sempre à vista**. (D24)
+44. **Listas com pesquisa, ordenação e filtros de escolha múltipla por coluna** (materiais, fornecedores e materiais de cada fornecedor), com a mesma peça reutilizável.
 15. **Todas as páginas** em `public/` são em português de Portugal e ligam-se ao Supabase só pelo `plataforma-core`. (D6)
 
 ## Histórico
+
+### v0.9c — 2026-10-11
+- Material: saíram os botões "Editar" (do material e de cada preço); carregar num preço abre a **janela completa** já preenchida (nome, categoria e notas do material + fornecedor, nome no fornecedor, medidas, preço, transporte…); "Apagar preço" e "Apagar material" na janela.
+- **"+ Preço de fornecedor" preenchido** a partir do preço mais barato: medidas, quantidade por embalagem, peso, unidade e IVA (fornecedor, nome, preço, desconto e transporte em branco; data de hoje).
+- Botões **Guardar/Cancelar fixos** no fundo das janelas do material e do fornecedor.
+- **Fornecedores com várias categorias** (migração `0013_fornecedores_categorias`): escolhidas das usadas nos materiais, ou novas.
+- **Lista de fornecedores em tabela** (pesquisa, ordenação, filtros por categoria, pagamento, transporte e armazéns) e **materiais de cada fornecedor** com pesquisa, ordenação e filtros — com uma tabela reutilizável (`tabelaFiltravel`).
+- Novo teste D24.
 
 ### v0.9b — 2026-10-11
 - **Correção:** a importação do Excel parava ao criar os materiais quando o Excel tinha o mesmo nome com maiúsculas diferentes ("FOSSA 10000 ESTANQUE" / "Fossa 10000 estanque", "Fita de Rede" / "FITA DE REDE"): a base de dados não aceita nomes repetidos sem contar maiúsculas. A leitura passa a juntá-los (fica a primeira forma escrita). Os 37 fornecedores novos já tinham ficado gravados.

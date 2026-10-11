@@ -344,6 +344,12 @@
   .popup-filtro .acoes { justify-content: space-between; }
   .conversoes { margin: 1.2rem 0; }
   .conversoes td.minimo { color: var(--ok); font-weight: 700; }
+  /* botões sempre à vista no fundo da janela (a janela desliza por baixo) */
+  dialog .rodape-fixo { position: sticky; bottom: -1.4rem; margin: 1rem -1.4rem -1.4rem; padding: .8rem 1.4rem; background: var(--branco);
+    border-top: 1px solid var(--linha); box-shadow: 0 -6px 14px rgba(0,0,0,.06); z-index: 2; align-items: center; }
+  dialog .rodape-fixo .mensagem { flex-basis: 100%; margin: 0 0 .4rem; }
+  dialog .rodape-fixo .mensagem:empty { display: none; }
+  #mf-categorias { max-height: 10rem; }
   .bloco-dialogo { border: 1px solid var(--fundo); border-radius: 6px; padding: .5rem .9rem .2rem; margin: 0 0 .8rem; }
   .bloco-dialogo legend { font-family: var(--titulos); font-weight: 700; text-transform: uppercase; letter-spacing: .05em; font-size: .9rem; padding: 0 .3rem; }
   #d-preco { width: min(100% - 2rem, 44rem); }
@@ -931,13 +937,14 @@
       <div class="campo"><label for="mp-obs">Observações</label><input id="mp-obs" autocomplete="off"></div>
     </fieldset>
     <p class="ajuda">Ao mudar o preço, o desconto, o IVA ou a unidade, o valor anterior fica guardado no histórico.</p>
-    <div class="rodape-dialogo">
+    <div class="rodape-dialogo rodape-fixo">
+      <p class="mensagem erro" id="mp-mensagem" role="alert"></p>
       <button class="botao" type="submit" value="ok">Guardar</button>
       <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Cancelar</button>
       <span class="espaco"></span>
-      <button class="botao perigo" type="button" id="mp-apagar">Apagar preço</button>
+      <button class="botao perigo pequeno" type="button" id="mp-apagar">Apagar preço</button>
+      <button class="botao perigo pequeno" type="button" id="mp-apagar-material">Apagar material</button>
     </div>
-    <p class="mensagem erro" id="mp-mensagem" role="alert"></p>
   </form>
 </dialog>
 
@@ -977,14 +984,17 @@
       <div class="campo"><label for="mf-contacto_telefone">Telefone</label><input id="mf-contacto_telefone" type="tel" autocomplete="off"></div>
       <div class="campo"><label for="mf-contacto_email">Email</label><input id="mf-contacto_email" type="email" autocomplete="off"></div>
     </div>
+    <div class="campo"><span class="rotulo">Categorias</span><div class="opcoes-lista" id="mf-categorias"></div>
+      <div class="com-botao" style="margin-top:.5rem"><input id="mf-nova-categoria" placeholder="Nova categoria" autocomplete="off" aria-label="Nova categoria"><button class="botao secundario pequeno" type="button" id="mf-acrescentar-categoria">Acrescentar</button></div>
+    </div>
     <div class="campo"><label for="mf-notas">Notas</label><input id="mf-notas" autocomplete="off"></div>
-    <div class="rodape-dialogo">
+    <div class="rodape-dialogo rodape-fixo">
+      <p class="mensagem erro" id="mf-mensagem" role="alert"></p>
       <button class="botao" type="submit" value="ok">Guardar</button>
       <button class="botao secundario" type="submit" value="cancelar" formnovalidate>Cancelar</button>
       <span class="espaco"></span>
-      <button class="botao perigo" type="button" id="mf-apagar">Apagar</button>
+      <button class="botao perigo pequeno" type="button" id="mf-apagar">Apagar</button>
     </div>
-    <p class="mensagem erro" id="mf-mensagem" role="alert"></p>
   </form>
 </dialog>
 
@@ -1034,10 +1044,25 @@
 <script src="/js/materiais-importar.js"></script>
 <script src="/js/materiais.js"></script>
 <script>
-  const APP_VERSAO = 'v0.9b';
+  const APP_VERSAO = 'v0.9c';
 
   // Mais recente primeiro. A primeira entrada tem de ser igual a APP_VERSAO.
   const NOVIDADES = [
+    {
+      versao: 'v0.9c',
+      data: '2026-10-11',
+      novas: [
+        'Fornecedores com várias categorias.',
+        'Lista de fornecedores com pesquisa, ordenação e filtros.',
+        'Lista dos materiais de cada fornecedor com pesquisa, ordenação e filtros.'
+      ],
+      alteracoes: [
+        'Editar um preço abre a janela completa, com o nome e a categoria do material.',
+        '"+ Preço de fornecedor" já vem com as medidas, a unidade e o IVA preenchidos.',
+        'Os botões Guardar e Cancelar ficam sempre à vista na janela.',
+        'Saíram os botões "Editar" dentro do material (carrega-se no preço).'
+      ]
+    },
     {
       versao: 'v0.9b',
       data: '2026-10-11',

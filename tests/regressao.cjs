@@ -300,6 +300,17 @@ teste('D23', 'leitura do Excel de materiais: medidas em metros, quantidades e gr
   exigir(!/\.delete\(/.test(js), 'a importação não pode apagar nada');
 });
 
+teste('D24', 'materiais: editar na janela completa, botões sempre à vista', () => {
+  const html = ler('public/index.html'), js = ler('public/js/materiais.js');
+  for (const d of ['d-preco', 'd-fornecedor']) {
+    const bloco = html.split(`<dialog id="${d}">`)[1].split('</dialog>')[0];
+    exigir(/rodape-dialogo rodape-fixo/.test(bloco), `a janela ${d} tem de ter os botões fixos no fundo`);
+  }
+  const ficha = js.split('async function fichaMaterial')[1].split('function caixaConversoes')[0];
+  exigir(!/text: 'Editar'/.test(ficha), 'dentro do material não há botões "Editar" (edita-se carregando no preço)');
+  exigir(/mpm-nome/.test(js.split('function abrirPreco')[1].split('function calcular')[0]) && !/mp-bloco-material'\)\.hidden/.test(js), 'a janela de editar tem de mostrar o nome e a categoria do material');
+});
+
 teste('—', 'ROADMAP marca a versão atual', () => {
   if (/[a-z]$/.test(versaoNotas || '')) return; // letras entre versões não vão ao roadmap
   exigir(new RegExp(`✅\\s*${versaoNotas?.replace('.', '\\.')}\\b`).test(ler('ROADMAP.md')),
