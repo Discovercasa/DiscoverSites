@@ -50,7 +50,10 @@
 
   async function mostrar(rota, utilizador) {
     eu = utilizador; gestor = Hub.ehGestor(eu);
-    const sub = rota.split('/')[1];
+    // ADMIN/Administrador: dentro de Colaboradores (/colaboradores/ferias/...); os outros: /ferias
+    const partes = rota.split('/'); const sub = partes[0] === 'colaboradores' ? partes[2] : partes[1];
+    const casa = gestor ? $('colab-ferias') : $('aba-ferias');
+    if ($('fe-conteudo').parentElement !== casa) casa.append($('fe-aviso'), $('fe-conteudo'));
     if (['mapa', 'anual', 'saldos', 'feriados'].includes(sub)) vista = sub;
     lembrarVista();
     aviso('');
@@ -101,7 +104,7 @@
         el('button', { class: 'botao perigo pequeno', type: 'button', text: 'Recusar', onclick: () => decidir(a, 'recusado') })
       ])))
     ]));
-    const sub = (id, nome) => el('a', { href: '/ferias/' + id, 'aria-current': vista === id ? 'page' : false, text: nome });
+    const sub = (id, nome) => el('a', { href: '/colaboradores/ferias/' + id, 'aria-current': vista === id ? 'page' : false, text: nome });
     conteudo.push(el('nav', { class: 'sub-abas' }, [sub('mapa', 'Mapa'), sub('anual', 'Visão Pedro'), sub('saldos', 'Saldos'), sub('feriados', 'Feriados')]));
     conteudo.push(vista === 'saldos' ? vistaSaldos() : vista === 'feriados' ? vistaFeriados() : vista === 'anual' ? vistaAnualGestor() : vistaMapa());
     $('fe-conteudo').replaceChildren(...conteudo);

@@ -42,7 +42,7 @@
 
 ## Férias
 
-- Separador **Férias**. ADMIN e Administrador: mapa mensal, pedidos, saldos e feriados. Cada colaborador com ficha: "As minhas férias" (saldo e pedidos).
+- **Colaboradores → Férias** (ADMIN e Administrador): mapa mensal, Visão Pedro, pedidos, saldos e feriados. Os outros colaboradores com ficha têm o separador **"As minhas férias"** (saldo, ano e pedidos).
 - Saldo: 22 dias por ano (ajustável) + transitados; descontam férias pessoais e Férias Discovercasa aprovadas, em dias úteis.
 
 ## Obras

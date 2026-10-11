@@ -49,7 +49,11 @@ nav.abas a[aria-current="page"] { border-bottom-color: var(--amarelo); }
   .topo-logo img { height: 36px; }
 }
 
-main { padding: 1.8rem 0 3rem; }
+main { padding: 3rem 0 3rem; }
+/* botão "Voltar": preso ao cabeçalho (que fica fixo no topo), logo abaixo dele, à esquerda */
+.voltar-fixo { position: absolute; top: calc(100% + .45rem); left: var(--margem); z-index: 19; border: 1px solid var(--linha); background: rgba(255,255,255,.95);
+  border-radius: 999px; padding: .3rem .85rem; font: inherit; font-size: .9rem; font-weight: 600; color: var(--escuro); cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.voltar-fixo:hover { background: var(--amarelo); border-color: var(--amarelo); }
 h1.titulo { font-size: clamp(1.8rem, 5vw, 2.4rem); margin: 0 0 .3rem; }
 .subtitulo { color: var(--suave); margin: 0 0 1.6rem; }
 footer { color: var(--suave); font-size: .85rem; padding-bottom: 2rem; }

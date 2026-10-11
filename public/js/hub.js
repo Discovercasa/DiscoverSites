@@ -35,17 +35,18 @@
       { id: 'inicio', nome: 'Início', href: '/' },
       { id: 'obras', nome: 'Obras', href: '/obras' },
       { id: 'checklist', nome: 'Checklist', href: '/checklist' },
-      (ehGestor(eu) || (eu && eu.ficha)) && { id: 'ferias', nome: 'Férias', href: '/ferias' },
+      !ehGestor(eu) && eu && eu.ficha && { id: 'ferias', nome: 'As minhas férias', href: '/ferias' },
       ehGestor(eu) && { id: 'materiais', nome: 'Materiais', href: '/materiais' },
-      ehGestor(eu) && { id: 'controlo', nome: 'Controlo', href: '/controlo' },
       ehGestor(eu) && { id: 'colaboradores', nome: 'Colaboradores', href: '/colaboradores' },
+      ehGestor(eu) && { id: 'controlo', nome: 'Controlo', href: '/controlo' },
       { id: 'novidades', nome: 'Novidades', href: '/novidades' }
     ].filter(Boolean);
   }
 
   function desenharTopo(eu, ativa) {
     const topo = $('topo');
-    topo.replaceChildren(el('div', { class: 'topo-linha' }, [
+    topo.replaceChildren(el('button', { class: 'voltar-fixo', id: 'voltar-fixo', type: 'button', title: 'Voltar à página anterior', 'aria-label': 'Voltar à página anterior', text: '← Voltar', onclick: voltar }),
+      el('div', { class: 'topo-linha' }, [
       el('a', { class: 'topo-logo', href: '/' }, el('img', { src: '/img/logo.png', alt: 'Discovercasa — início' })),
       el('nav', { class: 'abas', 'aria-label': 'Separadores' },
         separadores(eu).map((s) => el('a', { href: s.href, 'data-aba': s.id, text: s.nome }))),
@@ -55,6 +56,7 @@
       ])
     ]));
     marcarAba(ativa);
+    atualizarVoltar();
   }
 
   function marcarAba(ativa) {
@@ -102,7 +104,8 @@
   }
   function ir(destino, substituir = false) {
     const url = '/' + (destino === 'inicio' ? '' : destino.replace(/^\/+/, ''));
-    if (url !== location.pathname) history[substituir ? 'replaceState' : 'pushState'](null, '', url);
+    // marca as entradas criadas pelo Hub, para o botão "Voltar" saber se há página anterior no Hub
+    if (url !== location.pathname) history[substituir ? 'replaceState' : 'pushState']({ hub: true, n: substituir ? (history.state && history.state.n) || 0 : ((history.state && history.state.n) || 0) + 1 }, '', url);
     window.dispatchEvent(new Event('rota'));
   }
   const seccaoDe = (r) => r.split('/')[0];
@@ -136,6 +139,10 @@
     ir(destino);
   });
   window.addEventListener('popstate', () => window.dispatchEvent(new Event('rota')));
+  // "Voltar": página anterior (como o browser); se não houver nenhuma no Hub, vai para o Início
+  function voltar() { if (history.state && history.state.n > 0) history.back(); else ir('inicio'); }
+  function atualizarVoltar() { const b = $('voltar-fixo'); if (b) b.hidden = rota() === 'inicio' && !(history.state && history.state.n > 0); }
+  window.addEventListener('rota', atualizarVoltar);
 
   window.Hub = { sb, PAPEIS, $, el, ehGestor, perfilAtual, separadores, desenharTopo, marcarAba, sair, gerarSenha, guardar, ler, rota, ir, lembrar, recordar, registarRota, reporScroll };
 })();

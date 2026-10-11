@@ -47,9 +47,18 @@ Regras que não se alteram sem confirmação do Sebastião. Cada uma tem, sempre
 42. **Importar Excel de materiais = juntar:** acrescenta o que é novo e atualiza o que mudou (o preço anterior vai para o histórico); nunca apaga; preços alterados no Hub depois da data do Excel ficam como estão. (D23)
 43. **Dentro do material não há botões "Editar":** carrega-se no preço e abre a **janela completa** (material + preço). As janelas compridas têm os botões **Guardar/Cancelar sempre à vista**. (D24)
 44. **Listas com pesquisa, ordenação e filtros de escolha múltipla por coluna** (materiais, fornecedores e materiais de cada fornecedor), com a mesma peça reutilizável.
+45. **Separadores:** Início · Obras · Checklist · Materiais · Colaboradores · Controlo · Novidades (ADMIN/Administrador). **As férias estão em Colaboradores → Férias**; quem não é ADMIN/Administrador tem o separador **"As minhas férias"**. (D25)
+46. **Botão "← Voltar"** logo abaixo do cabeçalho, sempre visível: volta à página anterior (como o do browser); sem página anterior no Hub, vai para o Início. (D25)
 15. **Todas as páginas** em `public/` são em português de Portugal e ligam-se ao Supabase só pelo `plataforma-core`. (D6)
 
 ## Histórico
+
+### v0.9d — 2026-10-11
+- **Férias dentro de Colaboradores** (`/colaboradores/ferias/...`, abas Equipa · Férias · Veículos · Contas de acesso) para ADMIN/Administrador; ligações antigas `/ferias/...` passam para lá.
+- Os outros colaboradores (com ficha) têm o separador **"As minhas férias"** (`/ferias`).
+- **Controlo** passa para entre Colaboradores e Novidades.
+- **Botão "← Voltar"** fixo logo abaixo do cabeçalho (página anterior; escondido no Início sem página anterior). O conteúdo desceu um pouco para lhe dar espaço.
+- Novo teste D25.
 
 ### v0.9c — 2026-10-11
 - Material: saíram os botões "Editar" (do material e de cada preço); carregar num preço abre a **janela completa** já preenchida (nome, categoria e notas do material + fornecedor, nome no fornecedor, medidas, preço, transporte…); "Apagar preço" e "Apagar material" na janela.

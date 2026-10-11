@@ -262,7 +262,7 @@
   #ck-conteudo.editando ul.arvore:empty { min-height: 3rem; border: 2px dashed var(--linha); border-radius: 6px; }
 
   /* v0.7c — cabeçalho da obra com capa de fundo */
-  .cabeca-obra { position: relative; margin: -1.8rem calc(var(--margem) * -1) 0; padding: 1.4rem var(--margem) 1rem; overflow: hidden; }
+  .cabeca-obra { position: relative; margin: -3rem calc(var(--margem) * -1) 0; padding: 2.8rem var(--margem) 1rem; overflow: hidden; }
   .cabeca-obra .fundo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
   .cabeca-obra .sombra { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.25) 0%, rgba(0,0,0,.65) 100%); z-index: 1; }
   .cabeca-obra .conteudo-cabeca { position: relative; z-index: 2; }
@@ -479,10 +479,12 @@
     <section id="aba-colaboradores" hidden>
       <nav class="sub-abas" aria-label="Colaboradores">
         <a href="/colaboradores" data-sub="equipa">Equipa</a>
+        <a href="/colaboradores/ferias" data-sub="ferias">Férias</a>
         <a href="/colaboradores/veiculos" data-sub="veiculos">Veículos</a>
         <a href="/colaboradores/contas" data-sub="contas">Contas de acesso</a>
       </nav>
       <div id="colab-equipa"></div>
+      <div id="colab-ferias" hidden></div>
       <div id="colab-veiculos" hidden></div>
       <div id="colab-contas">
       <div class="barra">
@@ -1044,10 +1046,22 @@
 <script src="/js/materiais-importar.js"></script>
 <script src="/js/materiais.js"></script>
 <script>
-  const APP_VERSAO = 'v0.9c';
+  const APP_VERSAO = 'v0.9d';
 
   // Mais recente primeiro. A primeira entrada tem de ser igual a APP_VERSAO.
   const NOVIDADES = [
+    {
+      versao: 'v0.9d',
+      data: '2026-10-11',
+      novas: [
+        'Botão "← Voltar" sempre visível, logo abaixo do cabeçalho.'
+      ],
+      alteracoes: [
+        'As férias passaram para dentro de Colaboradores (para ADMIN e Administrador).',
+        'Os restantes colaboradores têm o separador "As minhas férias".',
+        'O separador Controlo fica entre Colaboradores e Novidades.'
+      ]
+    },
     {
       versao: 'v0.9c',
       data: '2026-10-11',
@@ -1363,7 +1377,9 @@
   function irPara(aba) {
     let rota = aba;
     aba = aba.split('/')[0];
-    const permitidas = ['inicio', 'obras', 'checklist', 'novidades', ehGestor() && 'colaboradores', ehGestor() && 'controlo', ehGestor() && 'materiais', (ehGestor() || eu.ficha) && 'ferias'].filter(Boolean);
+    // as férias de ADMIN/Administrador estão em Colaboradores (ligações antigas /ferias/... passam para lá)
+    if (aba === 'ferias' && ehGestor()) { Hub.ir('colaboradores/' + rota, true); return; }
+    const permitidas = ['inicio', 'obras', 'checklist', 'novidades', ehGestor() && 'colaboradores', ehGestor() && 'controlo', ehGestor() && 'materiais', (!ehGestor() && eu.ficha) && 'ferias'].filter(Boolean);
     if (!permitidas.includes(aba)) { aba = 'inicio'; rota = 'inicio'; }
     Hub.registarRota(rota);
     for (const s of document.querySelectorAll('main > section')) s.hidden = s.id !== 'aba-' + aba;
@@ -1375,11 +1391,12 @@
     if (aba === 'controlo') pronto = ControloHub.mostrar(rota, eu);
     if (aba === 'materiais') pronto = MateriaisHub.mostrar(rota, eu);
     if (aba === 'colaboradores') {
-      const sub = rota === 'colaboradores/contas' ? 'contas' : rota === 'colaboradores/veiculos' ? 'veiculos' : 'equipa';
-      $('colab-contas').hidden = sub !== 'contas'; $('colab-veiculos').hidden = sub !== 'veiculos'; $('colab-equipa').hidden = sub !== 'equipa';
+      const s2 = rota.split('/')[1];
+      const sub = s2 === 'contas' ? 'contas' : s2 === 'veiculos' ? 'veiculos' : s2 === 'ferias' ? 'ferias' : 'equipa';
+      $('colab-contas').hidden = sub !== 'contas'; $('colab-veiculos').hidden = sub !== 'veiculos'; $('colab-equipa').hidden = sub !== 'equipa'; $('colab-ferias').hidden = sub !== 'ferias';
       document.querySelectorAll('#aba-colaboradores .sub-abas a').forEach((a) => a.dataset.sub === sub
         ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
-      pronto = sub === 'contas' ? carregarContas() : sub === 'veiculos' ? ColaboradoresHub.mostrarVeiculos(eu) : ColaboradoresHub.mostrar(rota, eu);
+      pronto = sub === 'contas' ? carregarContas() : sub === 'veiculos' ? ColaboradoresHub.mostrarVeiculos(eu) : sub === 'ferias' ? FeriasHub.mostrar(rota, eu) : ColaboradoresHub.mostrar(rota, eu);
     }
     if (aba === 'inicio') pronto = mostrarAlertas();
     // volta à mesma posição da página (depois de o conteúdo aparecer)
@@ -1395,7 +1412,7 @@
       { titulo: 'Obras', texto: 'Projeto, entregas, pedidos e ficha de cada obra.', href: '/obras' },
       { titulo: 'Checklist', texto: 'Fases e checks de cada obra.', href: '/checklist' },
       ehGestor() && { titulo: 'Colaboradores', texto: 'Fichas da equipa, veículos e contas de acesso.', href: '/colaboradores' },
-      (ehGestor() || eu.ficha) && { titulo: 'Férias', texto: ehGestor() ? 'Mapa da equipa, pedidos, saldos e feriados.' : 'O meu saldo e pedidos de férias.', href: '/ferias' },
+      (ehGestor() || eu.ficha) && { titulo: 'Férias', texto: ehGestor() ? 'Mapa da equipa, pedidos, saldos e feriados.' : 'O meu saldo e pedidos de férias.', href: ehGestor() ? '/colaboradores/ferias' : '/ferias' },
       eu.papel !== 'cliente' && { titulo: 'Mapa de obras', texto: 'Todas as obras num mapa.', futuro: 'v0.9' },
       ehGestor() && { titulo: 'Controlo', texto: 'GPS das deslocações e horas extra.', href: '/controlo' },
       ehGestor() && { titulo: 'Materiais', texto: 'Preços por fornecedor e fornecedores.', href: '/materiais' },
@@ -1424,7 +1441,7 @@
     const [lista, nPedidos] = await Promise.all([ColaboradoresHub.alertas(), FeriasHub.pendentes()]);
     const pedidos = nPedidos ? el('section', { class: 'painel alertas' }, [
       el('h2', { class: 'titulo', text: `Pedidos de férias · ${nPedidos}` }),
-      el('p', { style: 'margin:0' }, [`Há ${nPedidos} pedido${nPedidos === 1 ? '' : 's'} à espera de decisão. `, el('a', { href: '/ferias', text: 'Ver pedidos' })])
+      el('p', { style: 'margin:0' }, [`Há ${nPedidos} pedido${nPedidos === 1 ? '' : 's'} à espera de decisão. `, el('a', { href: '/colaboradores/ferias', text: 'Ver pedidos' })])
     ]) : null;
     c.replaceChildren(...[blocoPedidosObra, pedidos].filter(Boolean), ...(lista.length ? [el('section', { class: 'painel alertas' }, [
       el('h2', { class: 'titulo', text: `Alertas · ${lista.length}` }),

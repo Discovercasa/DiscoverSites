@@ -311,6 +311,16 @@ teste('D24', 'materiais: editar na janela completa, botões sempre à vista', ()
   exigir(/mpm-nome/.test(js.split('function abrirPreco')[1].split('function calcular')[0]) && !/mp-bloco-material'\)\.hidden/.test(js), 'a janela de editar tem de mostrar o nome e a categoria do material');
 });
 
+teste('D25', 'separadores: Férias em Colaboradores, Controlo antes de Novidades, botão Voltar', () => {
+  const hub = ler('public/js/hub.js');
+  const ordem = [...hub.split('function separadores')[1].split('].filter')[0].matchAll(/id: '(\w+)'/g)].map((m) => m[1]);
+  const pos = (id) => ordem.indexOf(id);
+  exigir(pos('colaboradores') < pos('controlo') && pos('controlo') < pos('novidades'), 'Controlo tem de ficar entre Colaboradores e Novidades');
+  exigir(/!ehGestor\(eu\) && eu && eu\.ficha && \{ id: 'ferias', nome: 'As minhas férias'/.test(hub), '"As minhas férias" só para quem não é ADMIN/Administrador');
+  exigir(/data-sub="ferias">Férias</.test(ler('public/index.html')), 'Férias tem de ser uma aba de Colaboradores');
+  exigir(/class: 'voltar-fixo'/.test(hub) && /history\.back\(\)/.test(hub), 'falta o botão "Voltar" (página anterior)');
+});
+
 teste('—', 'ROADMAP marca a versão atual', () => {
   if (/[a-z]$/.test(versaoNotas || '')) return; // letras entre versões não vão ao roadmap
   exigir(new RegExp(`✅\\s*${versaoNotas?.replace('.', '\\.')}\\b`).test(ler('ROADMAP.md')),
